@@ -20,18 +20,20 @@ if CHAT_ID := os.getenv('TELEGRAM_SOBORNYI_CHAT_ID'):
 LOG_FILE = 'logs/bot.log'
 
 # Settings.
+DEBUG_MODE = False
 WAR_MODE = True
 WAR_START = datetime(2022, 2, 24)
 
 # Debugging helper.
 def debug(message, update=None, context=None):
-        logging.getLogger(__name__).debug(message)
-        if DEBUG_MODE:
-            message = f'{datetime.now().strftime(FMT)}: {message}'
-            if update and context:
-                context.bot.sendMessage(chat_id=update.message.chat.id,
-                                        text=f'```{message}```')
-            print(message)
+    logging.getLogger(__name__).debug(message)
+    print('debug mode:', DEBUG_MODE)
+    if DEBUG_MODE:
+        message = f'⌚️ {datetime.now().strftime(FMT)}: {message}'
+        if update and context:
+            context.bot.sendMessage(chat_id=update.message.chat.id,
+                                    text=f'```{message}```')
+        print(message)
 
 # Creates the directiry tree structure.
 def makedirs():
@@ -66,31 +68,61 @@ def error(update, context):
         # handle all other telegram related errors
         pass
 
+# Modes
+
+# Switch between dev and prod modes.
+def debug_switch(update, context):
+    debug('debug_switch', update, context)
+    global DEBUG_MODE
+    DEBUG_MODE = not DEBUG_MODE
+# Switch to the dev mode.
+def debug_on(update, context):
+    debug('debug_on', update, context)
+    global DEBUG_MODE
+    DEBUG_MODE = True
+# Switch to the prod mode.
+def debug_off(update, context):
+    debug('debug_off', update, context)
+    global DEBUG_MODE
+    DEBUG_MODE = False
+# Switch between war and piece modes.
+def war_switch(update, context):
+    debug('war_switch', update, context)
+    global WAR_MODE
+    WAR_MODE = not WAR_MODE
+# Switch to the war mode (morning minute of silence).
+def war_on(update, context):
+    debug('war_on', update, context)
+    global WAR_MODE
+    WAR_MODE = True
+# Switch to the piece mode.
+def war_off(update, context):
+    debug('war_off', update, context)
+    global WAR_MODE
+    WAR_MODE = False
+
 # Basic admin info command.
 def info(update, context):
+    debug('info', update, context)
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     debug(f'\nchat_id: {chat_id}\nuser_id: {user_id}', update, context)
 
-# Switch to the war mode (morning minute of silence).
-def war(update, context):
-    WAR_MODE = True
-
-# Switch to the piece mode.
-def piece(update, context):
-    WAR_MODE = False
-
+# Add morning message to a timer.
 def queue_morning_message():
+    debug('queue_morning_message')
     time_to_9am = datetime.combine(datetime.today(), time(hour=9)) - datetime.now();
     if time_to_9am.total_seconds() < 0:
         time_to_9am += timedelta(hours=24)
     Timer(int(time_to_9am.total_seconds()), morning_message).start()
 
+# Send morning message and add a new timer.
 def morning_message():
+    debug('morning_message')
     if WAR_MODE:
         days_since_war_started = (datetime.today() - WAR_START).days + 1;
         message = f'*День {days_since_war_started} війни*\n'\
-        '🕯 Щоденна хвилина мовчання за українцями, які віддали своє життя, '\
+        '🕯Щоденна хвилина мовчання за українцями, які віддали своє життя, '\
         'за всіма, хто міг би ще жити, якби Росія не почала цю війну.'
         updater.bot.sendMessage(chat_id=CHAT_ID, text=f'{message}')
         queue_morning_message()
@@ -119,12 +151,20 @@ logging.basicConfig(filename=LOG_FILE, level=logging_level,
 defaults = Defaults(parse_mode='Markdown')
 updater = Updater(TOKEN, defaults=defaults)
 # Admin commands.
+updater.dispatcher.add_handler(CommandHandler('debug', debug_switch,
+    Filters.user(ADMIN_ID) & Filters.chat(CHAT_ID)))
+updater.dispatcher.add_handler(CommandHandler('debug_on', debug_on,
+    Filters.user(ADMIN_ID) & Filters.chat(CHAT_ID)))
+updater.dispatcher.add_handler(CommandHandler('debug_off', debug_off,
+    Filters.user(ADMIN_ID) & Filters.chat(CHAT_ID)))
+updater.dispatcher.add_handler(CommandHandler('war', war_switch,
+    Filters.user(ADMIN_ID) & Filters.chat(CHAT_ID)))
+updater.dispatcher.add_handler(CommandHandler('war_on', war_on,
+    Filters.user(ADMIN_ID) & Filters.chat(CHAT_ID)))
+updater.dispatcher.add_handler(CommandHandler('war_off', war_off,
+    Filters.user(ADMIN_ID) & Filters.chat(CHAT_ID)))
 updater.dispatcher.add_handler(CommandHandler('info', info,
     Filters.user(ADMIN_ID) & Filters.chat(CHAT_ID)))
-updater.dispatcher.add_handler(CommandHandler('war', war,
-    Filters.user(ADMIN_ID) & Filters.chat(CHAT_ID)))
-updater.dispatcher.add_handler(CommandHandler('piece', piece,
-    Filters.user(ADMIN_ID) & Filters.chat(CHAT_ID)))    
 # Error handling.
 updater.dispatcher.add_error_handler(error)
 
