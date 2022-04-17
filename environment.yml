@@ -1,0 +1,8 @@
+name: telegram
+channels:
+  - defaults
+dependencies:
+  - pip==22.0.4
+  - python=3.10.0
+  - pip:
+    - python-telegram-bot==13.11
