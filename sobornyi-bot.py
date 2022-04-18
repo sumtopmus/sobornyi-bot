@@ -27,7 +27,6 @@ WAR_START = datetime(2022, 2, 24)
 # Debugging helper.
 def debug(message, update=None, context=None):
     logging.getLogger(__name__).debug(message)
-    print('debug mode:', DEBUG_MODE)
     if DEBUG_MODE:
         message = f'⌚️ {datetime.now().strftime(FMT)}: {message}'
         if update and context:
@@ -169,8 +168,7 @@ updater.dispatcher.add_handler(CommandHandler('info', info,
 updater.dispatcher.add_error_handler(error)
 
 # Add tasks.
-# queue_morning_message()
-morning_message()
+queue_morning_message()
 
 # Start the bot.
 updater.start_polling()
