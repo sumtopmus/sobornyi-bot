@@ -163,7 +163,7 @@ updater.dispatcher.add_handler(CommandHandler('war_on', war_on,
 updater.dispatcher.add_handler(CommandHandler('war_off', war_off,
     Filters.user(ADMIN_ID) & Filters.chat(CHAT_ID)))
 updater.dispatcher.add_handler(CommandHandler('info', info,
-    Filters.user(ADMIN_ID) & Filters.chat(CHAT_ID)))
+    Filters.user(ADMIN_ID)))
 # Error handling.
 updater.dispatcher.add_error_handler(error)
 
