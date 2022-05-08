@@ -24,6 +24,9 @@ DEBUG_MODE = False
 WAR_MODE = True
 WAR_START = datetime(2022, 2, 24)
 
+# Internal parameters.
+MIN_SECONDS_INTERVAL = 10
+
 # Debugging helper.
 def debug(message, update=None, context=None):
     logging.getLogger(__name__).debug(message)
@@ -111,7 +114,7 @@ def info(update, context):
 def queue_morning_message():
     debug('queue_morning_message')
     time_to_9am = datetime.combine(datetime.today(), time(hour=9)) - datetime.now();
-    if time_to_9am.total_seconds() < 0:
+    if time_to_9am.total_seconds() < MIN_SECONDS_INTERVAL:
         time_to_9am += timedelta(hours=24)
     Timer(int(time_to_9am.total_seconds()), morning_message).start()
 
@@ -145,6 +148,8 @@ if os.path.exists(LOG_FILE):
 logging_level = logging.DEBUG if DEBUG_MODE else logging.INFO
 logging.basicConfig(filename=LOG_FILE, level=logging_level,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Show admin and chat ids.
+debug(f'admin: {ADMIN_ID}, chat: {CHAT_ID}')
 
 # Setup the bot.
 defaults = Defaults(parse_mode='Markdown')
