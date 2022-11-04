@@ -7,7 +7,7 @@ In order to test/play with it:
 - SOBORNYI_BOT_API_TOKEN
 3. Create a test group space in Telegram.
 4. Add your bot to the group.
-5. Set up the dev environment with `conda env create -f environment.yml && conda activate telegram`
+5. Set up the dev environment with `conda env create -f environment.yml && conda activate telegram`.
 6. Run the bot with `make debug`.
 7. Type `\info` in your group.
 8. Set up the environment variables:
