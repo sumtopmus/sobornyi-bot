@@ -10,7 +10,5 @@ In order to test/play with it:
 5. Set up the dev environment with `conda env create -f environment.yml && conda activate telegram`.
 6. Run the bot with `make debug`.
 7. Type `/info` in your group.
-8. Set up the environment variables:
-- TELEGRAM_ADMIN_ID
-- TELEGRAM_SOBORNYI_CHAT_ID
+8. Adjust `config.yml`.
 9. Rerun the bot and enjoy!

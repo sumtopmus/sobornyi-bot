@@ -13,11 +13,13 @@ MORNING_JOB_NAME = 'morning_message'
 
 def create_handlers() -> list:
     """Creates a handler that processes piece/war modes."""
-    war_on_handler = CommandHandler(
-        'war_on', war_on, filters.User(config.ADMIN_ID) & filters.Chat(config.CHAT_ID))
+    war_handler = CommandHandler(
+        'war', war_on,
+        filters.User(username=config.ADMINS) & filters.Chat(config.CHAT_ID))
     war_off_handler = CommandHandler(
-        'war_off', war_off, filters.User(config.ADMIN_ID) & filters.Chat(config.CHAT_ID))
-    return [war_on_handler, war_off_handler]
+        'war_off', war_off,
+        filters.User(username=config.ADMINS) & filters.Chat(config.CHAT_ID))
+    return [war_handler, war_off_handler]
 
 
 def war_on(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

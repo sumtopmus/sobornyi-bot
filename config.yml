@@ -1,5 +1,6 @@
 bot-username: '@sobornyi_bot'
-admin-id: 839370
+admins:
+  - '@shurioque'
 chat-id: -1001642495107
 forum: True
 main-chat: 12277      # https://t.me/c/1642495107/12277

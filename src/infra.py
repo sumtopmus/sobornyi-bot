@@ -23,5 +23,5 @@ def init() -> None:
     logging.basicConfig(filename=config.LOG_PATH, level=logging_level,
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     # Show admin and chat ids.
-    tools.debug(f'admin: {config.ADMIN_ID}')
+    tools.debug(f'admins: {", ".join(config.ADMINS)}')
     tools.debug(f'chat: {config.CHAT_ID}')
