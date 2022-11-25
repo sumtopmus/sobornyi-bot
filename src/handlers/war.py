@@ -47,7 +47,9 @@ async def morning_message(context: ContextTypes.DEFAULT_TYPE) -> None:
     message = (f'*День {days_since_war_started} героїчного спротиву українського народу*\n'
     '🕯 Щоденна хвилина мовчання за українцями, які віддали своє життя, '
     'за всіма, хто міг би ще жити, якби Росія не почала цю війну.')
-    await context.bot.sendMessage(chat_id=context.job.chat_id, text=f'{message}')
+    await context.bot.sendMessage(
+        chat_id=context.job.chat_id, text=f'{message}',
+        message_thread_id=config.MAIN_THREAD_ID)
 
 
 def init(app: Application) -> None:
