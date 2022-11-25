@@ -7,7 +7,7 @@ import tools
 
 def makedirs() -> None:
     """Creates the directiry tree structure."""
-    for path in [config.LOG_PATH]:
+    for path in [config.DB_PATH, config.LOG_PATH]:
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
 
