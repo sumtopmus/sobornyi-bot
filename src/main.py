@@ -1,67 +1,47 @@
 # coding=UTF-8
 
-import logging
 import argparse
+from telegram.ext import Application, Defaults, PicklePersistence
 
-import telegram.error
-from telegram.ext import Updater, Defaults
-
-import infra
+from handlers import debug, error, info, request, war, welcome
 import config
-from commands import info, war, welcome
+import infra
 
-# API related calls & handlers.
 
-# Error handler.
-def error(update, context):
-    logging.getLogger(__name__).warning(f'Update {update} caused error {context.error}')
-    try:
-        raise context.error
-    except telegram.error.Unauthorized:
-        # remove update.message.user_id from conversation list
-        pass
-    except telegram.error.BadRequest:
-        # handle malformed requests - read more below!
-        pass
-    except telegram.error.TimedOut:
-        # handle slow connection problems
-        pass
-    except telegram.error.NetworkError:
-        # handle other connection problems
-        pass
-    except telegram.error.ChatMigrated:
-        # the user_id of a group has changed, use e.new_user_id instead
-        pass
-    except telegram.error.TelegramError:
-        # handle all other telegram related errors
-        pass
+def main() -> None:
+    """Main program to run."""
+    # Parse arguments.
+    parser = argparse.ArgumentParser(
+        description='''Runs a controller bot for Sobornyi Telegram group.''')
+    parser.add_argument('--debug', dest='debug', action='store_true',
+                        help="Whether to run in the debug mode.")
+    parser.set_defaults(debug=False)
+    args = parser.parse_args()
 
-# Parse arguments.
-parser = argparse.ArgumentParser(
-    description='''Runs a watchman bot for Sobornyi Telegram group.''')
-parser.add_argument('--debug', dest='debug', action='store_true',
-                    help="Whether to run in the debug mode.")
-parser.set_defaults(debug=False)
-args = parser.parse_args()
+    # Initialize infrastructure.
+    config.DEBUG_MODE = args.debug
+    infra.init()
 
-# Initialize infrastructure.
-config = config.Config()
-infra.init(config, args.debug)
+    # Setup the bot.
+    defaults = Defaults(parse_mode='Markdown', tzinfo=config.TIMEZONE)
+    persistence = PicklePersistence(filepath=config.DB_PATH, single_file=False)
+    app = Application.builder().token(config.TOKEN).defaults(defaults)\
+        .persistence(persistence).arbitrary_callback_data(True).build()
+    # Error handler.
+    app.add_error_handler(error.handler)
+    # Admin commands.
+    for module in [debug, info]:
+        app.add_handlers(module.create_handlers())
+    # General chat handling.
+    for module in [request, welcome, war]:
+        app.add_handlers(module.create_handlers())
 
-# Setup the bot.
-defaults = Defaults(parse_mode='Markdown')
-updater = Updater(config.TOKEN, defaults=defaults)
-# Admin commands.
-updater.dispatcher.add_handler(info.create_handler(config))
-# General chat handling.
-updater.dispatcher.add_handler(war.create_handler(config))
-updater.dispatcher.add_handler(welcome.create_handler(config))
-# Error handling.
-updater.dispatcher.add_error_handler(error)
+    # Initialize tasks.
+    war.init(app)
 
-# Add tasks.
-war.queue_morning_message(updater, config)
+    # Start the bot.
+    app.run_polling()
 
-# Start the bot.
-updater.start_polling()
-updater.idle()
+
+if __name__ == "__main__":
+    main()

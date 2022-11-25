@@ -2,8 +2,10 @@
 .DS_Store
 .vscode
 *.code-workspace
-data/db.pkl
+data/db_*
 logs/*.log
+*.ipynb
+config.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

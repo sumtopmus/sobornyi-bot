@@ -2,7 +2,9 @@ name: telegram
 channels:
   - defaults
 dependencies:
-  - pip==22.0.4
+  - pip=22.3.1
   - python=3.10.0
+  - pytz=2021.3
+  - ruamel.yaml
   - pip:
-    - python-telegram-bot==13.11
+    - python-telegram-bot=20.0a6

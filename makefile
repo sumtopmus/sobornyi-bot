@@ -1,7 +1,11 @@
-.PHONY: run debug
+.PHONY: run debug clean
 
-run:
+run: clean
 	python src/main.py
 
-debug:
+debug: clean
 	python src/main.py --debug
+
+clean:
+	@rm -rf src/__pycache__
+	@rm -rf src/handlers/__pycache__
