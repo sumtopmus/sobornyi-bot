@@ -12,15 +12,17 @@ TOKEN = os.getenv('SOBORNYI_BOT_API_TOKEN')
 
 # Main config.
 yaml = YAML()
-with open('config.yml', 'r') as f:
+with open('test-config.yml', 'r') as f:
     config = yaml.load(f)
     BOT_USERNAME = config['bot-username']
     ADMINS = config['admins']
     CHAT_ID = config['chat-id']
+    CHANNEL_USERNAME = config['channel-username']
     IS_FORUM = config['forum']
-    MAIN_THREAD_ID = config.get('main-chat', None)
-    WELCOME_THREAD_ID = config.get('welcome-chat', None)
-    OFFTOP_THREAD_ID = config.get('offtop-chat', None)
+    MAIN_THREAD_ID = config.get('main-thread', None)
+    WELCOME_THREAD_ID = config.get('welcome-thread', None)
+    OFFTOP_THREAD_ID = config.get('offtop-thread', None)
+    CHANNEL_THREAD_ID = config.get('channel-thread', None)
 # Pathes.
 DB_PATH = 'data/db'
 LOG_PATH = 'logs/bot.log'

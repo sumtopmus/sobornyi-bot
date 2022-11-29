@@ -15,7 +15,7 @@ State = Enum('State', ['JOIN', 'AWAITING'])
 
 
 def create_handlers() -> list:
-    """Creates a handler that processses new users."""
+    """Creates handlers that process new users."""
     return [ConversationHandler(
         entry_points=[
             MessageHandler(
@@ -42,11 +42,14 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     tools.debug('welcome')
     for user in update.message.new_chat_members:
         tools.debug(f'new user: {user.id} ({user.full_name})')
+        if user.is_bot():
+            tools.debug(f'new user is a bot')
+            continue
         message = (f'Cлава Україні, {tools.mention(user)}, і вітаємо тебе в Соборному! \n'
         'Ми хочемо познайомитися з тобою, так що розкажи трохи про себе '
         'і не забудь додати теґ #about!\n\n'
         'На це у тебе є одна доба. Якщо ми від тебе нічого не почуємо, ми попрощаємось.')
-        reply_to_message_id = None if config.IS_FORUM else update.message.message_id
+        reply_to_message_id = None if config.IS_FORUM else update.message.id
         welcome_message = await context.bot.sendMessage(
             chat_id=update.message.chat.id, message_thread_id=config.WELCOME_THREAD_ID,
             text=message, reply_to_message_id=reply_to_message_id)
@@ -76,7 +79,7 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     # TODO: handle the case when update.message.message_thread_id is incorrect.
     welcome_message = await context.bot.sendMessage(
             chat_id=update.message.chat.id, message_thread_id=config.WELCOME_THREAD_ID,
-            text=message, reply_to_message_id=update.message.message_id)
+            text=message, reply_to_message_id=update.message.id)
     context.job_queue.run_once(
             tools.message_cleanup,
             config.WELCOME_CLEANUP_PERIOD,
