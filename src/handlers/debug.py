@@ -6,7 +6,7 @@ import tools
 
 
 def create_handlers() -> list:
-    """Creates a handler that processes prod/debug modes."""
+    """Creates handlers that process prod/debug modes."""
     debug_on_handler = CommandHandler(
         'debug', debug_on,
         filters.User(username=config.ADMINS) & filters.Chat(config.CHAT_ID))

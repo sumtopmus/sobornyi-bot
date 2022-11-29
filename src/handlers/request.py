@@ -8,7 +8,7 @@ import tools
 
 
 def create_handlers() -> list:
-    """Creates a handler that processses join requests."""
+    """Creates handlers that process join requests."""
     return [ChatJoinRequestHandler(request, chat_id=config.CHAT_ID)]
 
 

@@ -8,11 +8,11 @@ import config
 import tools
 
 
-MORNING_JOB_NAME = 'morning_message'
+JOB_NAME = 'morning_message'
 
 
 def create_handlers() -> list:
-    """Creates a handler that processes piece/war modes."""
+    """Creates handlers that process piece/war modes."""
     war_handler = CommandHandler(
         'war', war_on,
         filters.User(username=config.ADMINS) & filters.Chat(config.CHAT_ID))
@@ -25,19 +25,19 @@ def create_handlers() -> list:
 def war_on(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Switch to the war mode (morning minute of silence)."""
     tools.debug('war_on')
-    if not context.job_queue.get_jobs_by_name(MORNING_JOB_NAME):
+    if not context.job_queue.get_jobs_by_name(JOB_NAME):
         tools.debug('job_added')
         context.job_queue.run_daily(
             morning_message,
             config.MORNING_TIME,
-            name=MORNING_JOB_NAME,
+            name=JOB_NAME,
             chat_id=update.update.message.chat.id)
 
 
 def war_off(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Switch to the piece mode."""
     tools.debug('war_off')
-    tools.clear_jobs(context, MORNING_JOB_NAME)
+    tools.clear_jobs(context, JOB_NAME)
 
 
 async def morning_message(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -50,14 +50,3 @@ async def morning_message(context: ContextTypes.DEFAULT_TYPE) -> None:
     await context.bot.sendMessage(
         chat_id=context.job.chat_id, text=f'{message}',
         message_thread_id=config.MAIN_THREAD_ID)
-
-
-def init(app: Application) -> None:
-    """Initializes morning message regarding the war."""
-    tools.debug('init_war')
-    if config.WAR_MODE:
-        app.job_queue.run_daily(
-            morning_message,
-            config.MORNING_TIME,
-            chat_id=config.CHAT_ID,
-            name=MORNING_JOB_NAME)
