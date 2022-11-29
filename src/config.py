@@ -12,7 +12,7 @@ TOKEN = os.getenv('SOBORNYI_BOT_API_TOKEN')
 
 # Main config.
 yaml = YAML()
-with open('test-config.yml', 'r') as f:
+with open('config.yml', 'r') as f:
     config = yaml.load(f)
     BOT_USERNAME = config['bot-username']
     ADMINS = config['admins']
