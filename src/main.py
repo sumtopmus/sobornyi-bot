@@ -36,7 +36,7 @@ def main() -> None:
     infra.init()
 
     # Setup the bot.
-    defaults = Defaults(parse_mode=ParseMode.MARKDOWN_V2, tzinfo=config.TIMEZONE)
+    defaults = Defaults(parse_mode=ParseMode.MARKDOWN, tzinfo=config.TIMEZONE)
     persistence = PicklePersistence(filepath=config.DB_PATH, single_file=False)
     app = Application.builder().token(config.TOKEN).defaults(defaults)\
         .persistence(persistence).arbitrary_callback_data(True).build()

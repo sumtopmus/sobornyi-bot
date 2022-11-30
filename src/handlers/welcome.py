@@ -45,9 +45,9 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
         if user.is_bot:
             tools.debug(f'new user is a bot')
             continue
-        message = (f'Cлава Україні, {tools.mention(user)}, і вітаємо тебе в Соборному! \n'
+        message = (f'Cлава Україні, {tools.mention(user)}! Вітаємо тебе в Соборному\! \n'
         'Ми хочемо познайомитися з тобою, так що розкажи трохи про себе '
-        'і не забудь додати теґ #about!\n\n'
+        'і додай, будь ласка, до повідомлення теґ #about.\n\n'
         'На це у тебе є одна доба. Якщо ми від тебе нічого не почуємо, ми попрощаємось.')
         reply_to_message_id = None if config.IS_FORUM else update.message.id
         welcome_message = await context.bot.sendMessage(
