@@ -42,7 +42,7 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     tools.debug('welcome')
     for user in update.message.new_chat_members:
         tools.debug(f'new user: {user.id} ({user.full_name})')
-        if user.is_bot():
+        if user.is_bot:
             tools.debug(f'new user is a bot')
             continue
         message = (f'Cлава Україні, {tools.mention(user)}, і вітаємо тебе в Соборному! \n'
