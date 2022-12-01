@@ -34,4 +34,4 @@ async def edit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     tools.debug('edit')
     copied_message_id = context.chat_data['channel-thread'][f'{update.edited_channel_post.id}']
     await context.bot.edit_message_text(
-        update.edited_channel_post.text_markdown_v2, config.CHAT_ID, copied_message_id)
+        update.edited_channel_post.text_markdown, config.CHAT_ID, copied_message_id)
