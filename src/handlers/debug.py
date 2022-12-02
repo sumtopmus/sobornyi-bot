@@ -8,14 +8,11 @@ import tools
 def create_handlers() -> list:
     """Creates handlers that process prod/debug modes."""
     debug_on_handler = CommandHandler(
-        'debug', debug_on,
-        filters.Chat(settings.CHAT_ID) & filters.User(username=settings.ADMINS))
+        'debug', debug_on, filters.User(username=settings.ADMINS))
     debug_off_handler = CommandHandler(
-        'debug_off', debug_off,
-        filters.Chat(settings.CHAT_ID) & filters.User(username=settings.ADMINS))
+        'debug_off', debug_off, filters.User(username=settings.ADMINS))
     debug_toggle_handler = CommandHandler(
-        'debug_toggle', debug_toggle,
-        filters.Chat(settings.CHAT_ID) & filters.User(username=settings.ADMINS))
+        'debug_toggle', debug_toggle, filters.User(username=settings.ADMINS))
     return [debug_on_handler, debug_off_handler, debug_toggle_handler]
 
 
