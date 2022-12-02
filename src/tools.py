@@ -1,14 +1,15 @@
 # coding=UTF-8
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from telegram import User
-from telegram.ext import ContextTypes
+from telegram.ext import Application, ContextTypes
 
 import config
 
 
 # Magic values.
 FMT = '%Y-%m-%d %H:%M:%S'
+MESSAGE_CLEANUP_JOB = 'message_cleanup'
 
 
 def debug(message: str) -> None:
@@ -31,14 +32,33 @@ def mention(user: User) -> None:
 
 async def message_cleanup(context: ContextTypes.DEFAULT_TYPE) -> None:
     """Cleans up outdated messages."""
-    debug('message_cleanup')
-    await context.bot.delete_message(context.job.chat_id, context.job.data)
+    debug(f'message_cleanup: {context.job.data}')
+    await context.bot.delete_message(config.CHAT_ID, context.job.data)
+    clear_jobs(context, MESSAGE_CLEANUP_JOB, context.job.data)
 
 
-def clear_jobs(context: ContextTypes.DEFAULT_TYPE, job_name: str) -> None:
+def add_job(job, delay: timedelta, app: Application, job_family: str, job_data) -> None:
+    """Adds a job to the bot scheduler."""
+    job_name = f'{job_family}:{job_data}'
+    debug(f'add_job: {job_name}')
+    app.job_queue.run_once(job, delay, data=job_data, name=job_name)
+    app.bot_data['jobs'][job_name] = {
+        'time': datetime.now() + delay,
+        'data': job_data}
+
+
+def add_message_cleanup_job(app: Application, message_id: int) -> None:
+    """Adds a message cleanup job to the scheduler."""
+    debug(f'add_message_cleanup_job: {message_id}')
+    add_job(message_cleanup, config.CLEANUP_PERIOD, app, MESSAGE_CLEANUP_JOB, message_id)
+
+
+def clear_jobs(app: Application, job_family: str, job_data) -> None:
     """Clears the existing jobs."""
-    current_jobs = context.job_queue.get_jobs_by_name(job_name)
-    if not current_jobs:
-        return
-    for job in current_jobs:
-        job.schedule_removal()
+    job_name = f'{job_family}:{job_data}'
+    debug(f'clear_jobs: {job_name}')
+    current_jobs = app.job_queue.get_jobs_by_name(job_name)
+    if current_jobs:
+        for job in current_jobs:
+            job.schedule_removal()
+    app.bot_data['jobs'].pop(job_name, None)

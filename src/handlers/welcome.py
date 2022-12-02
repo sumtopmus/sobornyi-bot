@@ -28,13 +28,10 @@ def create_handlers() -> list:
                     about)]},
         fallbacks=[
             # TODO: add bot's goodbye message as a fallback.
-            # MessageHandler(
-            #     filters.User(username=config.BOT_USERNAME) & filters.Regex(r'жаль')
-            # )
         ],
         conversation_timeout=config.WELCOME_TIMEOUT,
         name="welcome",
-        persistent=False)]
+        persistent=True)]
 
 
 async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
@@ -50,60 +47,42 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
         'і додай, будь ласка, до повідомлення теґ #about.\n\n'
         'На це у тебе є одна доба. Якщо ми від тебе нічого не почуємо, ми попрощаємось.')
         reply_to_message_id = None if config.IS_FORUM else update.message.id
-        welcome_message = await context.bot.sendMessage(
+        bot_message = await context.bot.sendMessage(
             chat_id=update.message.chat.id, message_thread_id=config.WELCOME_THREAD_ID,
             text=message, reply_to_message_id=reply_to_message_id)
-        context.user_data.setdefault('about', '')
-        context.job_queue.run_once(
-            welcome_timeout,
-            config.WELCOME_TIMEOUT,
-            data=user,
-            name=f'{WELCOME_TIMEOUT_JOB}:{user.id}',
-            chat_id=update.message.chat.id,
-            user_id=user.id)
-        context.job_queue.run_once(
-            tools.message_cleanup,
-            config.WELCOME_CLEANUP_PERIOD,
-            data=welcome_message.id,
-            name=f'welcome_cleanup',
-            chat_id=update.message.chat.id)
+        # timeout & cleanup jobs
+        tools.add_job(welcome_timeout, config.WELCOME_TIMEOUT,\
+            context.application, WELCOME_TIMEOUT_JOB, user.id)
+        tools.add_message_cleanup_job(context.application, bot_message.id)
     return State.AWAITING
 
 
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user writes #about."""
     tools.debug('about')
-    tools.clear_jobs(context, f'{WELCOME_TIMEOUT_JOB}:{update.message.from_user.id}')
     context.user_data['about'] = update.message.text
     message = f'Вітаємо тебе, {tools.mention(update.message.from_user)}!'
     # TODO: handle the case when update.message.message_thread_id is incorrect.
-    welcome_message = await context.bot.sendMessage(
-            chat_id=update.message.chat.id, message_thread_id=config.WELCOME_THREAD_ID,
-            text=message, reply_to_message_id=update.message.id)
-    context.job_queue.run_once(
-            tools.message_cleanup,
-            config.WELCOME_CLEANUP_PERIOD,
-            data=welcome_message.id,
-            name=f'welcome_cleanup',
-            chat_id=update.message.chat.id)
+    bot_message = await context.bot.sendMessage(
+        chat_id=update.message.chat.id, message_thread_id=config.WELCOME_THREAD_ID,
+        text=message, reply_to_message_id=update.message.id)
+    tools.add_message_cleanup_job(context.application, bot_message.id)
+    tools.clear_jobs(context.application, WELCOME_TIMEOUT_JOB, update.message.from_user.id)
     return ConversationHandler.END
 
 
 async def welcome_timeout(context: ContextTypes.DEFAULT_TYPE) -> int:
     """When #about was not written in time."""
     tools.debug('welcome_timeout')
-    message = f'На жаль, {tools.mention(context.job.data)} покидає Соборний.'
-    ban_message = await context.bot.sendMessage(
-        chat_id=context.job.chat_id, message_thread_id=config.WELCOME_THREAD_ID, text=message)
+    chat_member = await context.bot.get_chat_member(config.CHAT_ID, context.job.data)
+    message = f'На жаль, {tools.mention(chat_member.user)} покидає Соборний.'
+    bot_message = await context.bot.sendMessage(
+        chat_id=config.CHAT_ID, message_thread_id=config.WELCOME_THREAD_ID, text=message)
+    tools.add_message_cleanup_job(context.application, bot_message.id)
     unban_date = datetime.now() + config.BAN_PERIOD
     await context.bot.ban_chat_member(
-        context.job.chat_id, context.job.user_id,
+        config.CHAT_ID, context.job.data,
         until_date=unban_date, revoke_messages=False)
-    await context.bot.unban_chat_member(context.job.chat_id, context.job.user_id)
-    context.job_queue.run_once(
-            tools.message_cleanup,
-            config.BAN_CLEANUP_PERIOD,
-            data=ban_message.id,
-            name=f'ban_cleanup',
-            chat_id=context.job.chat_id)
+    await context.bot.unban_chat_member(config.CHAT_ID, context.job.data)
+    tools.clear_jobs(context.application, WELCOME_TIMEOUT_JOB, context.job.data)
     return ConversationHandler.END
