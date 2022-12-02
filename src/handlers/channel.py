@@ -26,12 +26,15 @@ async def post(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     tools.debug('post')
     copy = await update.channel_post.copy(
         config.CHAT_ID, message_thread_id=config.CHANNEL_THREAD_ID)
-    context.chat_data.setdefault('channel-thread', {})[f'{update.channel_post.id}'] = copy.message_id
+    context.chat_data.setdefault('channel-thread', {})[update.channel_post.id] = copy.message_id
 
 
 async def edit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """When a post is edited on the channel."""
     tools.debug('edit')
-    copied_message_id = context.chat_data['channel-thread'][f'{update.edited_channel_post.id}']
+    copied_message_id = context.chat_data.setdefault('channel-thread', {}).setdefault(
+        update.edited_channel_post.id, None)
+    if not copied_message_id:
+        return
     await context.bot.edit_message_text(
         update.edited_channel_post.text_markdown, config.CHAT_ID, copied_message_id)
