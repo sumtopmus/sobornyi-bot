@@ -1,22 +1,20 @@
 # coding=UTF-8
+
 from datetime import datetime, timedelta
+from dynaconf import settings
 import logging
 from telegram import User
 from telegram.ext import Application, ContextTypes
 
-import config
 
-
-# Magic values.
-FMT = '%Y-%m-%d %H:%M:%S'
 MESSAGE_CLEANUP_JOB = 'message_cleanup'
 
 
 def debug(message: str) -> None:
     """Debugging helper."""
     logging.getLogger(__name__).debug(message)
-    if config.DEBUG_MODE:
-        print(f'⌚️ {datetime.now().strftime(FMT)}: {message}')
+    if settings.DEBUG:
+        print(f'⌚️ {datetime.now().strftime(settings.DATETIME_FORMAT)}: {message}')
 
 
 def mention(user: User) -> None:
@@ -33,7 +31,7 @@ def mention(user: User) -> None:
 async def message_cleanup(context: ContextTypes.DEFAULT_TYPE) -> None:
     """Cleans up outdated messages."""
     debug(f'message_cleanup: {context.job.data}')
-    await context.bot.delete_message(config.CHAT_ID, context.job.data)
+    await context.bot.delete_message(settings.CHAT_ID, context.job.data)
     clear_jobs(context, MESSAGE_CLEANUP_JOB, context.job.data)
 
 
@@ -50,7 +48,7 @@ def add_job(job, delay: timedelta, app: Application, job_family: str, job_data) 
 def add_message_cleanup_job(app: Application, message_id: int) -> None:
     """Adds a message cleanup job to the scheduler."""
     debug(f'add_message_cleanup_job: {message_id}')
-    add_job(message_cleanup, config.CLEANUP_PERIOD, app, MESSAGE_CLEANUP_JOB, message_id)
+    add_job(message_cleanup, settings.CLEANUP_PERIOD, app, MESSAGE_CLEANUP_JOB, message_id)
 
 
 def clear_jobs(app: Application, job_family: str, job_data) -> None:
