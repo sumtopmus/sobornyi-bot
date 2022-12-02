@@ -35,6 +35,5 @@ MORNING_TIME = time(hour=9)
 # Internal parameters.
 MIN_SECONDS_INTERVAL = 5
 WELCOME_TIMEOUT = timedelta(days=1)
-WELCOME_CLEANUP_PERIOD = timedelta(days=1, hours=12)
-BAN_CLEANUP_PERIOD = WELCOME_CLEANUP_PERIOD - WELCOME_TIMEOUT
+CLEANUP_PERIOD = timedelta(days=1, hours=12)
 BAN_PERIOD = timedelta(seconds=35)
