@@ -3,6 +3,7 @@ channels:
   - defaults
 dependencies:
   - python==3.10.0
+  - pip
   - pip:
     - dynaconf
     - python-telegram-bot[callback-data, job-queue]==20.0a6
