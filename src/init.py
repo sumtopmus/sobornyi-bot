@@ -1,8 +1,8 @@
 import copy
 from datetime import datetime, timedelta
+from dynaconf import settings
 from telegram.ext import Application
 
-import config
 from handlers import channel, debug, error, info, request, war, welcome
 import tools
 
@@ -10,12 +10,12 @@ import tools
 async def post_init(app: Application) -> None:
     """Initializes bot with data and its tasks."""
     tools.debug('post_init')
-    if config.WAR_MODE:
+    if settings.WAR_MODE:
         tools.debug('init_war')
         app.job_queue.run_daily(
             war.morning_message,
-            config.MORNING_TIME,
-            chat_id=config.CHAT_ID,
+            settings.MORNING_TIME,
+            chat_id=settings.CHAT_ID,
             name=war.JOB_NAME)
     tools.debug('restoring_jobs')
     jobs = copy.deepcopy(app.bot_data.setdefault('jobs', {}))

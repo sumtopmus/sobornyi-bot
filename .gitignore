@@ -1,11 +1,18 @@
-# Custom
-.DS_Store
+# Auth secrets
+.secrets.*
+
+# App data
+data
+logs
+
+# Dev and local environment
 .vscode
 *.code-workspace
-data/db_*
-logs/*.log
-*.ipynb
-test-config.yml
+**/*.local*
+debug.ipynb
+
+# macOS environment
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -111,7 +118,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/

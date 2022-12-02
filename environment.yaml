@@ -1,0 +1,8 @@
+name: telegram-bot
+channels:
+  - defaults
+dependencies:
+  - python==3.10.0
+  - pip:
+    - dynaconf
+    - python-telegram-bot[callback-data, job-queue]==20.0a6
