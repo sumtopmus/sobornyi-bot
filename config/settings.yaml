@@ -15,7 +15,6 @@ default:
   TIMEZONE: US/Eastern
   # Behavior
   WAR_MODE: true
-  WAR_START_DATE: 2022-02-24
   # Internal parameters
   DATETIME_FORMAT: '%Y-%m-%d %H:%M:%S'
   # Local parameters
