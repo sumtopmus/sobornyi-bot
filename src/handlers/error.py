@@ -27,6 +27,9 @@ def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except telegram.error.InvalidToken:
         # handle invalid token case
         pass
+    except telegram.error.TimedOut:
+        # handle slow connection problems
+        pass
     except telegram.error.NetworkError:
         # handle other connection problems
         pass
@@ -35,9 +38,6 @@ def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         pass
     except telegram.error.RetryAfter:
         # handle the exceeded flood limits
-        pass
-    except telegram.error.TimedOut:
-        # handle slow connection problems
         pass
     except telegram.error.TelegramError:
         # handle all other telegram related errors

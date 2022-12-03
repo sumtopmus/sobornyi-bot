@@ -30,14 +30,13 @@ def war_on(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         context.job_queue.run_daily(
             morning_message,
             settings.MORNING_TIME,
-            name=JOB_NAME,
-            chat_id=update.update.message.chat.id)
+            name=JOB_NAME)
 
 
 def war_off(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Switch to the piece mode."""
     tools.debug('war_off')
-    tools.clear_jobs(context, JOB_NAME)
+    tools.clear_jobs(context.application, JOB_NAME)
 
 
 async def morning_message(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -48,5 +47,5 @@ async def morning_message(context: ContextTypes.DEFAULT_TYPE) -> None:
     '🕯 Щоденна хвилина мовчання за українцями, які віддали своє життя, '
     'за всіма, хто міг би ще жити, якби Росія не почала цю війну.')
     await context.bot.sendMessage(
-        chat_id=context.job.chat_id, text=f'{message}',
+        chat_id=settings.CHAT_ID, text=message,
         message_thread_id=settings.MAIN_THREAD_ID)
