@@ -23,7 +23,7 @@ def create_handlers() -> list:
 
 async def post(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """When new post appeares on the channel."""
-    tools.debug('post')
+    tools.log('post')
     copy = await update.channel_post.copy(
         settings.CHAT_ID, message_thread_id=settings.CHANNEL_THREAD_ID)
     context.chat_data.setdefault('channel-thread', {})[update.channel_post.id] = copy.message_id
@@ -31,7 +31,7 @@ async def post(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def edit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """When a post is edited on the channel."""
-    tools.debug('edit')
+    tools.log('edit')
     copied_message_id = context.chat_data.setdefault('channel-thread', {}).setdefault(
         update.edited_channel_post.id, None)
     if not copied_message_id:
