@@ -41,6 +41,9 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
         if user.is_bot:
             tools.debug(f'new user is a bot')
             continue
+        if 'about' in context.user_data:
+            tools.debug(f'user already introduced themselves')
+            continue
         message = (f'Cлава Україні, {tools.mention(user)}! Вітаємо тебе в Соборному! \n'
         'Ми хочемо познайомитися з тобою, так що розкажи трохи про себе '
         'і додай, будь ласка, до повідомлення теґ #about.\n\n'
