@@ -47,5 +47,4 @@ async def morning_message(context: ContextTypes.DEFAULT_TYPE) -> None:
     '🕯 Щоденна хвилина мовчання за українцями, які віддали своє життя, '
     'за всіма, хто міг би ще жити, якби Росія не почала цю війну.')
     await context.bot.sendMessage(
-        chat_id=settings.CHAT_ID, text=message,
-        message_thread_id=settings.MAIN_THREAD_ID)
+        chat_id=settings.CHAT_ID, text=message)
