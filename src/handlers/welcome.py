@@ -2,6 +2,7 @@
 
 from dynaconf import settings
 from enum import Enum
+import logging
 from telegram import Update
 from telegram.ext import MessageHandler, ContextTypes, ConversationHandler, filters
 
@@ -37,7 +38,7 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When new user enters the chat."""
     tools.log('welcome')
     for user in update.message.new_chat_members:
-        tools.log(f'new user: {user.id} ({user.full_name})')
+        tools.log(f'new user: {user.id} ({user.full_name})', logging.INFO)
         if user.is_bot:
             tools.log(f'new user is a bot')
             continue
@@ -67,13 +68,15 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     else:
         incoming_message = update.edited_message
     context.user_data['about'] = incoming_message.text
-    message = f'Вітаємо тебе, {tools.mention(update.message.from_user)}!'
+    user = update.message.from_user
+    message = f'Вітаємо тебе, {tools.mention(user)}!'
+    tools.log(f'about: {user.id} ({user.full_name})', logging.INFO)
     # TODO: handle the case when update.message.message_thread_id is incorrect.
     bot_message = await context.bot.sendMessage(
         chat_id=incoming_message.chat.id, message_thread_id=settings.WELCOME_THREAD_ID,
         text=message, reply_to_message_id=incoming_message.id)
     tools.add_message_cleanup_job(context.application, bot_message.id)
-    tools.clear_jobs(context.application, WELCOME_TIMEOUT_JOB, incoming_message.from_user.id)
+    tools.clear_jobs(context.application, WELCOME_TIMEOUT_JOB, user.id)
     return ConversationHandler.END
 
 
@@ -82,6 +85,7 @@ async def welcome_timeout(context: ContextTypes.DEFAULT_TYPE) -> int:
     tools.log('welcome_timeout')
     chat_member = await context.bot.get_chat_member(settings.CHAT_ID, context.job.data)
     message = f'На жаль, {tools.mention(chat_member.user)} покидає Соборний.'
+    tools.log(f'banned: {chat_member.user.id} ({chat_member.user.full_name})', logging.INFO)
     bot_message = await context.bot.sendMessage(
         chat_id=settings.CHAT_ID, message_thread_id=settings.WELCOME_THREAD_ID, text=message)
     tools.add_message_cleanup_job(context.application, bot_message.id)
