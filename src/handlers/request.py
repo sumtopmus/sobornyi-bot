@@ -14,6 +14,6 @@ def create_handlers() -> list:
 
 async def request(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """When a join request is sent."""
-    tools.debug('request')
+    tools.log('request')
     await update.chat_join_request.from_user.approve_join_request(
         update.chat_join_request.chat.id)

@@ -24,9 +24,9 @@ def create_handlers() -> list:
 
 def war_on(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Switch to the war mode (morning minute of silence)."""
-    tools.debug('war_on')
+    tools.log('war_on')
     if not context.job_queue.get_jobs_by_name(JOB_NAME):
-        tools.debug('job_added')
+        tools.log('job_added')
         context.job_queue.run_daily(
             morning_message,
             settings.MORNING_TIME,
@@ -35,13 +35,13 @@ def war_on(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 def war_off(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Switch to the piece mode."""
-    tools.debug('war_off')
+    tools.log('war_off')
     tools.clear_jobs(context.application, JOB_NAME)
 
 
 async def morning_message(context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send morning message and add a new timer."""
-    tools.debug('morning_message')
+    tools.log('morning_message')
     days_since_war_started = (datetime.today() - settings.WAR_START_DATE).days + 1;
     message = (f'*День {days_since_war_started} героїчного спротиву українського народу*\n'
     '🕯 Щоденна хвилина мовчання за українцями, які віддали своє життя, '

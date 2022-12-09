@@ -19,11 +19,11 @@ async def debug_on(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Switch to the debug mode."""
     settings.DEBUG = True
     logging.getLogger(__name__).setLevel(logging.DEBUG)
-    tools.debug('debug_on')
+    tools.log('debug_on')
 
 
 async def debug_off(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Switch to the prod mode."""
-    tools.debug('debug_off')
+    tools.log('debug_off')
     settings.DEBUG = False
     logging.getLogger(__name__).setLevel(logging.INFO)

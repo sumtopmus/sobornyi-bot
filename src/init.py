@@ -9,15 +9,15 @@ import tools
 
 async def post_init(app: Application) -> None:
     """Initializes bot with data and its tasks."""
-    tools.debug('post_init')
+    tools.log('post_init')
     if settings.WAR_MODE:
-        tools.debug('init_war')
+        tools.log('init_war')
         app.job_queue.run_daily(
             war.morning_message,
             settings.MORNING_TIME,
             chat_id=settings.CHAT_ID,
             name=war.JOB_NAME)
-    tools.debug('restoring_jobs')
+    tools.log('restoring_jobs')
     jobs = copy.deepcopy(app.bot_data.setdefault('jobs', {}))
     app.bot_data['jobs'] = {}
     for job_name, job_params in jobs.items():

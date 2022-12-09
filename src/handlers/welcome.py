@@ -35,14 +35,14 @@ def create_handlers() -> list:
 
 async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When new user enters the chat."""
-    tools.debug('welcome')
+    tools.log('welcome')
     for user in update.message.new_chat_members:
-        tools.debug(f'new user: {user.id} ({user.full_name})')
+        tools.log(f'new user: {user.id} ({user.full_name})')
         if user.is_bot:
-            tools.debug(f'new user is a bot')
+            tools.log(f'new user is a bot')
             continue
         if 'about' in context.user_data:
-            tools.debug(f'user already introduced themselves')
+            tools.log(f'user already introduced themselves')
             continue
         message = (f'Cлава Україні, {tools.mention(user)}! Вітаємо тебе в Соборному! \n'
         'Ми хочемо познайомитися з тобою, так що розкажи трохи про себе '
@@ -61,7 +61,7 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
 
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user writes #about."""
-    tools.debug('about')
+    tools.log('about')
     if update.message:
         incoming_message = update.message
     else:
@@ -79,7 +79,7 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
 
 async def welcome_timeout(context: ContextTypes.DEFAULT_TYPE) -> int:
     """When #about was not written in time."""
-    tools.debug('welcome_timeout')
+    tools.log('welcome_timeout')
     chat_member = await context.bot.get_chat_member(settings.CHAT_ID, context.job.data)
     message = f'На жаль, {tools.mention(chat_member.user)} покидає Соборний.'
     bot_message = await context.bot.sendMessage(

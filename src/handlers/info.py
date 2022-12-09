@@ -11,6 +11,6 @@ def create_handlers() -> list:
 
 async def info(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Basic admin info command."""
-    tools.debug('info')
-    tools.debug(f'chat_id: {update.effective_chat.id}')
-    tools.debug(f'user_id: {update.effective_user.id}')
+    tools.log('info')
+    tools.log(f'chat_id: {update.effective_chat.id}')
+    tools.log(f'user_id: {update.effective_user.id}')
