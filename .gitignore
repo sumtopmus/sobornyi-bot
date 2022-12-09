@@ -9,7 +9,7 @@ logs
 .vscode
 *.code-workspace
 **/*.local*
-debug.ipynb
+debug
 
 # macOS environment
 .DS_Store
