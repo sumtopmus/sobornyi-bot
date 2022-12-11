@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from dynaconf import settings
 import logging
 from telegram import User
+import telegram.error
 from telegram.ext import Application, ContextTypes
 
 
@@ -29,7 +30,10 @@ def mention(user: User) -> str:
 async def message_cleanup(context: ContextTypes.DEFAULT_TYPE) -> None:
     """Cleans up outdated messages."""
     log(f'message_cleanup: {context.job.data}')
-    await context.bot.delete_message(settings.CHAT_ID, context.job.data)
+    try:
+        await context.bot.delete_message(settings.CHAT_ID, context.job.data)
+    except telegram.error.BadRequest as e:
+        log(f'{e.__class__.__name__}: {e.message}', logging.ERROR)
     clear_jobs(context.application, MESSAGE_CLEANUP_JOB, context.job.data)
 
 
