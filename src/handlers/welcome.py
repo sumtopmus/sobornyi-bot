@@ -68,7 +68,7 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     else:
         incoming_message = update.edited_message
     context.user_data['about'] = incoming_message.text
-    user = update.message.from_user
+    user = incoming_message.from_user
     message = f'Вітаємо тебе, {tools.mention(user)}!'
     tools.log(f'about: {user.id} ({user.full_name})', logging.INFO)
     # TODO: handle the case when update.message.message_thread_id is incorrect.
