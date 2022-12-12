@@ -31,6 +31,8 @@ async def post_init(app: Application) -> None:
                     welcome.WELCOME_TIMEOUT_JOB, job_params['data'])
             case _:
                 pass
+    channel = await app.bot.get_chat(settings.CHANNEL_USERNAME)
+    app.chat_data[channel.id].setdefault('channel-thread', {})
 
 
 def add_handlers(app: Application) -> None:
