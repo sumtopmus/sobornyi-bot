@@ -22,7 +22,6 @@ def mention(user: User) -> str:
     """Create a user's mention."""
     result = user.mention_markdown(user.name)
     if user.username:
-        log(user.username)
         result += f' ({user.mention_markdown()})'
     return result
 
