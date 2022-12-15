@@ -4,6 +4,7 @@ from dynaconf import settings
 from enum import Enum
 import logging
 from telegram import Update
+import telegram.error
 from telegram.ext import MessageHandler, ContextTypes, ConversationHandler, filters
 
 import tools
@@ -46,7 +47,7 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
             tools.log(f'user already introduced themselves')
             continue
         message = (f'Cлава Україні, {tools.mention(user)}! Вітаємо тебе в Соборному!\n\n'
-        'Ми хочемо познайомитися з тобою, так що розкажи трохи про себе (в цій гілці)'
+        'Ми хочемо познайомитися з тобою, так що розкажи трохи про себе (в цій гілці) '
         'і додай, будь ласка, до повідомлення теґ #about.\n\n'
         'На це у тебе є одна доба. Якщо ми від тебе нічого не почуємо, ми попрощаємось.')
         reply_to_message_id = None if settings.FORUM else update.message.id
@@ -70,14 +71,33 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     context.user_data['about'] = incoming_message.text
     user = incoming_message.from_user
     message = (f'Вітаємо тебе, {tools.mention(user)}!\n\n'
-    '#️⃣[Соборний](https://t.me/c/{settings.CHAT_ID_LINK}/1) – основна гілка чату\n'
-    '🗓[Порядок тижневий](https://t.me/c/{settings.CHAT_ID_LINK}/{settings.AGENDA_THREAD_ID}) – календар українських заходів в DMV\n'
-    '🧭[Навігація](https://t.me/c/{settings.CHAT_ID_LINK}/{settings.NAVI_THREAD_ID}) – що ще є в нашому чаті')
+    f'#️⃣[Соборний](https://t.me/c/{settings.CHAT_ID_LINK}/1) – основна гілка чату\n'
+    f'🗓[Порядок тижневий](https://t.me/c/{settings.CHAT_ID_LINK}/{settings.AGENDA_THREAD_ID}) '
+    f'– календар українських заходів в DMV\n'
+    f'🧭[Навігація](https://t.me/c/{settings.CHAT_ID_LINK}/{settings.NAVI_THREAD_ID}) '
+    f'– що ще є в нашому чаті')
     tools.log(f'about: {user.id} ({user.full_name})', logging.INFO)
-    # TODO: handle the case when update.message.message_thread_id is incorrect.
+    reply_to_message_id = incoming_message.id
+    if incoming_message.message_thread_id != settings.WELCOME_THREAD_ID:
+        try:
+            if incoming_message.has_protected_content:
+                raise telegram.error.Forbidden(f'the message has protected content '
+                f'and can\'t be forwarded: {incoming_message.text}')
+            forwarded_message = await incoming_message.forward(
+                settings.CHAT_ID,message_thread_id=settings.WELCOME_THREAD_ID)
+            reply_to_message_id = forwarded_message.id
+        except:
+            message = f'{tools.mention(user)} написав(-ла):'
+            await context.bot.sendMessage(
+                chat_id=settings.CHAT_ID, message_thread_id=settings.WELCOME_THREAD_ID,
+                text=message)
+            copied_message = await incoming_message.copy(
+                settings.CHAT_ID, message_thread_id=settings.WELCOME_THREAD_ID)
+            reply_to_message_id = copied_message.id
+        await incoming_message.delete()
     bot_message = await context.bot.sendMessage(
         chat_id=incoming_message.chat.id, message_thread_id=settings.WELCOME_THREAD_ID,
-        text=message, reply_to_message_id=incoming_message.id)
+        text=message, reply_to_message_id=reply_to_message_id)
     tools.add_message_cleanup_job(context.application, bot_message.id)
     tools.clear_jobs(context.application, WELCOME_TIMEOUT_JOB, user.id)
     return ConversationHandler.END
