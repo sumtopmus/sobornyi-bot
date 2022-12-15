@@ -45,8 +45,8 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
         if 'about' in context.user_data:
             tools.log(f'user already introduced themselves')
             continue
-        message = (f'Cлава Україні, {tools.mention(user)}! Вітаємо тебе в Соборному! \n'
-        'Ми хочемо познайомитися з тобою, так що розкажи трохи про себе '
+        message = (f'Cлава Україні, {tools.mention(user)}! Вітаємо тебе в Соборному!\n\n'
+        'Ми хочемо познайомитися з тобою, так що розкажи трохи про себе (в цій гілці)'
         'і додай, будь ласка, до повідомлення теґ #about.\n\n'
         'На це у тебе є одна доба. Якщо ми від тебе нічого не почуємо, ми попрощаємось.')
         reply_to_message_id = None if settings.FORUM else update.message.id
@@ -69,7 +69,10 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
         incoming_message = update.edited_message
     context.user_data['about'] = incoming_message.text
     user = incoming_message.from_user
-    message = f'Вітаємо тебе, {tools.mention(user)}!'
+    message = (f'Вітаємо тебе, {tools.mention(user)}!\n\n'
+    '#️⃣[Соборний](https://t.me/c/{settings.CHAT_ID_LINK}/1) – основна гілка чату\n'
+    '🗓[Порядок тижневий](https://t.me/c/{settings.CHAT_ID_LINK}/{settings.AGENDA_THREAD_ID}) – календар українських заходів в DMV\n'
+    '🧭[Навігація](https://t.me/c/{settings.CHAT_ID_LINK}/{settings.NAVI_THREAD_ID}) – що ще є в нашому чаті')
     tools.log(f'about: {user.id} ({user.full_name})', logging.INFO)
     # TODO: handle the case when update.message.message_thread_id is incorrect.
     bot_message = await context.bot.sendMessage(

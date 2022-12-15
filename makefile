@@ -1,4 +1,4 @@
-.PHONY: run debug clean-cache clean-logs
+.PHONY: run debug clean-cache clean-logs clean-data
 
 run: clean-cache
 	@ENV_FOR_DYNACONF=production python src/main.py
@@ -12,3 +12,6 @@ clean-cache:
 
 clean-logs:
 	@rm -rf logs
+
+clean-data:
+	@rm -rf data
