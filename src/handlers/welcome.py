@@ -71,10 +71,10 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     context.user_data['about'] = incoming_message.text
     user = incoming_message.from_user
     message = (f'Вітаємо тебе, {tools.mention(user)}!\n\n'
-    f'#️⃣[Соборний](https://t.me/c/{settings.CHAT_ID_LINK}/1) – основна гілка чату\n'
-    f'🗓[Порядок тижневий](https://t.me/c/{settings.CHAT_ID_LINK}/{settings.AGENDA_THREAD_ID}) '
+    f'#️⃣[Соборний](https://t.me/c/{settings.CHAT_LINK_ID}/1) – основна гілка чату\n'
+    f'🗓[Порядок тижневий](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.AGENDA_THREAD_ID}) '
     f'– календар українських заходів в DMV\n'
-    f'🧭[Навігація](https://t.me/c/{settings.CHAT_ID_LINK}/{settings.NAVI_THREAD_ID}) '
+    f'🧭[Навігація](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.NAVI_THREAD_ID}) '
     f'– що ще є в нашому чаті')
     tools.log(f'about: {user.id} ({user.full_name})', logging.INFO)
     reply_to_message_id = incoming_message.id
