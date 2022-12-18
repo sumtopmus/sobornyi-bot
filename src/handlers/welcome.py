@@ -44,7 +44,7 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
             tools.log(f'new user is a bot')
             continue
         if 'about' in context.user_data:
-            tools.log(f'user already introduced themselves')
+            tools.log(f'user {user.id} already introduced themselves', logging.INFO)
             continue
         message = (f'Cлава Україні, {tools.mention(user)}! Вітаємо тебе в Соборному!\n\n'
         'Ми хочемо познайомитися з тобою, так що розкажи трохи про себе (в цій гілці) '
@@ -70,6 +70,7 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
         incoming_message = update.edited_message
     context.user_data['about'] = incoming_message.text
     user = incoming_message.from_user
+    tools.log(f'user introduced themselves: {user.id} ({user.full_name})', logging.INFO)
     message = (f'Вітаємо тебе, {tools.mention(user)}!\n\n'
     f'#️⃣[Соборний](https://t.me/c/{settings.CHAT_LINK_ID}/1) – основна гілка чату\n'
     f'🗓[Порядок тижневий](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.AGENDA_THREAD_ID}) '
