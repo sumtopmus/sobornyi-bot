@@ -17,8 +17,7 @@ def create_handlers() -> list:
         MessageHandler(
             filters.SenderChat(username=settings.CHANNEL_USERNAME)
             & filters.UpdateType.EDITED_CHANNEL_POST,
-            edit)
-    ]
+            edit)]
 
 
 async def post(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

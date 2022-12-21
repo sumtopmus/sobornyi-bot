@@ -8,11 +8,11 @@ import tools
 
 def create_handlers() -> list:
     """Creates handlers that process prod/debug modes."""
-    debug_on_handler = CommandHandler(
-        'debug', debug_on, filters.User(username=settings.ADMINS))
-    debug_off_handler = CommandHandler(
-        'debug_off', debug_off, filters.User(username=settings.ADMINS))
-    return [debug_on_handler, debug_off_handler]
+    return [
+        CommandHandler(
+            'debug', debug_on, filters.User(username=settings.ADMINS)),
+        CommandHandler(
+            'debug_off', debug_off, filters.User(username=settings.ADMINS))]
 
 
 async def debug_on(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

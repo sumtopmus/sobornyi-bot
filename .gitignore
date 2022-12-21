@@ -2,6 +2,7 @@
 .secrets.*
 
 # App data
+backup
 data
 logs
 
