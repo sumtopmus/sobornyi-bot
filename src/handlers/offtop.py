@@ -8,20 +8,33 @@ import tools
 
 
 def create_handlers() -> list:
-    """Creates handlers that process admin's `offtop` command."""
-    return [CommandHandler('offtop', offtop, filters.User(username=settings.ADMINS))]
+    """Creates handlers that process admin's `topic`/`offtop` commands."""
+    return [
+        CommandHandler('topic', topic, filters.User(username=settings.ADMINS)),
+        CommandHandler('offtop', offtop, filters.User(username=settings.ADMINS))
+    ]
+
+
+async def topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Command to redirect discussion to a different thread."""
+    tools.log('func: topic')
+    if len(context.args) != 1:
+        tools.log('invalid number of arguments', logging.INFO)
+        return
+    else:
+        await offtop(update, context)
 
 
 async def offtop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Command to redirect discussion to a different thread."""
+    """Command to redirect discussion to a different thread (offtop thread by default)."""
     tools.log('func: offtop')
     match len(context.args):
         case 0:
-            destination_thread_id = settings.TOPICS['o']
+            destination_thread_id = settings.TOPICS['offtop']
         case 1:
-            destination_thread_id = settings.TOPICS.setdefault(context.args[0], None)
-            if not destination_thread_id:
-                tools.log('topic is unknown', logging.INFO)
+            destination_thread_id = settings.TOPICS.setdefault(context.args[0], -1)
+            if destination_thread_id == -1:
+                tools.log(f'topic {context.args[0]} is unknown: {settings.TOPICS}', logging.INFO)
                 return
         case _:
             tools.log('invalid number of arguments', logging.INFO)
