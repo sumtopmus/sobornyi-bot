@@ -3,7 +3,7 @@ import logging
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes, filters
 
-import tools
+import utils
 
 
 def create_handlers() -> list:
@@ -19,11 +19,11 @@ async def debug_on(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Switch to the debug mode."""
     settings.DEBUG = True
     logging.getLogger(__name__).setLevel(logging.DEBUG)
-    tools.log('debug_on')
+    utils.log('debug_on')
 
 
 async def debug_off(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Switch to the prod mode."""
-    tools.log('debug_off')
+    utils.log('debug_off')
     settings.DEBUG = False
     logging.getLogger(__name__).setLevel(logging.INFO)
