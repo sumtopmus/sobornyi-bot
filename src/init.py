@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from dynaconf import settings
 from telegram.ext import Application
 
-from handlers import channel, debug, error, info, offtop, request, war, welcome
+from handlers import channel, debug, error, info, request, topic, war, welcome
 import tools
 
 
@@ -42,5 +42,5 @@ def add_handlers(app: Application) -> None:
     for module in [debug, info]:
         app.add_handlers(module.create_handlers())
     # General chat handling.
-    for module in [channel, offtop, request, welcome, war]:
+    for module in [channel, request, topic, welcome, war]:
         app.add_handlers(module.create_handlers())

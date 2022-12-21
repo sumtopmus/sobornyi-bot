@@ -3,12 +3,12 @@
 from dynaconf import settings
 from enum import Enum
 import logging
-from telegram import Update
+from telegram import  InlineKeyboardButton, InlineKeyboardMarkup, Update
 import telegram.error
-from telegram.ext import MessageHandler, ContextTypes, ConversationHandler, filters
+from telegram.ext import ContextTypes, ConversationHandler, filters, MessageHandler
 
+from handlers import topic
 import tools
-
 
 WELCOME_TIMEOUT_JOB = 'welcome_timeout'
 
@@ -24,6 +24,9 @@ def create_handlers() -> list:
                 welcome)],
         states={
             State.AWAITING: [
+                MessageHandler(
+                    filters.Chat(settings.CHAT_ID) & (~ filters.Regex(r'#about')),
+                    not_about),
                 MessageHandler(
                     filters.Chat(settings.CHAT_ID) & filters.Regex(r'#about'),
                     about)]},
@@ -48,16 +51,39 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
             continue
         message = (f'Cлава Україні, {tools.mention(user)}! Вітаємо тебе в Соборному!\n\n'
         'Ми хочемо познайомитися з тобою, так що розкажи трохи про себе (в цій гілці) '
-        'і додай, будь ласка, до повідомлення теґ #about.\n\n'
-        'На це у тебе є одна доба. Якщо ми від тебе нічого не почуємо, ми попрощаємось.')
+        'і додай, будь ласка, до повідомлення теґ #about. '
+        'На це у тебе є одна доба. Якщо ми від тебе нічого не почуємо, ми попрощаємось.\n\n'
+        'Якщо ти хочеш виключно слідкувати за українськими подіями в DMV та іншою '
+        'актуальною інформацією, можеш підписатися на наш канал.')
         reply_to_message_id = None if settings.FORUM else update.message.id
+        channel = await context.bot.get_chat(settings.CHANNEL_USERNAME)
+        button = InlineKeyboardButton(text='Підписатись', url=channel.link)
+        reply_markup = InlineKeyboardMarkup([[button]])
         bot_message = await context.bot.sendMessage(
             chat_id=update.message.chat.id, message_thread_id=settings.TOPICS['welcome'],
-            text=message, reply_to_message_id=reply_to_message_id)
+            text=message, reply_to_message_id=reply_to_message_id, reply_markup=reply_markup)
         # timeout & cleanup jobs
         tools.add_job(welcome_timeout, settings.WELCOME_TIMEOUT,\
             context.application, WELCOME_TIMEOUT_JOB, user.id)
         tools.add_message_cleanup_job(context.application, bot_message.id)
+    return State.AWAITING
+
+
+async def not_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user does not write #about."""
+    tools.log('not_about')
+    user = update.message.from_user
+    reply_to_message_id = update.message.id
+    message = f'{tools.mention(user)}, додай, будь ласка, до свого повідомлення теґ #about'
+    if update.message.message_thread_id != settings.TOPICS['welcome']:
+        message += ' і напиши його в цій гілці (у Вітальні)'
+        reply_to_message_id = await topic.move(update, context, settings.TOPICS['welcome'])
+    message += '.'
+    bot_message = await context.bot.sendMessage(
+        chat_id=update.message.chat.id, message_thread_id=settings.TOPICS['welcome'],
+        text=message, reply_to_message_id=reply_to_message_id)
+    tools.add_message_cleanup_job(context.application, reply_to_message_id)
+    tools.add_message_cleanup_job(context.application, bot_message.id)
     return State.AWAITING
 
 
@@ -68,14 +94,15 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
         incoming_message = update.message
     else:
         incoming_message = update.edited_message
+        tools.clear_jobs(context.application, tools.MESSAGE_CLEANUP_JOB, incoming_message.id)
     context.user_data['about'] = incoming_message.text
     user = incoming_message.from_user
     tools.log(f'user introduced themselves: {user.id} ({user.full_name})', logging.INFO)
     message = (f'Вітаємо тебе, {tools.mention(user)}!\n\n'
-    f'#️⃣[Соборний](https://t.me/c/{settings.CHAT_LINK_ID}/1) – основна гілка чату\n'
-    f'🗓[Порядок тижневий](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.TOPICS["agenda"]}) '
+    f'#️⃣ [Соборний](https://t.me/c/{settings.CHAT_LINK_ID}/1) – основна гілка чату\n'
+    f'🗓 [Порядок тижневий](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.TOPICS["agenda"]}) '
     f'– календар українських заходів в DMV\n'
-    f'🧭[Навігація](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.TOPICS["navigation"]}) '
+    f'🧭 [Навігація](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.TOPICS["navigation"]}) '
     f'– що ще є в нашому чаті')
     tools.log(f'about: {user.id} ({user.full_name})', logging.INFO)
     reply_to_message_id = incoming_message.id
