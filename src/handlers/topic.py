@@ -4,7 +4,7 @@ from telegram import Update
 import telegram.error
 from telegram.ext import CommandHandler, ContextTypes, filters
 
-import tools
+import utils
 
 
 def create_handlers() -> list:
@@ -20,9 +20,9 @@ def create_handlers() -> list:
 
 async def topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Command to redirect discussion to a different thread."""
-    tools.log('func: topic')
+    utils.log('func: topic')
     if len(context.args) != 1:
-        tools.log('invalid number of arguments', logging.INFO)
+        utils.log('invalid number of arguments', logging.INFO)
         return
     else:
         await offtop(update, context)
@@ -30,17 +30,17 @@ async def topic(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def offtop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Command to redirect discussion to a different thread (offtop thread by default)."""
-    tools.log('func: offtop')
+    utils.log('func: offtop')
     match len(context.args):
         case 0:
             destination_thread_id = settings.TOPICS['offtop']
         case 1:
             destination_thread_id = settings.TOPICS.setdefault(context.args[0], -1)
             if destination_thread_id == -1:
-                tools.log(f'topic {context.args[0]} is unknown: {settings.TOPICS}', logging.INFO)
+                utils.log(f'topic {context.args[0]} is unknown: {settings.TOPICS}', logging.INFO)
                 return
         case _:
-            tools.log('invalid number of arguments', logging.INFO)
+            utils.log('invalid number of arguments', logging.INFO)
             return
     await move(update, context, destination_thread_id)
 
@@ -51,7 +51,7 @@ async def move(update: Update, context: ContextTypes.DEFAULT_TYPE, destination_t
         destination_thread_id = None
     original_message = update.message.reply_to_message
     user = original_message.from_user
-    message = f'{tools.mention(user)}, вас було переміщено у відповідну гілку.'
+    message = f'{utils.mention(user)}, вас було переміщено у відповідну гілку.'
     if destination_thread_id != settings.TOPICS['welcome']:
         message += '\n\n⬇️ продовжуйте дискусію тут ⬇️'
     else:
@@ -65,7 +65,7 @@ async def move(update: Update, context: ContextTypes.DEFAULT_TYPE, destination_t
         moved_message_id = await original_message.forward(
             settings.CHAT_ID, message_thread_id=destination_thread_id)
     except:
-        message = f'{tools.mention(user)} написав(-ла):'
+        message = f'{utils.mention(user)} написав(-ла):'
         await context.bot.sendMessage(
             chat_id=settings.CHAT_ID, message_thread_id=destination_thread_id,
             text=message)
