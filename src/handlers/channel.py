@@ -26,7 +26,7 @@ async def post(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     tools.log('post')
     if update.channel_post.text or update.channel_post.caption:
         copy = await update.channel_post.copy(
-            settings.CHAT_ID, message_thread_id=settings.AGENDA_THREAD_ID)
+            settings.CHAT_ID, message_thread_id=settings.TOPICS['agenda'])
         context.chat_data['channel-thread'][update.channel_post.id] = copy.message_id
     elif update.channel_post.pinned_message:
         message_to_pin_id = context.chat_data['channel-thread'].setdefault(
