@@ -101,11 +101,11 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     message = (f'Вітаємо тебе, {utils.mention(user)}!\n\n'
     f'#️⃣ [Соборний](https://t.me/c/{settings.CHAT_LINK_ID}/1) – основна гілка\n'
     f'🧭 [Навігація](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.TOPICS["navigation"]}) '
-    f'– що у нас є\n')
+    f'– що у нас є\n'
     f'🗂️ [Довідник](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.TOPICS["guides"]}) '
     f'– місцевий довідник\n'
     f'🗓 [Порядок тижневий](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.TOPICS["agenda"]}) '
-    f'– календар українських заходів в DMV'
+    f'– календар українських заходів в DMV')
     utils.log(f'about: {user.id} ({user.full_name})', logging.INFO)
     reply_to_message_id = incoming_message.id
     if incoming_message.message_thread_id != settings.TOPICS['welcome']:
