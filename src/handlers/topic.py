@@ -42,15 +42,17 @@ async def offtop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         case _:
             utils.log('invalid number of arguments', logging.INFO)
             return
-    await move(update, context, destination_thread_id)
+    await move(update, context, destination_thread_id, True)
 
 
-async def move(update: Update, context: ContextTypes.DEFAULT_TYPE, destination_thread_id: int) -> int:
-    # TODO: remove before commit
-    if settings.DEBUG:
-        destination_thread_id = None
-    original_message = update.message.reply_to_message
-    user = original_message.from_user
+async def move(
+    update: Update, context: ContextTypes.DEFAULT_TYPE,
+    destination_thread_id: int, reply_to_message: bool = False) -> int:
+    if reply_to_message:
+        message_to_move = update.message.reply_to_message
+    else:
+        message_to_move = update.message
+    user = message_to_move.from_user
     message = f'{utils.mention(user)}, вас було переміщено у відповідну гілку.'
     if destination_thread_id != settings.TOPICS['welcome']:
         message += '\n\n⬇️ продовжуйте дискусію тут ⬇️'
@@ -60,17 +62,18 @@ async def move(update: Update, context: ContextTypes.DEFAULT_TYPE, destination_t
         chat_id=settings.CHAT_ID, message_thread_id=destination_thread_id,
         text=message)
     try:
-        if original_message.has_protected_content:
-            raise telegram.error.Forbidden(f'the message has protected content and can\'t be forwarded: {original_message.text}')
-        moved_message_id = await original_message.forward(
+        if message_to_move.has_protected_content:
+            raise telegram.error.Forbidden(f'the message has protected content and can\'t be forwarded: {message_to_move.text}')
+        moved_message_id = await message_to_move.forward(
             settings.CHAT_ID, message_thread_id=destination_thread_id)
     except:
         message = f'{utils.mention(user)} написав(-ла):'
         await context.bot.sendMessage(
             chat_id=settings.CHAT_ID, message_thread_id=destination_thread_id,
             text=message)
-        moved_message_id = await original_message.copy(
+        moved_message_id = await message_to_move.copy(
             settings.CHAT_ID, message_thread_id=destination_thread_id)
-    await update.message.delete()
-    await original_message.delete()
+    if reply_to_message:
+        await update.message.delete()
+    await message_to_move.delete()
     return moved_message_id
