@@ -1,9 +1,9 @@
 name: telegram-bot
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - python==3.10.0
-  - pip
-  - pip:
-    - dynaconf
-    - python-telegram-bot[callback-data, job-queue]==20.0a6
+  - dynaconf==3.1.11
+  - pytz==2021.3
+  - python-telegram-bot[callback-data, job-queue]==20.1

@@ -138,7 +138,7 @@ async def welcome_timeout(context: ContextTypes.DEFAULT_TYPE) -> int:
     utils.log('welcome_timeout')
     chat_member = await context.bot.get_chat_member(settings.CHAT_ID, context.job.data)
     message = f'На жаль, {utils.mention(chat_member.user)} покидає Соборний.'
-    utils.log(f'banned: {chat_member.user.id} ({chat_member.user.full_name})', logging.INFO)
+    utils.log(f'kicked: {chat_member.user.id} ({chat_member.user.full_name})', logging.INFO)
     bot_message = await context.bot.sendMessage(
         chat_id=settings.CHAT_ID, message_thread_id=settings.TOPICS['welcome'], text=message)
     utils.add_message_cleanup_job(context.application, bot_message.id)
