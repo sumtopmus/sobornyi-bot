@@ -41,5 +41,5 @@ def add_handlers(app: Application) -> None:
     for module in [debug, info]:
         app.add_handlers(module.create_handlers())
     # General chat handling.
-    for module in [channel, request, topic, welcome, war]:
+    for module in [channel, topic, welcome, war]:
         app.add_handlers(module.create_handlers())
