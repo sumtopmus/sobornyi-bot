@@ -48,7 +48,7 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
             continue
         if 'about' in context.user_data:
             utils.log(f'user {user.id} already introduced themselves', logging.INFO)
-            continue
+            return ConversationHandler.END
         message = (f'Cлава Україні, {utils.mention(user)}! Вітаємо тебе в Соборному!\n\n'
         'Ми хочемо познайомитися з тобою, так що розкажи трохи про себе (в цій гілці) '
         'і додай, будь ласка, до повідомлення теґ #about. '
