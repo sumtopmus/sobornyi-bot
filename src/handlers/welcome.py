@@ -48,6 +48,13 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
             continue
         if 'about' in context.user_data:
             utils.log(f'user {user.id} already introduced themselves', logging.INFO)
+            message = f'Cлава Україні, {utils.mention(user)}! Вітаємо тебе в Соборному, знову!'
+            reply_to_message_id = None if settings.FORUM else update.message.id
+            bot_message = await context.bot.sendMessage(
+                chat_id=update.message.chat.id, message_thread_id=settings.TOPICS['welcome'],
+                text=message, reply_to_message_id=reply_to_message_id, reply_markup=reply_markup)
+            # cleanup job
+            utils.add_message_cleanup_job(context.application, bot_message.id)
             return ConversationHandler.END
         message = (f'Cлава Україні, {utils.mention(user)}! Вітаємо тебе в Соборному!\n\n'
         'Ми хочемо познайомитися з тобою, так що розкажи трохи про себе (в цій гілці) '
