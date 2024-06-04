@@ -45,6 +45,6 @@ async def morning_message(context: ContextTypes.DEFAULT_TYPE) -> None:
     days_since_war_started = (datetime.today() - settings.WAR_START_DATE).days + 1;
     message = (f'*День {days_since_war_started} героїчного спротиву українського народу*\n'
     '🕯 Щоденна хвилина мовчання за українцями, які віддали своє життя, '
-    'за всіма, хто міг би ще жити, якби Росія не почала цю війну.')
+    'за всіма, хто міг би ще жити, якби ₚосія не почала цю війну.')
     await context.bot.sendMessage(
         chat_id=settings.CHAT_ID, text=message)
