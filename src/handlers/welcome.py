@@ -52,7 +52,7 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
             reply_to_message_id = None if settings.FORUM else update.message.id
             bot_message = await context.bot.sendMessage(
                 chat_id=update.message.chat.id, message_thread_id=settings.TOPICS['welcome'],
-                text=message, reply_to_message_id=reply_to_message_id, reply_markup=reply_markup)
+                text=message, reply_to_message_id=reply_to_message_id)
             # cleanup job
             utils.add_message_cleanup_job(context.application, bot_message.id)
             return ConversationHandler.END
