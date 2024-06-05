@@ -8,7 +8,6 @@ logs
 
 # Dev and local environment
 .vscode
-*.code-workspace
 **/*.local*
 debug
 
