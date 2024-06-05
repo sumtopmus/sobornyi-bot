@@ -1,10 +1,10 @@
 .PHONY: run debug clean-cache clean-logs clean-data
 
 run: clean-cache
-	@ENV_FOR_DYNACONF=production python src/main.py
+	@ENV_FOR_DYNACONF=prod python src/main.py
 
 debug: clean-cache clean-logs
-	@python src/main.py
+	@ENV_FOR_DYNACONF=dev python src/main.py
 
 clean-cache:
 	@rm -rf src/__pycache__

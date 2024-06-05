@@ -1,4 +1,4 @@
-from dynaconf import settings
+from config import settings
 import logging
 from telegram import Update
 import telegram.error

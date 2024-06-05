@@ -1,9 +1,9 @@
 # coding=UTF-8
 
-from dynaconf import settings
-from datetime import datetime
+from config import settings
+from datetime import datetime, time
 from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes, filters
+from telegram.ext import Application, CommandHandler, ContextTypes, filters
 
 import utils
 
@@ -22,14 +22,19 @@ def create_handlers() -> list:
     return [war_handler, war_off_handler]
 
 
-def war_on(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+def war_on(_: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Switch to the war mode (morning minute of silence)."""
+    war_on(context.application)
+
+
+def war_on(app: Application) -> None:
     """Switch to the war mode (morning minute of silence)."""
     utils.log('war_on')
-    if not context.job_queue.get_jobs_by_name(JOB_NAME):
+    if not app.job_queue.get_jobs_by_name(JOB_NAME):
         utils.log('job_added')
-        context.job_queue.run_daily(
+        app.job_queue.run_daily(
             morning_message,
-            settings.MORNING_TIME,
+            time.fromisoformat(settings.MORNING_TIME),
             name=JOB_NAME)
 
 
@@ -42,7 +47,8 @@ def war_off(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def morning_message(context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send morning message and add a new timer."""
     utils.log('morning_message')
-    days_since_war_started = (datetime.today() - settings.WAR_START_DATE).days + 1;
+    war_start_date = datetime.strptime(settings.WAR_START_DATE, settings.DATE_FORMAT)
+    days_since_war_started = (datetime.today() - war_start_date).days + 1;
     message = (f'*День {days_since_war_started} героїчного спротиву українського народу*\n'
     '🕯 Щоденна хвилина мовчання за українцями, які віддали своє життя, '
     'за всіма, хто міг би ще жити, якби ₚосія не почала цю війну.')

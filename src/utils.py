@@ -1,7 +1,7 @@
 # coding=UTF-8
 
 from datetime import datetime, timedelta
-from dynaconf import settings
+from config import settings
 import logging
 from telegram import User
 import telegram.error
@@ -49,7 +49,8 @@ def add_job(job, delay: timedelta, app: Application, job_family: str, job_data) 
 def add_message_cleanup_job(app: Application, message_id: int) -> None:
     """Adds a message cleanup job to the scheduler."""
     log(f'add_message_cleanup_job: {message_id}')
-    add_job(message_cleanup, settings.CLEANUP_PERIOD, app, MESSAGE_CLEANUP_JOB, message_id)
+    add_job(message_cleanup, timedelta(seconds=settings.CLEANUP_PERIOD),
+            app, MESSAGE_CLEANUP_JOB, message_id)
 
 
 def clear_jobs(app: Application, job_family: str, job_data=None) -> None:

@@ -1,6 +1,6 @@
 import copy
-from datetime import datetime, timedelta
-from dynaconf import settings
+from datetime import datetime, time, timedelta
+from config import settings
 from telegram.ext import Application
 
 from handlers import channel, debug, error, info, request, topic, war, welcome
@@ -11,12 +11,7 @@ async def post_init(app: Application) -> None:
     """Initializes bot with data and its tasks."""
     utils.log('post_init')
     if settings.WAR_MODE:
-        utils.log('init_war')
-        app.job_queue.run_daily(
-            war.morning_message,
-            settings.MORNING_TIME,
-            chat_id=settings.CHAT_ID,
-            name=war.JOB_NAME)
+        war.war_on(app)
     utils.log('restoring_jobs')
     jobs = copy.deepcopy(app.bot_data.setdefault('jobs', {}))
     app.bot_data['jobs'] = {}
@@ -24,11 +19,11 @@ async def post_init(app: Application) -> None:
         delay = max(timedelta(seconds=0), job_params['time'] - datetime.now())
         match job_name.partition(':')[0]:
             case 'message_cleanup':
-                utils.add_job(utils.message_cleanup, delay, app,\
-                    utils.MESSAGE_CLEANUP_JOB, job_params['data'])
+                utils.add_job(utils.message_cleanup, delay, app,
+                              utils.MESSAGE_CLEANUP_JOB, job_params['data'])
             case 'welcome_timeout':
-                utils.add_job(welcome.welcome_timeout, delay, app,\
-                    welcome.WELCOME_TIMEOUT_JOB, job_params['data'])
+                utils.add_job(welcome.welcome_timeout, delay, app,
+                              welcome.WELCOME_TIMEOUT_JOB, job_params['data'])
             case _:
                 pass
     channel = await app.bot.get_chat(settings.CHANNEL_USERNAME)

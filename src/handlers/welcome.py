@@ -1,6 +1,7 @@
 # coding=UTF-8
 
-from dynaconf import settings
+from config import settings
+from datetime import timedelta
 from enum import Enum
 import logging
 from telegram import  InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -70,8 +71,8 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
             chat_id=update.message.chat.id, message_thread_id=settings.TOPICS['welcome'],
             text=message, reply_to_message_id=reply_to_message_id, reply_markup=reply_markup)
         # timeout & cleanup jobs
-        utils.add_job(welcome_timeout, settings.WELCOME_TIMEOUT,\
-            context.application, WELCOME_TIMEOUT_JOB, user.id)
+        utils.add_job(welcome_timeout, timedelta(seconds=settings.WELCOME_TIMEOUT),
+                      context.application, WELCOME_TIMEOUT_JOB, user.id)
         utils.add_message_cleanup_job(context.application, bot_message.id)
     return State.AWAITING
 

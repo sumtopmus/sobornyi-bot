@@ -1,4 +1,4 @@
-from dynaconf import settings
+from config import settings
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes, filters
 

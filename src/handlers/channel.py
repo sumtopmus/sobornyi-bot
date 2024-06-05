@@ -1,6 +1,6 @@
 # coding=UTF-8
 
-from dynaconf import settings
+from config import settings
 import logging
 from telegram import Update
 from telegram.ext import MessageHandler, ContextTypes, filters

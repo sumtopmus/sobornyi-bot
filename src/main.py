@@ -1,4 +1,4 @@
-from dynaconf import settings
+from config import settings
 import logging
 import os
 import pytz
