@@ -28,7 +28,7 @@ token = 'SECRET_PLACEHOLDER'
 
 [prod.TOPICS]
 [prod.TAGS]
-[prod.PRIORITY]
+[prod.PRIORITIES]
 
 [dev]
 debug = true
