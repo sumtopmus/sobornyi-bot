@@ -7,7 +7,7 @@ from telegram.warnings import PTBUserWarning
 import re
 from warnings import filterwarnings
 
-from handlers import channel, debug, error, info, request, topic, war, welcome
+import handlers
 import utils
 
 
@@ -33,7 +33,7 @@ async def post_init(app: Application) -> None:
     """Initializes bot with data and its tasks."""
     utils.log('post_init')
     if settings.WAR_MODE:
-        war.war_on(app)
+        handlers.war.war_on(app)
     utils.log('restoring_jobs')
     jobs = copy.deepcopy(app.bot_data.setdefault('jobs', {}))
     app.bot_data['jobs'] = {}
@@ -44,19 +44,15 @@ async def post_init(app: Application) -> None:
                 utils.add_job(utils.message_cleanup, delay, app,
                               utils.MESSAGE_CLEANUP_JOB, job_params['data'])
             case 'welcome_timeout':
-                utils.add_job(welcome.welcome_timeout, delay, app,
-                              welcome.WELCOME_TIMEOUT_JOB, job_params['data'])
+                utils.add_job(handlers.welcome.welcome_timeout, delay, app,
+                              handlers.welcome.WELCOME_TIMEOUT_JOB, job_params['data'])
             case _:
                 pass
     channel = await app.bot.get_chat(settings.CHANNEL_USERNAME)
     app.chat_data[channel.id].setdefault('cross-posts', {})
 
 def add_handlers(app: Application) -> None:
-    # Error handler.
-    app.add_error_handler(error.handler)
-    # Debug commands.
-    for module in [debug, info]:
-        app.add_handlers(module.create_handlers())
-    # General chat handling.
-    for module in [channel, request, topic, welcome, war]:
-        app.add_handlers(module.create_handlers())
+    # Error handler
+    app.add_error_handler(handlers.error)
+    # Debug & business logic handlers
+    app.add_handlers(handlers.all)

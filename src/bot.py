@@ -1,14 +1,15 @@
-from config import settings
 import os
 import pytz
 from telegram.constants import ParseMode
 from telegram.ext import Application, Defaults, PicklePersistence
+from telegram.warnings import PTBUserWarning
 
+from config import settings
 import init
 
 
 def main() -> None:
-    """Main program to run."""
+    """Runs bot."""
     # Create directory tree structure.
     for path in [settings.DB_PATH, settings.LOG_PATH]:
         if not os.path.exists(os.path.dirname(path)):
