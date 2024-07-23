@@ -4,19 +4,10 @@ from datetime import datetime, timedelta
 from config import settings
 from telegram.ext import Application
 from telegram.warnings import PTBUserWarning
-import re
 from warnings import filterwarnings
 
 import handlers
 import utils
-
-
-class HttpxLoggingFilter(logging.Filter):
-    def filter(self, record):
-        pattern = r'getUpdates "HTTP\/1\.1 200 OK"'
-        if re.search(pattern, record.getMessage()):
-            return 0
-        return 1
 
 
 def setup_logging() -> None:
@@ -24,7 +15,8 @@ def setup_logging() -> None:
     logging_level = logging.DEBUG if settings.DEBUG else logging.INFO
     logging.basicConfig(filename=settings.LOG_PATH, level=logging_level,
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    logger = logging.getLogger('httpx').addFilter(HttpxLoggingFilter())
+    logging.getLogger('apscheduler').setLevel(logging.WARNING)
+    logging.getLogger('httpx').setLevel(logging.WARNING)
     # Debugging
     filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
 
