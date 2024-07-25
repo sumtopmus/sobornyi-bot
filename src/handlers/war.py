@@ -31,7 +31,7 @@ def war_on(app: Application) -> None:
     """Switch to the war mode (morning minute of silence)."""
     utils.log('war_on')
     if not app.job_queue.get_jobs_by_name(JOB_NAME):
-        utils.log('job_added')
+        utils.log(f'job_added: {JOB_NAME}')
         app.job_queue.run_daily(
             morning_message,
             time.fromisoformat(settings.MORNING_TIME),

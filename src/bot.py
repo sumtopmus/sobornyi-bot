@@ -2,7 +2,6 @@ import os
 import pytz
 from telegram.constants import ParseMode
 from telegram.ext import Application, Defaults, PicklePersistence
-from telegram.warnings import PTBUserWarning
 
 from config import settings
 import init
@@ -10,12 +9,12 @@ import init
 
 def main() -> None:
     """Runs bot."""
-    # Create directory tree structure.
+    # Create directory tree structure
     for path in [settings.DB_PATH, settings.LOG_PATH]:
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
 
-    # Set up logging and debugging.
+    # Set up logging
     init.setup_logging()
 
     # Setup the bot.

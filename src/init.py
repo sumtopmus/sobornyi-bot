@@ -1,33 +1,27 @@
 import copy
 import logging
 from datetime import datetime, timedelta
-from config import settings
 from telegram.ext import Application
-from telegram.warnings import PTBUserWarning
-from warnings import filterwarnings
 
+from config import settings
 import handlers
 import utils
 
 
 def setup_logging() -> None:
-    # Logging
     logging_level = logging.DEBUG if settings.DEBUG else logging.INFO
     logging.basicConfig(filename=settings.LOG_PATH, level=logging_level,
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     logging.getLogger('apscheduler').setLevel(logging.WARNING)
     logging.getLogger('httpx').setLevel(logging.WARNING)
-    # Debugging
-    filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
 
 
 async def post_init(app: Application) -> None:
     """Initializes bot with data and its tasks."""
-    utils.log('post_init')
     if settings.WAR_MODE:
         handlers.war.war_on(app)
-    utils.log('restoring_jobs')
     jobs = copy.deepcopy(app.bot_data.setdefault('jobs', {}))
+    app.bot_data.setdefault('calendar', [])
     app.bot_data['jobs'] = {}
     for job_name, job_params in jobs.items():
         delay = max(timedelta(seconds=0), job_params['time'] - datetime.now())
