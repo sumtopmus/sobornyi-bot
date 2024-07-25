@@ -16,26 +16,27 @@ def create_handlers() -> list:
                 CallbackQueryHandler(add_event_request, pattern="^" + State.EVENT_ADDING.name + "$"),
             ],
             State.EVENT_WAITING_FOR_TITLE: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, set_event_title)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, set_event_title),
             ],
             State.EVENT_WAITING_FOR_DATE: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, set_event_date)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, set_event_date),
             ],
             State.EVENT_WAITING_FOR_OCCURRENCE: [
                 CallbackQueryHandler(set_event_duration_within_day, pattern=Event.OCCURRENCE.WITHIN_DAY.name + "$"),
                 CallbackQueryHandler(ask_event_date_end, pattern=Event.OCCURRENCE.WITHIN_DAYS.name + "$"),
             ],
             State.EVENT_WAITING_FOR_DATE_END: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, set_event_date_end)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, set_event_date_end),
             ],
             State.EVENT_WAITING_FOR_EMOJI: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, set_event_emoji)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, set_event_emoji),
             ],
             State.EVENT_WAITING_FOR_URL: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, set_event_url)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, set_event_url),
             ],
             State.EVENT_WAITING_FOR_IMAGE: [
-                MessageHandler(filters.PHOTO, set_event_image)
+                CommandHandler('noposter', add_event, filters.COMMAND),
+                MessageHandler(filters.PHOTO, set_event_image),
             ],
         },
         fallbacks=[
@@ -153,7 +154,7 @@ async def set_event_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
     """When a user enters the event url."""
     log('set_event_url')
     context.bot_data['current_event'].url = update.message.text
-    message = 'Надішліть постер до заходу (картинкою).'
+    message = 'Надішліть постер до заходу (картинкою) або /noposter, якщо постеру немає.'
     await update.effective_user.send_message(message)
     return State.EVENT_WAITING_FOR_IMAGE
 
@@ -162,6 +163,12 @@ async def set_event_image(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     """When a user sends the event image."""
     log('set_event_image')
     context.bot_data['current_event'].image = update.message.photo[0].file_id
+    return await add_event(update, context)
+
+
+async def add_event(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user submit all event data."""
+    log('add_event')
     context.bot_data['calendar'].append(context.bot_data['current_event'])
     message = f'"{context.bot_data['current_event'].title}" було додано до календаря.'
     menu = construct_calendar_menu()
