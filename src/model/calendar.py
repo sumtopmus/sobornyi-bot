@@ -1,16 +1,16 @@
-from datetime import date, datetime, timedelta
 from enum import Enum
 
-from format import clock
+from format import clock, link
+
+
+Occurrence = Enum('Occurrence', [
+    'WITHIN_DAY',
+    'WITHIN_DAYS',
+    'REGULAR'
+])
 
 
 class Event:
-    OCCURRENCE = Enum('OCCURRENCE', [
-        'WITHIN_DAY',
-        'WITHIN_DAYS',
-        'REGULAR'
-    ])
-
     def __init__(self, title):
         self.id = None
         self.title = title
@@ -38,10 +38,20 @@ class Event:
         return f'{self.emoji}{self.title}'
     
     def get_current_repr(self) -> str:
-        return clock.emoji(self.start_time) + self.get_title()
+        return clock.emoji(self.time) + self.get_title()
 
     def get_future_repr(self) -> str:
         return f'{self.date}: {self.get_title()}'
+
+    def get_full_repr(self) -> str:
+        return (
+            f'*{self.emoji}{self.title}*\n'
+            f'\n'
+            f'`🗓️{self.date.strftime("%m/%d")} {clock.emoji(self.time)}{self.time.strftime("%H:%M")}`\n'
+            f'🔗 [{link.provider(self.url)}]({self.url})\n'
+            f'\n'
+            f'_#events_'
+        )
 
 
 class Calendar:

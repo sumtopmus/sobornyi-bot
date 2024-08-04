@@ -1,1 +1,1 @@
-from .calendar import Calendar, Event
+from .calendar import Calendar, Event, Occurrence
