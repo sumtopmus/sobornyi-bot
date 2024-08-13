@@ -1,4 +1,7 @@
+from dataclasses import dataclass, field
 from enum import Enum
+import json
+from typing import Optional
 
 from format import clock, link
 
@@ -10,26 +13,23 @@ Occurrence = Enum('Occurrence', [
 ])
 
 
+@dataclass
 class Event:
-    def __init__(self, title):
-        self.id = None
-        self.title = title
-        self.date = None
-        self.time = None
-        self.end_date = None
-        self.end_time = None
-        self.description = None
-        self.emoji = ''
-        self.url = None
-        self.image = None
-        self.type = None
-        self.occurrence = None
+    title: str
+    id: Optional[int] = field(default=None)
+    date: Optional[str] = field(default=None)
+    time: Optional[str] = field(default=None)
+    end_date: Optional[str] = field(default=None)
+    end_time: Optional[str] = field(default=None)
+    description: Optional[str] = field(default=None)
+    emoji: str = field(default='')
+    url: Optional[str] = field(default=None)
+    image: Optional[str] = field(default=None)
+    type: Optional[str] = field(default=None)
+    occurrence: Optional[str] = field(default=None)
 
     def __hash__(self) -> int:
         return hash((self.title, self.date, self.time))
-    
-    def __repr__(self) -> str:
-        return (f"Event('{self.title}')")
     
     def get_hash(self) -> int:
         return self.__hash__()
@@ -52,6 +52,29 @@ class Event:
             f'\n'
             f'_#events_'
         )
+
+    def to_dict(self, recursive: bool = False) -> dict:
+        return {
+            'id': self.id,
+            'title': self.title,
+            'date': self.date.isoformat() if self.date else None,
+            'time': self.time.isoformat() if self.time else None,
+            'end_date': self.end_date.isoformat() if self.end_date else None,
+            'end_time': self.end_time.isoformat() if self.end_time else None,
+            'description': self.description,
+            'emoji': self.emoji,
+            'url': self.url,
+            'image': self.image,
+            'type': self.type,
+            'occurrence': self.occurrence.name if self.occurrence else None,
+        }
+
+
+class EventEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Event):
+            return obj.to_dict()
+        return super().default(obj)
 
 
 class Calendar:

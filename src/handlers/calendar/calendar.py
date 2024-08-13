@@ -3,7 +3,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, ContextTypes, ConversationHandler, filters, MessageHandler
 
 from utils import log
-from .menu import State, construct_calendar_menu
+from .menu import State, construct_calendar_menu, construct_events_menu
 from model import Calendar, Event, Occurrence
 
 
@@ -14,6 +14,7 @@ def create_handlers() -> list:
         states={
             State.CALENDAR_MENU: [
                 CallbackQueryHandler(add_event_request, pattern="^" + State.EVENT_ADDING.name + "$"),
+                CallbackQueryHandler(edit_event_request, pattern="^" + State.EVENT_EDITING.name + "$"),
             ],
             State.EVENT_WAITING_FOR_TITLE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, set_event_title),
@@ -70,6 +71,14 @@ async def add_event_request(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     message = 'Будь ласка, напишіть назву заходу чи події, які Ви хочете додати в календар.'
     await update.callback_query.edit_message_text(message)
     return State.EVENT_WAITING_FOR_TITLE
+
+
+async def edit_event_request(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user wants to edit an event."""
+    log('edit_event_request')
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_text(**construct_events_menu(context))
+    return State.EVENT_PICKING
 
 
 async def set_event_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
@@ -183,7 +192,7 @@ async def set_event_image(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 
 async def add_event(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
-    """When a user submit all event data."""
+    """When a user submits all event data."""
     log('add_event')
     context.bot_data['calendar'].append(context.bot_data['current_event'])
     # Displaying the event
