@@ -70,13 +70,6 @@ class Event:
         }
 
 
-class EventEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Event):
-            return obj.to_dict()
-        return super().default(obj)
-
-
 class Calendar:
     def __init__(self):
         self.__new_event_id = 0
