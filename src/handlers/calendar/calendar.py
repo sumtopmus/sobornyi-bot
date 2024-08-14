@@ -3,6 +3,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, ContextTypes, ConversationHandler, filters, MessageHandler
 
 from utils import log
+from .event import create_handlers as create_event_handlers
 from .menu import State, construct_calendar_menu, construct_events_menu
 from model import Calendar, Event, Occurrence
 
@@ -10,12 +11,15 @@ from model import Calendar, Event, Occurrence
 def create_handlers() -> list:
     """Creates handlers that process all calendar requests."""
     return [ConversationHandler(
-        entry_points= [CommandHandler('calendar', calendar_menu)],
+        entry_points= [
+            CommandHandler('calendar', calendar_menu)
+        ],
         states={
             State.CALENDAR_MENU: [
                 CallbackQueryHandler(add_event_request, pattern="^" + State.EVENT_ADDING.name + "$"),
                 CallbackQueryHandler(edit_event_request, pattern="^" + State.EVENT_EDITING.name + "$"),
             ],
+            State.EVENT_PICKING: create_event_handlers(),
             State.EVENT_WAITING_FOR_TITLE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, set_event_title),
             ],

@@ -5,6 +5,7 @@ from telegram.ext import Application
 
 from config import settings
 import handlers
+from model import Calendar
 import utils
 
 
@@ -21,7 +22,7 @@ async def post_init(app: Application) -> None:
     if settings.WAR_MODE:
         handlers.war.war_on(app)
     jobs = copy.deepcopy(app.bot_data.setdefault('jobs', {}))
-    app.bot_data.setdefault('calendar', [])
+    app.bot_data.setdefault('calendar', Calendar())
     app.bot_data['jobs'] = {}
     for job_name, job_params in jobs.items():
         delay = max(timedelta(seconds=0), job_params['time'] - datetime.now())
@@ -36,6 +37,7 @@ async def post_init(app: Application) -> None:
                 pass
     channel = await app.bot.get_chat(settings.CHANNEL_USERNAME)
     app.chat_data[channel.id].setdefault('cross-posts', {})
+
 
 def add_handlers(app: Application) -> None:
     # Error handler

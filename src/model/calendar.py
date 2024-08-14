@@ -45,7 +45,7 @@ class Event:
 
     def get_full_repr(self) -> str:
         return (
-            f'*{self.emoji}{self.title}*\n'
+            f'*{self.emoji} {self.title}*\n'
             f'\n'
             f'`🗓️{self.date.strftime("%m/%d")} {clock.emoji(self.time)}{self.time.strftime("%H:%M")}`\n'
             f'🔗 [{link.provider(self.url)}]({self.url})\n'
@@ -79,3 +79,9 @@ class Calendar:
         event.id = self.__new_event_id
         self.__new_event_id += 1
         self.__events.append(event)
+
+    def get_event_by_title(self, title):
+        return next((event for event in self.__events if event.title == title), None)
+    
+    def __iter__(self):
+        return iter(self.__events)
