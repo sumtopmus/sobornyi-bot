@@ -2,10 +2,8 @@ from dynaconf import settings
 from enum import Enum
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, ContextTypes
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-from model import Calendar, Event
 from utils import log
 
 
@@ -22,15 +20,9 @@ State = Enum('State', [
     'EVENT_EDITING',
     'EVENT_PICKING',
     'EVENT_DELETING',
+    'EVENT_DELETING_CONFIRMATION',
     'EVENT_FINDING',
     'EVENT_WAITING_FOR_TITLE',
-    'EVENT_WAITING_FOR_DATE',
-    'EVENT_WAITING_FOR_OCCURRENCE',
-    'EVENT_WAITING_FOR_DATE_END',
-    'EVENT_WAITING_FOR_TIME',
-    'EVENT_WAITING_FOR_EMOJI',
-    'EVENT_WAITING_FOR_URL',
-    'EVENT_WAITING_FOR_IMAGE',
     'EVENT_EDITING_TITLE',
     'EVENT_EDITING_EMOJI',
     'EVENT_EDITING_DESCRIPTION',
@@ -43,9 +35,19 @@ State = Enum('State', [
 ])
 
 
-def construct_calendar_menu() -> dict:
-    log('construct_calendar_menu')
+async def update_menu(update: Update, menu: dict):
+    if update.callback_query:
+        await update.callback_query.answer()
+        await update.callback_query.edit_message_text(**menu)
+    else:
+        await update.effective_user.send_message(**menu)
+
+
+async def calendar_menu(update: Update, context: CallbackContext, prefix_text: str = None) -> State:
+    log('calendar_menu')
     text = 'Ви знаходитесь в меню редагування календаря. Що Ви хочете зробити?'
+    if prefix_text:
+        text = prefix_text + '\n\n' + text
     keyboard = [
         [
             InlineKeyboardButton("Додати подію", callback_data=State.EVENT_ADDING.name),
@@ -55,40 +57,43 @@ def construct_calendar_menu() -> dict:
             InlineKeyboardButton("« Вийти", callback_data=State.EXIT.name),
         ],
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    return {'text': text, 'reply_markup': reply_markup}
+    reply_markup = InlineKeyboardMarkup(keyboard)    
+    menu = {'text': text, 'reply_markup': reply_markup}
+    await update_menu(update, menu)
+    context.user_data['state'] = State.CALENDAR_MENU
+    return State.CALENDAR_MENU
 
 
-def construct_events_menu(context: ContextTypes.DEFAULT_TYPE) -> dict:
-    log('construct_events_menu')
-    text = 'Будь ласка, оберіть захід, який Ви хочете відредагувати.'
-    events = sorted(context.bot_data.get('calendar', {}), key=lambda x: x.date)
-    titles = [event.title for event in events]
+def events_menu(events: dict, add_search_button: bool = True) -> dict:
+    log(events)
+    sorted_events = sorted(events, key=lambda item: (item[1].date is None, item[1].date))
+    ids_and_titles = [(id, event.title) for id, event in sorted_events]
     back_button = InlineKeyboardButton('« Назад', callback_data=State.CALENDAR_MENU.name)
-    if len(titles) == 0:
+    if len(ids_and_titles) == 0:
+        text = 'Жодних подій не знайдено.'
         reply_markup = InlineKeyboardMarkup([[back_button]])
-        return {'text': 'Жодних подій не знайдено.', 'reply_markup': reply_markup}
+        return {'text': text, 'reply_markup': reply_markup}
+    text = 'Будь ласка, оберіть захід, який Ви хочете відредагувати.'
     keyboard = []
-    for index, title in enumerate(titles):
-        keyboard.append([InlineKeyboardButton(title, callback_data=f'{State.EVENT.name}:{title}')])
+    for index, (id, title) in enumerate(ids_and_titles):
+        keyboard.append([InlineKeyboardButton(title, callback_data=f'{State.EVENT.name}:{id}')])
         if index == 4:
             break
-    keyboard.append([
-        InlineKeyboardButton('🔍 Пошук', callback_data=State.EVENT_FINDING.name),
-        back_button])
+    last_row = []
+    if add_search_button:
+        last_row.append(InlineKeyboardButton('🔍 Пошук', callback_data=State.EVENT_FINDING.name))
+    last_row.append(back_button)
+    keyboard.append(last_row)
     reply_markup = InlineKeyboardMarkup(keyboard)
     return {'text': text, 'reply_markup': reply_markup}
 
 
-def construct_event_menu(event: Event) -> dict:
-    log('construct_event_menu')
-    log(event)
-    menu = {}
-    if event.image:
-        menu['photo'] = event.image
-    else:
-        menu['photo'] = settings.missing_poster
-    menu['caption'] = event.get_full_repr()
+async def event_menu(update: Update, context: CallbackContext, prefix_text: str = None) -> State:
+    log('event_menu')
+    event = context.bot_data['current_event']
+    text = event.get_full_repr()
+    if prefix_text:
+        text = prefix_text + '\n\n' + text
     keyboard = [
         [
             InlineKeyboardButton('Емоджи', callback_data=State.EVENT_EDITING_EMOJI.name),
@@ -107,30 +112,14 @@ def construct_event_menu(event: Event) -> dict:
             InlineKeyboardButton('Постер', callback_data=State.EVENT_EDITING_IMAGE.name),
         ],
         [
-            InlineKeyboardButton("Видалити ❌", callback_data=State.EVENT_DELETING.name),
-            InlineKeyboardButton("« Back", callback_data=State.CALENDAR_MENU.name),
-        ]
+            # InlineKeyboardButton("Зберегти 💾", callback_data=State.EVENT_SAVING.name),
+            InlineKeyboardButton("Видалити ❌", callback_data=State.EVENT_DELETING.name),  
+            InlineKeyboardButton("« Назад", callback_data=State.CALENDAR_MENU.name),          
+        ],
     ]        
-    menu['reply_markup'] = InlineKeyboardMarkup(keyboard)
-    return menu
-
-
-async def event_menu(update: Update, context: CallbackContext):
-    log('event_menu')
-    event = context.bot_data['current_event']
-    menu = construct_event_menu(event)
-    if update.callback_query:
-        await update.callback_query.answer()
-        if update.callback_query.message.photo != event.image:
-            log('deleting message')
-            await update.callback_query.delete_message()
-            await update.effective_user.send_photo(**menu)
-        else:
-            log('replacing text and keyboard, keeping image')
-            await update.callback_query.edit_message_text(**menu)
-    else:
-        log('sending new photo message')
-        await update.effective_user.send_photo(**menu)
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    menu = {'text': text, 'reply_markup': reply_markup}
+    await update_menu(update, menu)
     context.user_data['state'] = State.EVENT_MENU
     return State.EVENT_MENU
 

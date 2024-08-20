@@ -1,17 +1,18 @@
-from datetime import datetime, time
+from datetime import datetime
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, ContextTypes, ConversationHandler, filters, MessageHandler
 
 from utils import log
-from .menu import State, construct_calendar_menu, event_menu, construct_back_button
-from model import Calendar, Event, Occurrence
+from .menu import State, calendar_menu, event_menu, construct_back_button
+from model import Event, Occurrence
 
 
 def create_handlers() -> list:
     """Creates handlers that process all event editing requests."""
     return [ConversationHandler(
         entry_points= [
-            CallbackQueryHandler(event_menu_entry, pattern="^" + State.EVENT.name)
+            CallbackQueryHandler(on_add_event, pattern="^" + State.EVENT_ADDING.name + "$"),
+            CallbackQueryHandler(on_pick_event, pattern="^" + State.EVENT.name),
         ],
         states={
             State.EVENT_MENU: [
@@ -24,7 +25,11 @@ def create_handlers() -> list:
                 CallbackQueryHandler(on_edit_time, pattern="^" + State.EVENT_EDITING_TIME.name + "$"),
                 CallbackQueryHandler(on_edit_url, pattern="^" + State.EVENT_EDITING_URL.name + "$"),
                 CallbackQueryHandler(on_edit_image, pattern="^" + State.EVENT_EDITING_IMAGE.name + "$"),
+                CallbackQueryHandler(on_delete_event, pattern="^" + State.EVENT_DELETING.name + "$"),
                 CallbackQueryHandler(back, pattern="^" + State.CALENDAR_MENU.name + "$"),
+            ],
+            State.EVENT_WAITING_FOR_TITLE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, add_event),
             ],
             State.EVENT_EDITING_TITLE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, edit_title),
@@ -55,6 +60,9 @@ def create_handlers() -> list:
             State.EVENT_EDITING_IMAGE: [
                 MessageHandler(filters.PHOTO, edit_image),
             ],
+            State.EVENT_DELETING_CONFIRMATION: [
+                CallbackQueryHandler(delete_event, pattern="^" + State.EVENT_DELETING_CONFIRMATION.name + "$"),
+            ],
         },
         fallbacks=[
             CommandHandler('cancel', cancel),
@@ -68,12 +76,29 @@ def create_handlers() -> list:
         persistent=True)]
 
 
-async def event_menu_entry(update: Update, context: CallbackContext) -> State:
+async def on_pick_event(update: Update, context: CallbackContext) -> State:
     """When a user goes to the event editing menu."""
     log('event_menu')
-    title = update.callback_query.data.split(':')[-1]
-    event = context.bot_data['calendar'].get_event_by_title(title)
-    context.bot_data['current_event'] = event
+    id = int(update.callback_query.data.split(':')[-1])
+    context.bot_data['current_event'] = context.bot_data['calendar'][id]
+    return await event_menu(update, context)
+
+
+async def on_add_event(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user wants to add an event."""
+    log('on_add_event')
+    await update.callback_query.answer()
+    text = 'Будь ласка, вкажіть назву заходу:'
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.CALENDAR_MENU))
+    return State.EVENT_WAITING_FOR_TITLE
+
+
+async def add_event(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user enters the title of a new event."""
+    log('add_event')
+    title = update.message.text
+    context.bot_data['current_event'] = Event(title)
+    context.bot_data['calendar'].add_event(context.bot_data['current_event'])
     return await event_menu(update, context)
 
 
@@ -81,8 +106,8 @@ async def on_edit_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
     """When a user wants to edit the title."""
     log('on_edit_title')
     await update.callback_query.answer()
-    message = 'Будь ласка, вкажіть назву заходу:'
-    await update.callback_query.edit_message_caption(message, **construct_back_button(State.EVENT_MENU))
+    text = 'Будь ласка, вкажіть назву заходу:'
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_TITLE
 
 
@@ -97,8 +122,8 @@ async def on_edit_emoji(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
     """When a user wants to edit the emoji."""
     log('on_edit_emoji')
     await update.callback_query.answer()
-    message = 'Будь ласка, вкажіть емоджи, яке символізує цей захід:'
-    await update.callback_query.edit_message_caption(message, **construct_back_button(State.EVENT_MENU))
+    text = 'Будь ласка, вкажіть емоджи, яке символізує цей захід:'
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_EMOJI
 
 
@@ -113,8 +138,8 @@ async def on_edit_description(update: Update, context: ContextTypes.DEFAULT_TYPE
     """When a user wants to edit the description."""
     log('on_edit_description')
     await update.callback_query.answer()
-    message = 'Будь ласка, вкажіть більш детальний опис цього заходу:'
-    await update.callback_query.edit_message_caption(message, **construct_back_button(State.EVENT_MENU))
+    text = 'Будь ласка, вкажіть більш детальний опис цього заходу:'
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_DESCRIPTION
 
 
@@ -129,7 +154,7 @@ async def on_edit_occurrence(update: Update, context: ContextTypes.DEFAULT_TYPE)
     """When a user wants to edit the occurrence."""
     log('on_edit_occurrence')
     await update.callback_query.answer()
-    message = 'Як довго захід триватиме?'
+    text = 'Як довго захід триватиме?'
     keyboard = [
         [
             InlineKeyboardButton("В межах одного дня", callback_data=Occurrence.WITHIN_DAY.name),
@@ -142,7 +167,7 @@ async def on_edit_occurrence(update: Update, context: ContextTypes.DEFAULT_TYPE)
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.callback_query.edit_message_caption(message, reply_markup=reply_markup)
+    await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
     return State.EVENT_EDITING_OCCURRENCE
 
 
@@ -157,8 +182,8 @@ async def on_edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
     """When a user wants to edit the date."""
     log('on_edit_date')
     await update.callback_query.answer()
-    message = 'Введіть дату заходу в форматі MM/DD/YY:'
-    await update.callback_query.edit_message_caption(message, **construct_back_button(State.EVENT_MENU))
+    text = 'Введіть дату заходу в форматі MM/DD/YY:'
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_DATE
 
 
@@ -173,8 +198,8 @@ async def on_edit_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
     """When a user wants to edit the time."""
     log('on_edit_time')
     await update.callback_query.answer()
-    message = 'Введіть час початку заходу в 24-годинному форматі HH:MM:'
-    await update.callback_query.edit_message_caption(message, **construct_back_button(State.EVENT_MENU))
+    text = 'Введіть час початку заходу в 24-годинному форматі HH:MM:'
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_TIME
 
 
@@ -189,8 +214,8 @@ async def on_edit_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Sta
     """When a user wants to edit the URL."""
     log('on_edit_url')
     await update.callback_query.answer()
-    message = 'Будь ласка, вкажіть посилання на цей захід:'
-    await update.callback_query.edit_message_caption(message, **construct_back_button(State.EVENT_MENU))
+    text = 'Будь ласка, вкажіть посилання на цей захід:'
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_URL
 
 
@@ -201,13 +226,12 @@ async def edit_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     return await event_menu(update, context)
 
 
-
 async def on_edit_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user wants to edit the poster."""
     log('on_edit_image')
     await update.callback_query.answer()
-    message = 'Будь ласка, надішліть постер для цього заходу (картинкою):'
-    await update.callback_query.edit_message_caption(message, **construct_back_button(State.EVENT_MENU))
+    text = 'Будь ласка, надішліть постер для цього заходу (картинкою):'
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_IMAGE
 
 
@@ -218,31 +242,41 @@ async def edit_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Stat
     return await event_menu(update, context)
 
 
+async def on_delete_event(update: Update, context: CallbackContext) -> State:
+    """When a user presses the delete event button."""
+    log('on_delete_event')
+    await update.callback_query.answer()
+    text = 'Ви впевнені, що хочете видалити цей захід?'
+    keyboard = [
+        [
+            InlineKeyboardButton('Так', callback_data=State.EVENT_DELETING_CONFIRMATION.name),
+            InlineKeyboardButton('Ні', callback_data=State.EVENT_MENU.name),
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+    return State.EVENT_DELETING_CONFIRMATION
+
+
+async def delete_event(update: Update, context: CallbackContext) -> State:
+    """When a user confirms deleting the event."""
+    log('delete_event')
+    await update.callback_query.answer()
+    context.bot_data['calendar'].delete_event(context.bot_data['current_event'])
+    text = 'Захід було видалено з календаря.'
+    return await calendar_menu(update, context, text)
+
+
 async def back(update: Update, context: CallbackContext) -> State:
     """When a user presses the back button."""
     log('back')
-    # TODO: save event
-    # old_event = context.bot_data['calendar'].get_event_by_title(context.bot_data['current_event'].title)
-    # old_event = context.bot_data['current_event']
-    menu = construct_calendar_menu()
-    if update.callback_query:
-        await update.callback_query.answer()
-        if update.callback_query.message.photo:
-            log('deleting message')
-            await update.callback_query.delete_message()
-            await update.effective_user.send_message(**menu)
-        else:
-            log('replacing text and keyboard, keeping image')
-            await update.callback_query.edit_message_text(**menu)
-    else:
-        log('sending new text message')
-        await update.effective_user.send_message(**menu)
-    context.user_data['state'] = State.CALENDAR_MENU
-    return State.CALENDAR_MENU
+    await update.callback_query.answer()
+    context.bot_data['current_event'] = None
+    return await calendar_menu(update, context)
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
-    """When a user cancels the conversation."""
+    """When a user cancels the action."""
     log('cancel')
     return await event_menu(update, context)
 
@@ -250,11 +284,11 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
 async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user exits the conversation."""
     log('exit')
-    message = 'Роботу з календарем завершено.'
+    text = 'Роботу з календарем завершено.'
     if update.callback_query:
         await update.callback_query.answer()
-        await update.callback_query.edit_message_text(message)
+        await update.callback_query.edit_message_text(text)
     else:
-        await update.effective_user.send_message(message)
+        await update.effective_user.send_message(text)
     context.user_data['state'] = None
     return ConversationHandler.END

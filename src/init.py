@@ -21,8 +21,8 @@ async def post_init(app: Application) -> None:
     """Initializes bot with data and its tasks."""
     if settings.WAR_MODE:
         handlers.war.war_on(app)
-    jobs = copy.deepcopy(app.bot_data.setdefault('jobs', {}))
     app.bot_data.setdefault('calendar', Calendar())
+    jobs = copy.deepcopy(app.bot_data.setdefault('jobs', {}))
     app.bot_data['jobs'] = {}
     for job_name, job_params in jobs.items():
         delay = max(timedelta(seconds=0), job_params['time'] - datetime.now())
