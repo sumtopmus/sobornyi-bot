@@ -65,9 +65,8 @@ async def calendar_menu(update: Update, context: CallbackContext, prefix_text: s
 
 
 def events_menu(events: dict, add_search_button: bool = True) -> dict:
-    log(events)
     sorted_events = sorted(events, key=lambda item: (item[1].date is None, item[1].date))
-    ids_and_titles = [(id, event.title) for id, event in sorted_events]
+    ids_and_titles = [(id, event.get_title()) for id, event in sorted_events]
     back_button = InlineKeyboardButton('« Назад', callback_data=State.CALENDAR_MENU.name)
     if len(ids_and_titles) == 0:
         text = 'Жодних подій не знайдено.'
@@ -91,33 +90,31 @@ def events_menu(events: dict, add_search_button: bool = True) -> dict:
 async def event_menu(update: Update, context: CallbackContext, prefix_text: str = None) -> State:
     log('event_menu')
     event = context.bot_data['current_event']
+    buttons = [
+        ('Емоджи', event.emoji, State.EVENT_EDITING_EMOJI),
+        ('Назва', event.title, State.EVENT_EDITING_TITLE),
+        ('Опис', event.description, State.EVENT_EDITING_DESCRIPTION),
+        ('Формат', event.occurrence, State.EVENT_EDITING_OCCURRENCE),
+        ('Дата', event.date, State.EVENT_EDITING_DATE),
+        ('Час', event.time, State.EVENT_EDITING_TIME),
+        ('Посилання', event.url, State.EVENT_EDITING_URL),
+        ('Постер', event.image, State.EVENT_EDITING_IMAGE),
+    ]
+    keyboard = []
+    row = []
+    for text, value, state in buttons:
+        row.append(InlineKeyboardButton(text + (' ✅' if value else ' 🚫'), callback_data=state.name))
+        if len(row) == 2:
+            keyboard.append(row)
+            row = []
+    keyboard.append([
+        InlineKeyboardButton("Видалити ❌", callback_data=State.EVENT_DELETING.name),
+        InlineKeyboardButton("« Назад", callback_data=State.CALENDAR_MENU.name),
+    ])
+    reply_markup = InlineKeyboardMarkup(keyboard)
     text = event.get_full_repr()
     if prefix_text:
         text = prefix_text + '\n\n' + text
-    keyboard = [
-        [
-            InlineKeyboardButton('Емоджи', callback_data=State.EVENT_EDITING_EMOJI.name),
-            InlineKeyboardButton('Назва', callback_data=State.EVENT_EDITING_TITLE.name),
-        ],
-        [
-            InlineKeyboardButton('Опис', callback_data=State.EVENT_EDITING_DESCRIPTION.name),
-            InlineKeyboardButton('Формат', callback_data=State.EVENT_EDITING_OCCURRENCE.name),
-        ],
-        [
-            InlineKeyboardButton('Дата', callback_data=State.EVENT_EDITING_DATE.name),
-            InlineKeyboardButton('Час', callback_data=State.EVENT_EDITING_TIME.name),
-        ],
-        [
-            InlineKeyboardButton('Посилання', callback_data=State.EVENT_EDITING_URL.name),
-            InlineKeyboardButton('Постер', callback_data=State.EVENT_EDITING_IMAGE.name),
-        ],
-        [
-            # InlineKeyboardButton("Зберегти 💾", callback_data=State.EVENT_SAVING.name),
-            InlineKeyboardButton("Видалити ❌", callback_data=State.EVENT_DELETING.name),  
-            InlineKeyboardButton("« Назад", callback_data=State.CALENDAR_MENU.name),          
-        ],
-    ]        
-    reply_markup = InlineKeyboardMarkup(keyboard)
     menu = {'text': text, 'reply_markup': reply_markup}
     await update_menu(update, menu)
     context.user_data['state'] = State.EVENT_MENU

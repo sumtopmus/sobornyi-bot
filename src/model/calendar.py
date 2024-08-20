@@ -40,18 +40,16 @@ class Event:
     def get_title(self) -> Optional[str]:
         if not self.title:
             return None
-        result = self.title
-        if self.emoji:
-            result = self.emoji + result
-        return result
+        if not self.emoji:
+            return self.title
+        return f'{self.emoji} {self.title}'
 
     def get_current_repr(self) -> Optional[str]:
         if not self.title:
             return None
-        result = self.get_title()
-        if self.time:
-            result = clock.emoji(self.time) + result
-        return result
+        if not self.time:
+            return self.get_title()
+        return clock.emoji(self.time) + self.get_title()
 
     def get_future_repr(self) -> Optional[str]:
         if not self.title:
@@ -72,7 +70,7 @@ class Event:
             result += f'🗓️{self.date.strftime("%m/%d")}'
             if self.time:
                 result += f' {clock.emoji(self.time)}{self.time.strftime("%H:%M")}'
-            result += '\n'
+            result += '\n\n'
         if self.url:
             result += f'🔗 [{link.provider(self.url)}]({self.url})\n\n'
         result += '_#events_'
@@ -145,20 +143,3 @@ class Calendar:
 
     def keys(self):
         return self.__events.keys()
-
-
-# class Calendar:
-#     def __init__(self):
-#         self.__new_event_id = 0
-#         self.__events = []
-
-#     def append(self, event) -> None:
-#         event.id = self.__new_event_id
-#         self.__new_event_id += 1
-#         self.__events.append(event)
-
-#     def get_event_by_title(self, title):
-#         return next((event for event in self.__events if event.title == title), None)
-    
-#     def __iter__(self):
-#         return iter(self.__events)

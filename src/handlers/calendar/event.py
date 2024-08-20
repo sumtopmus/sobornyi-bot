@@ -78,7 +78,7 @@ def create_handlers() -> list:
 
 async def on_pick_event(update: Update, context: CallbackContext) -> State:
     """When a user goes to the event editing menu."""
-    log('event_menu')
+    log('on_pick_event')
     id = int(update.callback_query.data.split(':')[-1])
     context.bot_data['current_event'] = context.bot_data['calendar'][id]
     return await event_menu(update, context)
@@ -88,7 +88,7 @@ async def on_add_event(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
     """When a user wants to add an event."""
     log('on_add_event')
     await update.callback_query.answer()
-    text = 'Будь ласка, вкажіть назву заходу:'
+    text = 'Будь ласка, вкажіть назву заходу.'
     await update.callback_query.edit_message_text(text, **construct_back_button(State.CALENDAR_MENU))
     return State.EVENT_WAITING_FOR_TITLE
 
@@ -106,7 +106,7 @@ async def on_edit_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
     """When a user wants to edit the title."""
     log('on_edit_title')
     await update.callback_query.answer()
-    text = 'Будь ласка, вкажіть назву заходу:'
+    text = 'Будь ласка, вкажіть назву заходу.'
     await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_TITLE
 
@@ -122,7 +122,7 @@ async def on_edit_emoji(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
     """When a user wants to edit the emoji."""
     log('on_edit_emoji')
     await update.callback_query.answer()
-    text = 'Будь ласка, вкажіть емоджи, яке символізує цей захід:'
+    text = 'Будь ласка, вкажіть емоджи, яке символізує цей захід.'
     await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_EMOJI
 
@@ -138,7 +138,7 @@ async def on_edit_description(update: Update, context: ContextTypes.DEFAULT_TYPE
     """When a user wants to edit the description."""
     log('on_edit_description')
     await update.callback_query.answer()
-    text = 'Будь ласка, вкажіть більш детальний опис цього заходу:'
+    text = 'Будь ласка, вкажіть більш детальний опис цього заходу.'
     await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_DESCRIPTION
 
@@ -182,7 +182,7 @@ async def on_edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
     """When a user wants to edit the date."""
     log('on_edit_date')
     await update.callback_query.answer()
-    text = 'Введіть дату заходу в форматі MM/DD/YY:'
+    text = 'Введіть дату заходу в форматі MM/DD/YY.'
     await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_DATE
 
@@ -198,7 +198,7 @@ async def on_edit_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
     """When a user wants to edit the time."""
     log('on_edit_time')
     await update.callback_query.answer()
-    text = 'Введіть час початку заходу в 24-годинному форматі HH:MM:'
+    text = 'Введіть час початку заходу в 24-годинному форматі HH:MM.'
     await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_TIME
 
@@ -214,7 +214,7 @@ async def on_edit_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Sta
     """When a user wants to edit the URL."""
     log('on_edit_url')
     await update.callback_query.answer()
-    text = 'Будь ласка, вкажіть посилання на цей захід:'
+    text = 'Будь ласка, вкажіть посилання на цей захід.'
     await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_URL
 
@@ -230,7 +230,7 @@ async def on_edit_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
     """When a user wants to edit the poster."""
     log('on_edit_image')
     await update.callback_query.answer()
-    text = 'Будь ласка, надішліть постер для цього заходу (картинкою):'
+    text = 'Будь ласка, надішліть постер для цього заходу (картинкою).'
     await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_EDITING_IMAGE
 
