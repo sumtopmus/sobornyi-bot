@@ -11,8 +11,9 @@ morning_time = '09:00:00'
 # Internal parameters
 date_format = '%Y-%m-%d'
 datetime_format = '%Y-%m-%d %H:%M:%S'
-welcome_timeout = 86400  # 1 day (in seconds)
-cleanup_period = 129600  # 1.5 days (in seconds)
+conversation_timeout = 60   # in seconds
+welcome_timeout = 86400     # 1 day (in seconds)
+cleanup_period = 129600     # 1.5 days (in seconds)
 
 [prod]
 debug = false
@@ -34,6 +35,7 @@ token = 'SECRET_PLACEHOLDER'
 debug = true
 forum = false
 morning_time_offset = 10  # in seconds
+conversation_timeout = 10   # in seconds
 welcome_timeout = 10  # in seconds
 cleanup_period = 20   # in seconds
 bot_username = '@PLACEHOLDER'

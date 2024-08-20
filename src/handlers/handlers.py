@@ -1,6 +1,7 @@
 from .error import handler as error
 from . import debug
 from . import info
+from . import upload
 
 from . import calendar
 from . import channel
@@ -12,7 +13,7 @@ from . import welcome
 
 # Debug handlers
 debug_handlers = []
-for module in [debug, info]:
+for module in [debug, info, upload]:
     debug_handlers.extend(module.create_handlers())
 # Business logic handlers
 logic_handlers = []
