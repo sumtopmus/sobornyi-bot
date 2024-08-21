@@ -66,6 +66,8 @@ class Event:
         if self.emoji:
             result += f'{self.emoji} '
         result += f'{self.title}*\n\n'
+        if self.description:
+            result += f'{self.description}\n\n'
         if self.date:
             result += f'🗓️{self.date.strftime("%m/%d")}'
             if self.time:

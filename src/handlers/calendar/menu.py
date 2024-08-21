@@ -20,6 +20,7 @@ State = Enum('State', [
     'EVENT_EDITING',
     'EVENT_PICKING',
     'EVENT_PREPRINT',
+    'EVENT_POSTING',
     'EVENT_DELETING',
     'EVENT_DELETING_CONFIRMATION',
     'EVENT_FINDING',
@@ -110,10 +111,11 @@ async def event_menu(update: Update, context: CallbackContext, prefix_text: str 
             row = []
     keyboard.extend([
         [
-            InlineKeyboardButton("Препрінт 📺", callback_data=State.EVENT_PREPRINT.name),
-            InlineKeyboardButton("Видалити ❌", callback_data=State.EVENT_DELETING.name),
+            InlineKeyboardButton("Препрінт 🖨️", callback_data=State.EVENT_PREPRINT.name),
+            InlineKeyboardButton("Пост 📺", callback_data=State.EVENT_POSTING.name),
         ],
         [
+            InlineKeyboardButton("Видалити ❌", callback_data=State.EVENT_DELETING.name),
             InlineKeyboardButton("« Назад", callback_data=State.CALENDAR_MENU.name),
         ]
     ])

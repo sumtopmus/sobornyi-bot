@@ -3,9 +3,10 @@ from hmac import new
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, ContextTypes, ConversationHandler, filters, MessageHandler
 
-from utils import log
+from config import settings
 from .menu import State, calendar_menu, event_menu, construct_back_button
 from model import Event, Occurrence
+from utils import log
 
 
 def create_handlers() -> list:
@@ -27,6 +28,7 @@ def create_handlers() -> list:
                 CallbackQueryHandler(on_edit_url, pattern="^" + State.EVENT_EDITING_URL.name + "$"),
                 CallbackQueryHandler(on_edit_image, pattern="^" + State.EVENT_EDITING_IMAGE.name + "$"),
                 CallbackQueryHandler(on_preprint_event, pattern="^" + State.EVENT_PREPRINT.name + "$"),
+                CallbackQueryHandler(on_post_event, pattern="^" + State.EVENT_POSTING.name + "$"),
                 CallbackQueryHandler(on_delete_event, pattern="^" + State.EVENT_DELETING.name + "$"),
                 CallbackQueryHandler(back, pattern="^" + State.CALENDAR_MENU.name + "$"),
             ],
@@ -61,6 +63,9 @@ def create_handlers() -> list:
             ],
             State.EVENT_EDITING_IMAGE: [
                 MessageHandler(filters.PHOTO, edit_image),
+            ],
+            State.EVENT_POSTING: [
+                CallbackQueryHandler(event_menu, pattern="^" + State.EVENT_MENU.name + "$"),
             ],
             State.EVENT_DELETING_CONFIRMATION: [
                 CallbackQueryHandler(delete_event, pattern="^" + State.EVENT_DELETING_CONFIRMATION.name + "$"),
@@ -244,6 +249,32 @@ async def edit_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Stat
     return await event_menu(update, context)
 
 
+async def on_preprint_event(update: Update, context: CallbackContext) -> State:
+    """When a user wants to see the event before publishing it."""
+    log('on_preprint_event')
+    await update.callback_query.answer()
+    event = context.bot_data['current_event']
+    if event.image:
+        await update.effective_user.send_photo(**event.post())
+    else:
+        await update.callback_query.edit_message_text(**event.post())
+    return await event_menu(update, context, new_message=True)
+
+
+async def on_post_event(update: Update, context: CallbackContext) -> State:
+    """When a user wants to post the event to the channel."""
+    log('on_post_event')
+    await update.callback_query.answer()
+    event = context.bot_data['current_event']
+    if event.image:
+        await context.bot.send_photo(chat_id=settings.channel_username, **event.post())
+    else:
+        await context.bot.send_message(chat_id=settings.channel_username, **event.post())
+    text = 'Захід було опубліковано.'
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))  
+    return State.EVENT_POSTING
+
+
 async def on_delete_event(update: Update, context: CallbackContext) -> State:
     """When a user presses the delete event button."""
     log('on_delete_event')
@@ -267,18 +298,6 @@ async def delete_event(update: Update, context: CallbackContext) -> State:
     context.bot_data['calendar'].delete_event(context.bot_data['current_event'])
     text = 'Захід було видалено з календаря.'
     return await calendar_menu(update, context, text)
-
-
-async def on_preprint_event(update: Update, context: CallbackContext) -> State:
-    """When a user wants to see the event before publishing it."""
-    log('on_preprint_event')
-    await update.callback_query.answer()
-    event = context.bot_data['current_event']
-    if event.image:
-        await update.effective_user.send_photo(**event.post())
-    else:
-        await update.callback_query.edit_message_text(**event.post())
-    return await event_menu(update, context, new_message=True)
 
 
 async def back(update: Update, context: CallbackContext) -> State:
