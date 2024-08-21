@@ -1,4 +1,5 @@
 from datetime import datetime
+from hmac import new
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, ContextTypes, ConversationHandler, filters, MessageHandler
 
@@ -25,6 +26,7 @@ def create_handlers() -> list:
                 CallbackQueryHandler(on_edit_time, pattern="^" + State.EVENT_EDITING_TIME.name + "$"),
                 CallbackQueryHandler(on_edit_url, pattern="^" + State.EVENT_EDITING_URL.name + "$"),
                 CallbackQueryHandler(on_edit_image, pattern="^" + State.EVENT_EDITING_IMAGE.name + "$"),
+                CallbackQueryHandler(on_preprint_event, pattern="^" + State.EVENT_PREPRINT.name + "$"),
                 CallbackQueryHandler(on_delete_event, pattern="^" + State.EVENT_DELETING.name + "$"),
                 CallbackQueryHandler(back, pattern="^" + State.CALENDAR_MENU.name + "$"),
             ],
@@ -265,6 +267,18 @@ async def delete_event(update: Update, context: CallbackContext) -> State:
     context.bot_data['calendar'].delete_event(context.bot_data['current_event'])
     text = 'Захід було видалено з календаря.'
     return await calendar_menu(update, context, text)
+
+
+async def on_preprint_event(update: Update, context: CallbackContext) -> State:
+    """When a user wants to see the event before publishing it."""
+    log('on_preprint_event')
+    await update.callback_query.answer()
+    event = context.bot_data['current_event']
+    if event.image:
+        await update.effective_user.send_photo(**event.post())
+    else:
+        await update.callback_query.edit_message_text(**event.post())
+    return await event_menu(update, context, new_message=True)
 
 
 async def back(update: Update, context: CallbackContext) -> State:

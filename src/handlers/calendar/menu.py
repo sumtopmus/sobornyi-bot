@@ -19,6 +19,7 @@ State = Enum('State', [
     'EVENT_ADDING',
     'EVENT_EDITING',
     'EVENT_PICKING',
+    'EVENT_PREPRINT',
     'EVENT_DELETING',
     'EVENT_DELETING_CONFIRMATION',
     'EVENT_FINDING',
@@ -87,7 +88,7 @@ def events_menu(events: dict, add_search_button: bool = True) -> dict:
     return {'text': text, 'reply_markup': reply_markup}
 
 
-async def event_menu(update: Update, context: CallbackContext, prefix_text: str = None) -> State:
+async def event_menu(update: Update, context: CallbackContext, prefix_text: str = None, new_message: bool = False) -> State:
     log('event_menu')
     event = context.bot_data['current_event']
     buttons = [
@@ -107,16 +108,24 @@ async def event_menu(update: Update, context: CallbackContext, prefix_text: str 
         if len(row) == 2:
             keyboard.append(row)
             row = []
-    keyboard.append([
-        InlineKeyboardButton("Видалити ❌", callback_data=State.EVENT_DELETING.name),
-        InlineKeyboardButton("« Назад", callback_data=State.CALENDAR_MENU.name),
+    keyboard.extend([
+        [
+            InlineKeyboardButton("Препрінт 📺", callback_data=State.EVENT_PREPRINT.name),
+            InlineKeyboardButton("Видалити ❌", callback_data=State.EVENT_DELETING.name),
+        ],
+        [
+            InlineKeyboardButton("« Назад", callback_data=State.CALENDAR_MENU.name),
+        ]
     ])
     reply_markup = InlineKeyboardMarkup(keyboard)
     text = event.get_full_repr()
     if prefix_text:
         text = prefix_text + '\n\n' + text
     menu = {'text': text, 'reply_markup': reply_markup}
-    await update_menu(update, menu)
+    if new_message:
+        await update.effective_user.send_message(**menu)
+    else:
+        await update_menu(update, menu)
     context.user_data['state'] = State.EVENT_MENU
     return State.EVENT_MENU
 
