@@ -16,16 +16,18 @@ Occurrence = Enum('Occurrence', [
 @dataclass
 class Event:
     title: str
+    emoji: Optional[str] = field(default=None)
+    description: Optional[str] = field(default=None)
+    occurrence: Optional[str] = field(default=None)
     date: Optional[str] = field(default=None)
     time: Optional[str] = field(default=None)
     end_date: Optional[str] = field(default=None)
     end_time: Optional[str] = field(default=None)
-    description: Optional[str] = field(default=None)
-    emoji: Optional[str] = field(default=None)
+    venue: Optional[str] = field(default=None)
+    location: Optional[str] = field(default=None)
     url: Optional[str] = field(default=None)
     image: Optional[str] = field(default=None)
     type: Optional[str] = field(default=None)
-    occurrence: Optional[str] = field(default=None)
     cancelled: bool = field(default=False)
 
     def __hash__(self) -> int:
@@ -69,10 +71,20 @@ class Event:
         if self.description:
             result += f'{self.description}\n\n'
         if self.date:
-            result += f'🗓️{self.date.strftime("%m/%d")}'
+            result += f'`🗓️{self.date.strftime("%m/%d")}`'
             if self.time:
-                result += f' {clock.emoji(self.time)}{self.time.strftime("%H:%M")}'
-            result += '\n\n'
+                result += f' `{clock.emoji(self.time)}{self.time.strftime("%H:%M")}`'
+            result += '\n'
+        if self.date and not (self.location or self.venue):
+            result += '\n'
+        if self.location:
+            if self.venue:
+                result += f'📍 [{self.venue}]({self.location})\n\n'
+            else:
+                result += f'📍 [Location]({self.location}\n\n'
+        else:
+            if self.venue:
+                result += f'📍 {self.venue}\n\n'        
         if self.url:
             result += f'🔗 [{link.provider(self.url)}]({self.url})\n\n'
         result += '_#events_'
@@ -88,16 +100,19 @@ class Event:
     def to_dict(self, recursive: bool = False) -> dict:
         return {
             'title': self.title,
+            'emoji': self.emoji,
+            'description': self.description,
+            'occurrence': self.occurrence.name if self.occurrence else None,
             'date': self.date.isoformat() if self.date else None,
             'time': self.time.isoformat() if self.time else None,
             'end_date': self.end_date.isoformat() if self.end_date else None,
             'end_time': self.end_time.isoformat() if self.end_time else None,
-            'description': self.description,
-            'emoji': self.emoji,
+            'venue': self.venue,
+            'location': self.location,
             'url': self.url,
             'image': self.image,
             'type': self.type,
-            'occurrence': self.occurrence.name if self.occurrence else None,
+            'cancelled': self.cancelled,
         }
 
 

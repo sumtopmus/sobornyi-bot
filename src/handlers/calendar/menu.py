@@ -1,3 +1,4 @@
+from hmac import new
 from dynaconf import settings
 from enum import Enum
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -32,6 +33,8 @@ State = Enum('State', [
     'EVENT_EDITING_DATE',
     'EVENT_EDITING_TIME',
     'EVENT_EDITING_DATE_END',
+    'EVENT_EDITING_VENUE',
+    'EVENT_EDITING_LOCATION',
     'EVENT_EDITING_URL',
     'EVENT_EDITING_IMAGE',
 ])
@@ -99,6 +102,8 @@ async def event_menu(update: Update, context: CallbackContext, prefix_text: str 
         ('Формат', event.occurrence, State.EVENT_EDITING_OCCURRENCE),
         ('Дата', event.date, State.EVENT_EDITING_DATE),
         ('Час', event.time, State.EVENT_EDITING_TIME),
+        ('Локація', event.venue, State.EVENT_EDITING_VENUE),
+        ('Мапа', event.location, State.EVENT_EDITING_LOCATION),
         ('Посилання', event.url, State.EVENT_EDITING_URL),
         ('Постер', event.image, State.EVENT_EDITING_IMAGE),
     ]
@@ -122,7 +127,10 @@ async def event_menu(update: Update, context: CallbackContext, prefix_text: str 
     reply_markup = InlineKeyboardMarkup(keyboard)
     text = event.get_full_repr()
     if prefix_text:
-        text = prefix_text + '\n\n' + text
+        if new_message:
+            text = prefix_text
+        else:
+            text = prefix_text + '\n\n' + text
     menu = {'text': text, 'reply_markup': reply_markup}
     if new_message:
         await update.effective_user.send_message(**menu)

@@ -11,8 +11,6 @@ providers = {
 def provider(url: str) -> str:
     domain = urlparse(url).netloc
     domain_noext = domain.split('.')[-2]
-    if domain_noext in providers:
-        return providers[domain_noext]
-    return domain
+    return providers.get(domain_noext, 'Link')
 
 

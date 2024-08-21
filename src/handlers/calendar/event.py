@@ -25,6 +25,8 @@ def create_handlers() -> list:
                 CallbackQueryHandler(on_edit_date, pattern="^" + State.EVENT_EDITING_DATE.name + "$"),
                 # CallbackQueryHandler(on_edit_date_end, pattern="^" + State.EVENT_EDITING_DATE_END.name + "$"),
                 CallbackQueryHandler(on_edit_time, pattern="^" + State.EVENT_EDITING_TIME.name + "$"),
+                CallbackQueryHandler(on_edit_venue, pattern="^" + State.EVENT_EDITING_VENUE.name + "$"),
+                CallbackQueryHandler(on_edit_location, pattern="^" + State.EVENT_EDITING_LOCATION.name + "$"),
                 CallbackQueryHandler(on_edit_url, pattern="^" + State.EVENT_EDITING_URL.name + "$"),
                 CallbackQueryHandler(on_edit_image, pattern="^" + State.EVENT_EDITING_IMAGE.name + "$"),
                 CallbackQueryHandler(on_preprint_event, pattern="^" + State.EVENT_PREPRINT.name + "$"),
@@ -57,6 +59,12 @@ def create_handlers() -> list:
             # ],
             State.EVENT_EDITING_TIME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, edit_time),
+            ],
+            State.EVENT_EDITING_VENUE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, edit_venue),
+            ],
+            State.EVENT_EDITING_LOCATION: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, edit_location),
             ],
             State.EVENT_EDITING_URL: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, edit_url),
@@ -233,6 +241,38 @@ async def edit_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     return await event_menu(update, context)
 
 
+async def on_edit_venue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user wants to edit the venue."""
+    log('on_edit_venue')
+    await update.callback_query.answer()
+    text = 'Будь ласка, введіть назву локації.'
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
+    return State.EVENT_EDITING_VENUE
+
+
+async def edit_venue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user enters the venue."""
+    log('edit_venue')
+    context.bot_data['current_event'].venue = update.message.text
+    return await event_menu(update, context)
+
+
+async def on_edit_location(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user wants to edit the location."""
+    log('on_edit_location')
+    await update.callback_query.answer()
+    text = 'Будь ласка, вкажіть посилання на локацію на Google Maps.'
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
+    return State.EVENT_EDITING_LOCATION
+
+
+async def edit_location(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user enters the location."""
+    log('edit_location')
+    context.bot_data['current_event'].location = update.message.text
+    return await event_menu(update, context)
+
+
 async def on_edit_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user wants to edit the poster."""
     log('on_edit_image')
@@ -258,7 +298,8 @@ async def on_preprint_event(update: Update, context: CallbackContext) -> State:
         await update.effective_user.send_photo(**event.post())
     else:
         await update.callback_query.edit_message_text(**event.post())
-    return await event_menu(update, context, new_message=True)
+    text = 'Так буде виглядати пост з цією подією.'
+    return await event_menu(update, context, prefix_text=text, new_message=True)
 
 
 async def on_post_event(update: Update, context: CallbackContext) -> State:
