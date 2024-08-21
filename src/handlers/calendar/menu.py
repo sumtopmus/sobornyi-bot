@@ -17,6 +17,8 @@ State = Enum('State', [
     # Prefix states:
     'EVENT',
     # Process states:
+    'CALENDAR_DIGEST',
+    'CALENDAR_CLEANUP',
     'EVENT_ADDING',
     'EVENT_EDITING',
     'EVENT_PICKING',
@@ -48,7 +50,7 @@ async def update_menu(update: Update, menu: dict):
         await update.effective_user.send_message(**menu)
 
 
-async def calendar_menu(update: Update, context: CallbackContext, prefix_text: str = None) -> State:
+async def calendar_menu(update: Update, context: CallbackContext, prefix_text: str = None, new_message: bool = False) -> State:
     log('calendar_menu')
     text = 'Ви знаходитесь в меню редагування календаря. Що Ви хочете зробити?'
     if prefix_text:
@@ -59,12 +61,19 @@ async def calendar_menu(update: Update, context: CallbackContext, prefix_text: s
             InlineKeyboardButton("Редагувати подію", callback_data=State.EVENT_EDITING.name),
         ],
         [
+            InlineKeyboardButton("Дайджест", callback_data=State.CALENDAR_DIGEST.name),
+            InlineKeyboardButton("Оновити", callback_data=State.CALENDAR_CLEANUP.name),
+        ],
+        [
             InlineKeyboardButton("« Вийти", callback_data=State.EXIT.name),
         ],
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)    
+    reply_markup = InlineKeyboardMarkup(keyboard)
     menu = {'text': text, 'reply_markup': reply_markup}
-    await update_menu(update, menu)
+    if new_message:
+        await update.effective_user.send_message(**menu)
+    else:
+        await update_menu(update, menu)
     context.user_data['state'] = State.CALENDAR_MENU
     return State.CALENDAR_MENU
 

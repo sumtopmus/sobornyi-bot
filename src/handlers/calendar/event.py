@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from hmac import new
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, ContextTypes, ConversationHandler, filters, MessageHandler
@@ -205,7 +205,7 @@ async def on_edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
 async def edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the date."""
     log('edit_date')
-    context.bot_data['current_event'].date = datetime.strptime(update.message.text, '%m/%d/%y')
+    context.bot_data['current_event'].date = datetime.strptime(update.message.text, '%m/%d/%y').date()
     return await event_menu(update, context)
 
 
@@ -298,7 +298,7 @@ async def on_preprint_event(update: Update, context: CallbackContext) -> State:
         await update.effective_user.send_photo(**event.post())
     else:
         await update.callback_query.edit_message_text(**event.post())
-    text = 'Так буде виглядати пост з цією подією.'
+    text = f'Так буде виглядати пост з цією подією.\n\n[{event.tg_url}]'
     return await event_menu(update, context, prefix_text=text, new_message=True)
 
 
@@ -308,9 +308,10 @@ async def on_post_event(update: Update, context: CallbackContext) -> State:
     await update.callback_query.answer()
     event = context.bot_data['current_event']
     if event.image:
-        await context.bot.send_photo(chat_id=settings.channel_username, **event.post())
+        message = await context.bot.send_photo(chat_id=settings.channel_username, **event.post())
     else:
-        await context.bot.send_message(chat_id=settings.channel_username, **event.post())
+        message = await context.bot.send_message(chat_id=settings.channel_username, **event.post())
+    event.tg_url = message.link
     text = 'Захід було опубліковано.'
     await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))  
     return State.EVENT_POSTING

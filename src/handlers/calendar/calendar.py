@@ -1,4 +1,5 @@
 from asyncio import events
+from hmac import new
 from telegram import Update
 from telegram.ext import CallbackQueryHandler, CommandHandler, ContextTypes, ConversationHandler, filters, MessageHandler
 
@@ -16,6 +17,8 @@ def create_handlers() -> list:
         states={
             State.CALENDAR_MENU: [
                 CallbackQueryHandler(on_edit_event, pattern="^" + State.EVENT_EDITING.name + "$"),
+                CallbackQueryHandler(on_digest, pattern="^" + State.CALENDAR_DIGEST.name + "$"),
+                CallbackQueryHandler(on_cleanup, pattern="^" + State.CALENDAR_CLEANUP.name + "$"),
             ] + event_handlers(),
             State.EVENT_PICKING: [
                 CallbackQueryHandler(on_find_event, pattern="^" + State.EVENT_FINDING.name + "$"),
@@ -40,6 +43,22 @@ async def on_edit_event(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
     menu = events_menu(context.bot_data['calendar'].items())
     await update.callback_query.edit_message_text(**menu)
     return State.EVENT_PICKING
+
+
+async def on_digest(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user requests a digest of the calendar."""
+    log('on_digest')
+    text = context.bot_data['calendar'].get_digest()
+    await update.effective_user.send_message(text)
+    return await calendar_menu(update, context, new_message=True)
+
+
+async def on_cleanup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user requests a cleanup of the calendar."""
+    log('on_cleanup')
+    context.bot_data['calendar'].remove_past_events()
+    text = 'Минулі події було видалено.'
+    return await calendar_menu(update, context, prefix_text=text)
 
 
 async def on_find_event(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
