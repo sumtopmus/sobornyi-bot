@@ -178,9 +178,8 @@ class Calendar:
         this_week = self.__get_this_week()
         next_week = self.__get_next_week()
         for _, event in self.__events.items():
-            if event.date:
-                if this_week <= event.date < next_week or (event.end_date and this_week <= event.end_date < next_week):
-                    result.append(event)
+            if not event.date or this_week <= event.date < next_week or (event.end_date and this_week <= event.end_date < next_week):
+                result.append(event)
         return result
 
     def get_future_events(self) -> List[Event]:
@@ -191,19 +190,34 @@ class Calendar:
                 result.append(event)
         return result
 
-    def get_nearest_digest(self) -> str:
-        return '\n'.join([event.get_current_repr() for event in self.get_nearest_events()])
+    def get_simple_digest(self, events: List[Event], category: Category = Category.GENERAL) -> str:
+        return '\n'.join([event.get_title_repr() for event in events if event.category == category])
 
-    def get_future_digest(self) -> str:
-        return '\n'.join([event.get_future_repr() for event in self.get_future_events()])
+    def get_nearest_digest(self, events: List[Event], category: Category = Category.GENERAL) -> str:
+        return '\n'.join([event.get_current_repr() for event in events if event.category == category])
+
+    def get_future_digest(self, events: List[Event], category: Category = Category.GENERAL) -> str:
+        return '\n'.join([event.get_future_repr() for event in events if event.category == category])
 
     def get_digest(self) -> str:
-        result = (
-            f'*🎟 Заходи:*\n'
-            f'{self.get_nearest_digest()}\n\n'
-            f'*📰 Анонси:*\n'
-            f'{self.get_future_digest()}'
-        )
+        result = f"*Порядок тижневий*\n\n"
+        nearest_events = self.get_nearest_events()
+        events_repr = self.get_nearest_digest(nearest_events)
+        if events_repr:
+            result += f"*🎟 Заходи:*\n{events_repr}\n\n"
+        events_repr = self.get_nearest_digest(nearest_events, Category.RALLY)
+        if events_repr:
+            result += f"*📢 Ралі:*\n{events_repr}\n\n"
+        events_repr = self.get_future_digest(self.get_future_events())
+        if events_repr:
+            result += f"*📰 Анонси:*\n{events_repr}\n\n"
+        events_repr = self.get_simple_digest(nearest_events, Category.FUNDRAISER)
+        if events_repr:
+            result += f"*💰 Збори коштів:*\n{events_repr}\n\n"
+        events_repr = self.get_simple_digest(nearest_events, Category.VOLUNTEER)
+        if events_repr:
+            result += f"*🤲 Волонтерство:*\n{events_repr}\n\n"
+        result += '_#agenda_'
         return result
 
     def remove_past_events(self) -> bool:

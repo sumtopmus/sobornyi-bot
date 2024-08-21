@@ -49,7 +49,7 @@ async def on_digest(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State
     """When a user requests a digest of the calendar."""
     log('on_digest')
     text = context.bot_data['calendar'].get_digest()
-    await update.effective_user.send_message(text)
+    await update.effective_user.send_message(text, disable_web_page_preview=True)
     return await calendar_menu(update, context, new_message=True)
 
 
