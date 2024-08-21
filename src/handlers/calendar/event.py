@@ -5,7 +5,7 @@ from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, 
 
 from config import settings
 from .menu import State, calendar_menu, event_menu, construct_back_button
-from model import Event, Occurrence
+from model import Category, Event, Occurrence
 from utils import log
 
 
@@ -21,6 +21,7 @@ def create_handlers() -> list:
                 CallbackQueryHandler(on_edit_title, pattern="^" + State.EVENT_EDITING_TITLE.name + "$"),
                 CallbackQueryHandler(on_edit_emoji, pattern="^" + State.EVENT_EDITING_EMOJI.name + "$"),
                 CallbackQueryHandler(on_edit_description, pattern="^" + State.EVENT_EDITING_DESCRIPTION.name + "$"),
+                CallbackQueryHandler(on_edit_category, pattern="^" + State.EVENT_EDITING_CATEGORY.name + "$"),
                 CallbackQueryHandler(on_edit_occurrence, pattern="^" + State.EVENT_EDITING_OCCURRENCE.name + "$"),
                 CallbackQueryHandler(on_edit_date, pattern="^" + State.EVENT_EDITING_DATE.name + "$"),
                 # CallbackQueryHandler(on_edit_date_end, pattern="^" + State.EVENT_EDITING_DATE_END.name + "$"),
@@ -46,9 +47,11 @@ def create_handlers() -> list:
             State.EVENT_EDITING_DESCRIPTION: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, edit_description),
             ],       
+            State.EVENT_EDITING_CATEGORY: [
+                CallbackQueryHandler(edit_category, pattern="^" + State.CATEGORY.name),
+            ],
             State.EVENT_EDITING_OCCURRENCE: [
-                CallbackQueryHandler(edit_occurrence, pattern="^" + Occurrence.WITHIN_DAY.name + "$"),
-                CallbackQueryHandler(edit_occurrence, pattern="^" + Occurrence.WITHIN_DAYS.name + "$"),
+                CallbackQueryHandler(edit_occurrence, pattern="^" + State.OCCURRENCE.name + "$"),
             ],
             State.EVENT_EDITING_DATE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, edit_date),
@@ -165,17 +168,52 @@ async def edit_description(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     return await event_menu(update, context)
 
 
+async def on_edit_category(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user wants to edit the category."""
+    log('on_edit_category')
+    await update.callback_query.answer()
+    text = 'Оберіть категорію, під яку підпадає цей захід:'
+    category = context.bot_data['current_event'].category
+    prefix = State.CATEGORY.name + ':'
+    buttons = [
+        ('Ралі', Category.RALLY),
+        ('Фандрейзер', Category.FUNDRAISER),
+        ('Волонтерство', Category.VOLUNTEER),
+        ('Загальне', Category.GENERAL),
+    ]
+    keyboard, row = [], []
+    for button_text, button_category in buttons:
+        row.append(InlineKeyboardButton(button_text + (' ✅' if category == button_category else ''),
+                                        callback_data=prefix + button_category.name))
+        if len(row) == 2:
+            keyboard.append(row)
+            row = []
+    keyboard.append([InlineKeyboardButton('« Назад', callback_data=State.EVENT_MENU.name)])
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+    return State.EVENT_EDITING_CATEGORY
+
+
+async def edit_category(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user enters the category."""
+    log('edit_category')
+    category = Category[update.callback_query.data.split(':')[-1]]
+    context.bot_data['current_event'].category = category
+    return await on_edit_category(update, context)
+
+
 async def on_edit_occurrence(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user wants to edit the occurrence."""
     log('on_edit_occurrence')
     await update.callback_query.answer()
     text = 'Як довго захід триватиме?'
+    prefix = State.OCCURRENCE.name + ':'
     keyboard = [
         [
-            InlineKeyboardButton("В межах одного дня", callback_data=Occurrence.WITHIN_DAY.name),
+            InlineKeyboardButton("В межах одного дня", callback_data=prefix + Occurrence.WITHIN_DAY.name),
         ],
         [
-            InlineKeyboardButton("В межах декількох днів", callback_data=Occurrence.WITHIN_DAYS.name),
+            InlineKeyboardButton("В межах декількох днів", callback_data=prefix + Occurrence.WITHIN_DAYS.name),
         ],
         [
             InlineKeyboardButton('« Назад', callback_data=State.EVENT_MENU.name),
@@ -189,7 +227,8 @@ async def on_edit_occurrence(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def edit_occurrence(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the occurrence."""
     log('edit_occurrence')
-    context.bot_data['current_event'].occurrence = Occurrence[update.callback_query.data]
+    occurrence = Occurrence[update.callback_query.data.split(':')[-1]]
+    context.bot_data['current_event'].occurrence = occurrence
     return await event_menu(update, context)
 
 

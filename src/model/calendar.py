@@ -15,6 +15,14 @@ Occurrence = Enum('Occurrence', [
 ])
 
 
+Category = Enum('Category', [
+    'GENERAL',
+    'FUNDRAISER',
+    'RALLY',
+    'VOLUNTEER',
+])
+
+
 @dataclass
 class Event:
     title: str
@@ -30,7 +38,7 @@ class Event:
     url: Optional[str] = field(default=None)
     tg_url: Optional[str] = field(default=None)
     image: Optional[str] = field(default=None)
-    type: Optional[str] = field(default=None)
+    category: Category = field(default=Category.GENERAL)
     cancelled: bool = field(default=False)
 
     def __hash__(self) -> int:
@@ -139,7 +147,7 @@ class Event:
             'url': self.url,
             'tg_url': self.tg_url,
             'image': self.image,
-            'type': self.type,
+            'category': self.category.name,
             'cancelled': self.cancelled,
         }
 

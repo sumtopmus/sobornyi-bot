@@ -1,4 +1,5 @@
 from hmac import new
+from operator import le
 from dynaconf import settings
 from enum import Enum
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -16,6 +17,8 @@ State = Enum('State', [
     'EXIT',
     # Prefix states:
     'EVENT',
+    'CATEGORY',
+    'OCCURRENCE',
     # Process states:
     'CALENDAR_DIGEST',
     'CALENDAR_CLEANUP',
@@ -31,6 +34,7 @@ State = Enum('State', [
     'EVENT_EDITING_TITLE',
     'EVENT_EDITING_EMOJI',
     'EVENT_EDITING_DESCRIPTION',
+    'EVENT_EDITING_CATEGORY',
     'EVENT_EDITING_OCCURRENCE',
     'EVENT_EDITING_DATE',
     'EVENT_EDITING_TIME',
@@ -108,6 +112,7 @@ async def event_menu(update: Update, context: CallbackContext, prefix_text: str 
         ('Емоджи', event.emoji, State.EVENT_EDITING_EMOJI),
         ('Назва', event.title, State.EVENT_EDITING_TITLE),
         ('Опис', event.description, State.EVENT_EDITING_DESCRIPTION),
+        ('Категорія', event.category, State.EVENT_EDITING_CATEGORY),
         ('Формат', event.occurrence, State.EVENT_EDITING_OCCURRENCE),
         ('Дата', event.date, State.EVENT_EDITING_DATE),
         ('Час', event.time, State.EVENT_EDITING_TIME),
@@ -116,13 +121,14 @@ async def event_menu(update: Update, context: CallbackContext, prefix_text: str 
         ('Посилання', event.url, State.EVENT_EDITING_URL),
         ('Постер', event.image, State.EVENT_EDITING_IMAGE),
     ]
-    keyboard = []
-    row = []
+    keyboard, row = [], []
     for text, value, state in buttons:
         row.append(InlineKeyboardButton(text + (' ✅' if value else ' 🚫'), callback_data=state.name))
         if len(row) == 2:
             keyboard.append(row)
             row = []
+    if len(row) > 0:
+        keyboard.append(row)
     keyboard.extend([
         [
             InlineKeyboardButton("Препрінт 🖨️", callback_data=State.EVENT_PREPRINT.name),
