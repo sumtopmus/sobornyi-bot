@@ -1,11 +1,13 @@
 from hmac import new
 from operator import le
+import time
 from dynaconf import settings
 from enum import Enum
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, ContextTypes
 
 
+from model.calendar import Days, Occurrence
 from utils import log
 
 
@@ -13,12 +15,14 @@ State = Enum('State', [
     # Menu state:
     'CALENDAR_MENU',
     'EVENT_MENU',
+    'DATETIME_MENU',
     'BACK',
     'EXIT',
     # Prefix states:
     'EVENT',
     'CATEGORY',
     'OCCURRENCE',
+    'WEEKDAY',
     # Process states:
     'CALENDAR_DIGEST',
     'CALENDAR_CLEANUP',
@@ -36,8 +40,11 @@ State = Enum('State', [
     'EVENT_EDITING_DESCRIPTION',
     'EVENT_EDITING_CATEGORY',
     'EVENT_EDITING_OCCURRENCE',
+    'EVENT_EDITING_DATETIME',
     'EVENT_EDITING_DATE',
+    'EVENT_EDITING_END_DATE',
     'EVENT_EDITING_TIME',
+    'EVENT_EDITING_END_TIME',
     'EVENT_EDITING_DATE_END',
     'EVENT_EDITING_VENUE',
     'EVENT_EDITING_LOCATION',
@@ -46,12 +53,12 @@ State = Enum('State', [
 ])
 
 
-async def update_menu(update: Update, menu: dict):
-    if update.callback_query:
+async def update_menu(update: Update, menu: dict, new_message: bool = False):
+    if new_message or not update.callback_query:
+        await update.effective_user.send_message(**menu)
+    else:
         await update.callback_query.answer()
         await update.callback_query.edit_message_text(**menu)
-    else:
-        await update.effective_user.send_message(**menu)
 
 
 async def calendar_menu(update: Update, context: CallbackContext, prefix_text: str = None, new_message: bool = False) -> State:
@@ -74,10 +81,7 @@ async def calendar_menu(update: Update, context: CallbackContext, prefix_text: s
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     menu = {'text': text, 'reply_markup': reply_markup}
-    if new_message:
-        await update.effective_user.send_message(**menu)
-    else:
-        await update_menu(update, menu)
+    await update_menu(update, menu, new_message)
     context.user_data['state'] = State.CALENDAR_MENU
     return State.CALENDAR_MENU
 
@@ -114,8 +118,7 @@ async def event_menu(update: Update, context: CallbackContext, prefix_text: str 
         ('Опис', event.description, State.EVENT_EDITING_DESCRIPTION),
         ('Категорія', event.category, State.EVENT_EDITING_CATEGORY),
         ('Формат', event.occurrence, State.EVENT_EDITING_OCCURRENCE),
-        ('Дата', event.date, State.EVENT_EDITING_DATE),
-        ('Час', event.time, State.EVENT_EDITING_TIME),
+        ('Дата і час', event.date, State.EVENT_EDITING_DATETIME),
         ('Локація', event.venue, State.EVENT_EDITING_VENUE),
         ('Мапа', event.location, State.EVENT_EDITING_LOCATION),
         ('Посилання', event.url, State.EVENT_EDITING_URL),
@@ -127,8 +130,6 @@ async def event_menu(update: Update, context: CallbackContext, prefix_text: str 
         if len(row) == 2:
             keyboard.append(row)
             row = []
-    if len(row) > 0:
-        keyboard.append(row)
     keyboard.extend([
         [
             InlineKeyboardButton("Препрінт 🖨️", callback_data=State.EVENT_PREPRINT.name),
@@ -147,12 +148,61 @@ async def event_menu(update: Update, context: CallbackContext, prefix_text: str 
         else:
             text = prefix_text + '\n\n' + text
     menu = {'text': text, 'reply_markup': reply_markup}
-    if new_message:
-        await update.effective_user.send_message(**menu)
-    else:
-        await update_menu(update, menu)
+    await update_menu(update, menu, new_message)
     context.user_data['state'] = State.EVENT_MENU
     return State.EVENT_MENU
+
+
+async def datetime_menu(update: Update, context: CallbackContext, prefix_text: str = None, new_message: bool = False) -> State:
+    log('datetime_menu')
+    event = context.bot_data['current_event']
+    buttons = [
+        ('Час (початок)', event.time, State.EVENT_EDITING_TIME),
+        ('Час (кінець)', event.end_time, State.EVENT_EDITING_END_TIME),
+    ]
+    time_row = []
+    for text, value, state in buttons:
+        time_row.append(InlineKeyboardButton(text + (' ✅' if value else ' 🚫'), callback_data=state.name))
+    if event.occurrence == Occurrence.REGULAR:
+        buttons = [
+            ('Пн', 0, {Days.Monday}),
+            ('Вт', 1, {Days.Tuesday}),
+            ('Ср', 2, {Days.Wednesday}),
+            ('Чт', 3, {Days.Thursday}),
+            ('Пт', 4, {Days.Friday}),
+            ('Будні', 10, {Days.Monday, Days.Tuesday, Days.Wednesday, Days.Thursday, Days.Friday}),
+            ('Сб', 5, {Days.Saturday}),
+            ('Нд', 6, {Days.Sunday}),
+            ('Вихідні', 20, {Days.Saturday, Days.Sunday}),
+        ]
+        keyboard, row = [], []
+        for text, value, days in buttons:
+            row.append(InlineKeyboardButton(text + (' ✅' if days.issubset(event.days) else ' 🚫'), callback_data=f'{State.WEEKDAY.name}:{value}'))
+            if len(row) == 3:
+                keyboard.append(row)
+                row = []
+    else:
+        buttons = [
+            ('Дата (початок)', event.date, State.EVENT_EDITING_DATE),
+            ('Дата (кінець)', event.end_date, State.EVENT_EDITING_END_DATE),
+        ]
+        date_row = []
+        for text, value, state in buttons:
+            date_row.append(InlineKeyboardButton(text + (' ✅' if value else ' 🚫'), callback_data=state.name))
+        keyboard = [date_row]
+    keyboard.append(time_row)
+    keyboard.append([InlineKeyboardButton("« Назад", callback_data=State.EVENT_MENU.name)])
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    text = event.get_full_repr()
+    if prefix_text:
+        if new_message:
+            text = prefix_text
+        else:
+            text = prefix_text + '\n\n' + text
+    menu = {'text': text, 'reply_markup': reply_markup}
+    await update_menu(update, menu, new_message)
+    context.user_data['state'] = State.DATETIME_MENU
+    return State.DATETIME_MENU
 
 
 def construct_back_button(state: State = State.BACK) -> dict:

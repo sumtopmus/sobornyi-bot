@@ -2,10 +2,18 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 from format import clock, link, weekday
 from utils import log
+
+
+Category = Enum('Category', [
+    'GENERAL',
+    'FUNDRAISER',
+    'RALLY',
+    'VOLUNTEER',
+])
 
 
 Occurrence = Enum('Occurrence', [
@@ -15,11 +23,14 @@ Occurrence = Enum('Occurrence', [
 ])
 
 
-Category = Enum('Category', [
-    'GENERAL',
-    'FUNDRAISER',
-    'RALLY',
-    'VOLUNTEER',
+Days = Enum('Days', [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
 ])
 
 
@@ -33,6 +44,7 @@ class Event:
     time: Optional[datetime.time] = field(default=None)
     end_date: Optional[str] = field(default=None)
     end_time: Optional[str] = field(default=None)
+    days: Set[Days] = field(default_factory=set)
     venue: Optional[str] = field(default=None)
     location: Optional[str] = field(default=None)
     url: Optional[str] = field(default=None)
@@ -76,6 +88,8 @@ class Event:
         result = ''
         if self.date:
             result = f'`🗓️{weekday.name[self.date.weekday()]}`'
+        if self.end_date:
+            result += f'`-{weekday.name[self.end_date.weekday()]}`'
         if self.time:
             result += f' `{clock.emoji(self.time)}'
             if self.time.minute == 0:
@@ -92,7 +106,13 @@ class Event:
             return None
         result = ''
         if self.date:
-            result = f'`🗓️{self.date.strftime("%m/%d")}:`'
+            result = f'`🗓️{self.date.strftime("%m/%d")}`'
+            if self.end_date:
+                if self.date.month != self.end_date.month:
+                    result += f'`-{self.end_date.strftime("%m/%d")}`'
+                else:
+                    result += f'`-{self.end_date.strftime("%d")}`'
+            result += '`:`'
         result += f'{self.get_title_repr()}'
         return result
 
@@ -107,6 +127,11 @@ class Event:
             result += f'{self.description}\n\n'
         if self.date:
             result += f'`🗓️{self.date.strftime("%m/%d")}`'
+            if self.end_date:
+                if self.date.month != self.end_date.month:
+                    result += f'`-{self.end_date.strftime("%m/%d")}`'
+                else:
+                    result += f'`-{self.end_date.strftime("%d")}`'
             if self.time:
                 result += f' `{clock.emoji(self.time)}{self.time.strftime("%H:%M")}`'
             result += '\n'
@@ -142,6 +167,7 @@ class Event:
             'time': self.time.isoformat() if self.time else None,
             'end_date': self.end_date.isoformat() if self.end_date else None,
             'end_time': self.end_time.isoformat() if self.end_time else None,
+            'days': [day.name for day in self.days],
             'venue': self.venue,
             'location': self.location,
             'url': self.url,

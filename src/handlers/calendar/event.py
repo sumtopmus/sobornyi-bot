@@ -4,8 +4,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, ContextTypes, ConversationHandler, filters, MessageHandler
 
 from config import settings
-from .menu import State, calendar_menu, event_menu, construct_back_button
-from model import Category, Event, Occurrence
+from .menu import State, calendar_menu, datetime_menu, event_menu, construct_back_button
+from model import Category, Days, Event, Occurrence
 from utils import log
 
 
@@ -23,9 +23,7 @@ def create_handlers() -> list:
                 CallbackQueryHandler(on_edit_description, pattern="^" + State.EVENT_EDITING_DESCRIPTION.name + "$"),
                 CallbackQueryHandler(on_edit_category, pattern="^" + State.EVENT_EDITING_CATEGORY.name + "$"),
                 CallbackQueryHandler(on_edit_occurrence, pattern="^" + State.EVENT_EDITING_OCCURRENCE.name + "$"),
-                CallbackQueryHandler(on_edit_date, pattern="^" + State.EVENT_EDITING_DATE.name + "$"),
-                # CallbackQueryHandler(on_edit_date_end, pattern="^" + State.EVENT_EDITING_DATE_END.name + "$"),
-                CallbackQueryHandler(on_edit_time, pattern="^" + State.EVENT_EDITING_TIME.name + "$"),
+                CallbackQueryHandler(on_edit_datetime, pattern="^" + State.EVENT_EDITING_DATETIME.name + "$"),
                 CallbackQueryHandler(on_edit_venue, pattern="^" + State.EVENT_EDITING_VENUE.name + "$"),
                 CallbackQueryHandler(on_edit_location, pattern="^" + State.EVENT_EDITING_LOCATION.name + "$"),
                 CallbackQueryHandler(on_edit_url, pattern="^" + State.EVENT_EDITING_URL.name + "$"),
@@ -34,6 +32,13 @@ def create_handlers() -> list:
                 CallbackQueryHandler(on_post_event, pattern="^" + State.EVENT_POSTING.name + "$"),
                 CallbackQueryHandler(on_delete_event, pattern="^" + State.EVENT_DELETING.name + "$"),
                 CallbackQueryHandler(back, pattern="^" + State.CALENDAR_MENU.name + "$"),
+            ],
+            State.DATETIME_MENU: [
+                CallbackQueryHandler(on_edit_date, pattern="^" + State.EVENT_EDITING_DATE.name + "$"),
+                CallbackQueryHandler(on_edit_end_date, pattern="^" + State.EVENT_EDITING_END_DATE.name + "$"),
+                CallbackQueryHandler(on_edit_time, pattern="^" + State.EVENT_EDITING_TIME.name + "$"),
+                CallbackQueryHandler(on_edit_end_time, pattern="^" + State.EVENT_EDITING_END_TIME.name + "$"),
+                CallbackQueryHandler(edit_days, pattern="^" + State.WEEKDAY.name), 
             ],
             State.EVENT_WAITING_FOR_TITLE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, add_event),
@@ -51,18 +56,20 @@ def create_handlers() -> list:
                 CallbackQueryHandler(edit_category, pattern="^" + State.CATEGORY.name),
             ],
             State.EVENT_EDITING_OCCURRENCE: [
-                CallbackQueryHandler(edit_occurrence, pattern="^" + State.OCCURRENCE.name + "$"),
+                CallbackQueryHandler(edit_occurrence, pattern="^" + State.OCCURRENCE.name),
             ],
             State.EVENT_EDITING_DATE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, edit_date),
             ],
-            # State.EVENT_EDITING_DATE_END: [
-            #     MessageHandler(filters.TEXT & ~filters.COMMAND, set_event_date_end),
-            #     CallbackQueryHandler(set_event_date_end, pattern=Occurrence.WITHIN_DAYS.name + "$"),
-            # ],
+            State.EVENT_EDITING_END_DATE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, edit_end_date),
+            ],
             State.EVENT_EDITING_TIME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, edit_time),
             ],
+            State.EVENT_EDITING_END_TIME: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, edit_end_time),
+            ],          
             State.EVENT_EDITING_VENUE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, edit_venue),
             ],
@@ -83,8 +90,9 @@ def create_handlers() -> list:
             ],
         },
         fallbacks=[
-            CommandHandler('cancel', cancel),
-            CallbackQueryHandler(cancel, pattern="^" + State.EVENT_MENU.name + "$"),
+            CommandHandler('cancel', event_menu),
+            CallbackQueryHandler(event_menu, pattern="^" + State.EVENT_MENU.name + "$"),
+            CallbackQueryHandler(datetime_menu, pattern="^" + State.DATETIME_MENU.name + "$"),
             CallbackQueryHandler(exit, pattern="^" + State.EXIT.name + "$")
         ],
         map_to_parent={
@@ -181,15 +189,7 @@ async def on_edit_category(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         ('Волонтерство', Category.VOLUNTEER),
         ('Загальне', Category.GENERAL),
     ]
-    keyboard, row = [], []
-    for button_text, button_category in buttons:
-        row.append(InlineKeyboardButton(button_text + (' ✅' if category == button_category else ''),
-                                        callback_data=prefix + button_category.name))
-        if len(row) == 2:
-            keyboard.append(row)
-            row = []
-    keyboard.append([InlineKeyboardButton('« Назад', callback_data=State.EVENT_MENU.name)])
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = construct_picker_keyboard(category, prefix, buttons)
     await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
     return State.EVENT_EDITING_CATEGORY
 
@@ -207,19 +207,14 @@ async def on_edit_occurrence(update: Update, context: ContextTypes.DEFAULT_TYPE)
     log('on_edit_occurrence')
     await update.callback_query.answer()
     text = 'Як довго захід триватиме?'
+    occurrence = context.bot_data['current_event'].occurrence
     prefix = State.OCCURRENCE.name + ':'
-    keyboard = [
-        [
-            InlineKeyboardButton("В межах одного дня", callback_data=prefix + Occurrence.WITHIN_DAY.name),
-        ],
-        [
-            InlineKeyboardButton("В межах декількох днів", callback_data=prefix + Occurrence.WITHIN_DAYS.name),
-        ],
-        [
-            InlineKeyboardButton('« Назад', callback_data=State.EVENT_MENU.name),
-        ]
+    buttons = [
+        ('В межах одного дня', Occurrence.WITHIN_DAY),
+        ('В межах декількох днів', Occurrence.WITHIN_DAYS),
+        ('Регулярно', Occurrence.REGULAR),
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = construct_picker_keyboard(occurrence, prefix, buttons, num_cols=1)
     await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
     return State.EVENT_EDITING_OCCURRENCE
 
@@ -229,7 +224,14 @@ async def edit_occurrence(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     log('edit_occurrence')
     occurrence = Occurrence[update.callback_query.data.split(':')[-1]]
     context.bot_data['current_event'].occurrence = occurrence
-    return await event_menu(update, context)
+    return await on_edit_occurrence(update, context)
+
+
+async def on_edit_datetime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user wants to edit the date and time."""
+    log('on_edit_datetime')
+    await update.callback_query.answer()
+    return await datetime_menu(update, context)
 
 
 async def on_edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
@@ -237,7 +239,7 @@ async def on_edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
     log('on_edit_date')
     await update.callback_query.answer()
     text = 'Введіть дату заходу в форматі MM/DD/YY.'
-    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.DATETIME_MENU))
     return State.EVENT_EDITING_DATE
 
 
@@ -245,7 +247,23 @@ async def edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State
     """When a user enters the date."""
     log('edit_date')
     context.bot_data['current_event'].date = datetime.strptime(update.message.text, '%m/%d/%y').date()
-    return await event_menu(update, context)
+    return await datetime_menu(update, context)
+
+
+async def on_edit_end_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user wants to edit the end date."""
+    log('on_edit_end_date')
+    await update.callback_query.answer()
+    text = 'Введіть дату закінчення заходу в форматі MM/DD/YY.'
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.DATETIME_MENU))
+    return State.EVENT_EDITING_END_DATE
+
+
+async def edit_end_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user enters the end date."""
+    log('edit_end_date')
+    context.bot_data['current_event'].end_date = datetime.strptime(update.message.text, '%m/%d/%y').date()
+    return await datetime_menu(update, context)
 
 
 async def on_edit_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
@@ -253,7 +271,7 @@ async def on_edit_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
     log('on_edit_time')
     await update.callback_query.answer()
     text = 'Введіть час початку заходу в 24-годинному форматі HH:MM.'
-    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.DATETIME_MENU))
     return State.EVENT_EDITING_TIME
 
 
@@ -261,7 +279,39 @@ async def edit_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State
     """When a user enters the time."""
     log('edit_time')
     context.bot_data['current_event'].time = datetime.strptime(update.message.text, '%H:%M').time()
-    return await event_menu(update, context)
+    return await datetime_menu(update, context)
+
+
+async def on_edit_end_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user wants to edit the end time."""
+    log('on_edit_end_time')
+    await update.callback_query.answer()
+    text = 'Введіть час кінця заходу в 24-годинному форматі HH:MM.'
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.DATETIME_MENU))
+    return State.EVENT_EDITING_END_TIME
+
+
+async def edit_end_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user enters the end time."""
+    log('edit_end_time')
+    context.bot_data['current_event'].end_time = datetime.strptime(update.message.text, '%H:%M').time()
+    return await datetime_menu(update, context)
+
+
+async def edit_days(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user picks days for a regular event."""
+    log('edit_days')
+    await update.callback_query.answer()
+    event = context.bot_data['current_event']
+    choice = int(update.callback_query.data.split(':')[-1])
+    log(choice)
+    if choice == 10:
+        event.days ^= {Days.Monday, Days.Tuesday, Days.Wednesday, Days.Thursday, Days.Friday}
+    elif choice == 20:
+        event.days ^= {Days.Saturday, Days.Sunday}
+    else:
+        event.days ^= {Days(choice + 1)}
+    return await datetime_menu(update, context)
 
 
 async def on_edit_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
@@ -406,3 +456,15 @@ async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
         await update.effective_user.send_message(text)
     context.user_data['state'] = None
     return ConversationHandler.END
+
+
+def construct_picker_keyboard(value, prefix: str, buttons: list, num_cols: int = 2) -> InlineKeyboardMarkup:
+    keyboard, row = [], []
+    for button_text, button_value in buttons:
+        row.append(InlineKeyboardButton(button_text + (' ✅' if value == button_value else ''),
+                                        callback_data=prefix + button_value.name))
+        if len(row) == num_cols:
+            keyboard.append(row)
+            row = []
+    keyboard.append([InlineKeyboardButton('« Назад', callback_data=State.EVENT_MENU.name)])
+    return InlineKeyboardMarkup(keyboard)
