@@ -201,8 +201,8 @@ class Calendar:
 
     def get_nearest_events(self) -> List[Event]:
         result = []
-        this_week = self.__get_this_week()
-        next_week = self.__get_next_week()
+        this_week = self.get_this_week()
+        next_week = self.get_next_week()
         for _, event in self.__events.items():
             if not event.date or this_week <= event.date < next_week or (event.end_date and this_week <= event.end_date < next_week):
                 result.append(event)
@@ -210,7 +210,7 @@ class Calendar:
 
     def get_future_events(self) -> List[Event]:
         result = []
-        next_week = self.__get_next_week()
+        next_week = self.get_next_week()
         for _, event in self.__events.items():
             if event.date and next_week <= event.date:
                 result.append(event)
@@ -247,7 +247,7 @@ class Calendar:
         return result
 
     def remove_past_events(self) -> bool:
-        this_week = self.__get_this_week()
+        this_week = self.get_this_week()
         events_to_remove = [
             event_id for event_id, event in self.__events.items()
             if event.date and event.date < this_week and (not event.end_date or event.end_date < this_week)
@@ -256,12 +256,14 @@ class Calendar:
             del self.__events[event_id]
         return len(events_to_remove) > 0
 
-    def __get_this_week(self) -> date:
-        today = datetime.now().date()
-        return today - timedelta(days=today.weekday())
+    def get_this_week(self) -> date:
+        today = date.today()
+        this_monday = today - timedelta(days=today.weekday())
+        return this_monday
 
-    def __get_next_week(self) -> date:
-        return self.__get_this_week() + timedelta(days=7)
+    def get_next_week(self) -> date:
+        next_monday = self.get_this_week() + timedelta(days=7)
+        return next_monday
 
     def __getitem__(self, event_id: int) -> Optional[Event]:
         return self.__events[event_id]
