@@ -224,7 +224,7 @@ async def edit_occurrence(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     log('edit_occurrence')
     occurrence = Occurrence[update.callback_query.data.split(':')[-1]]
     context.bot_data['current_event'].occurrence = occurrence
-    return await on_edit_occurrence(update, context)
+    return await event_menu(update, context)
 
 
 async def on_edit_datetime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:

@@ -39,7 +39,7 @@ class Event:
     title: str
     emoji: Optional[str] = field(default=None)
     description: Optional[str] = field(default=None)
-    occurrence: Optional[Occurrence] = field(default=None)
+    occurrence: Occurrence = field(default=Occurrence.WITHIN_DAY)
     date: Optional[datetime.date] = field(default=None)
     time: Optional[datetime.time] = field(default=None)
     end_date: Optional[str] = field(default=None)
