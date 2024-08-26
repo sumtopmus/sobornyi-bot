@@ -29,6 +29,7 @@ State = Enum('State', [
     'EVENT_ADDING',
     'EVENT_EDITING',
     'EVENT_PICKING',
+    'EVENT_NOT_FOUND',
     'EVENT_PREPRINT',
     'EVENT_POSTING',
     'EVENT_DELETING',
@@ -68,15 +69,15 @@ async def calendar_menu(update: Update, context: CallbackContext, prefix_text: s
         text = prefix_text + '\n\n' + text
     keyboard = [
         [
-            InlineKeyboardButton("Додати подію", callback_data=State.EVENT_ADDING.name),
-            InlineKeyboardButton("Редагувати подію", callback_data=State.EVENT_EDITING.name),
+            InlineKeyboardButton('Додати подію', callback_data=State.EVENT_ADDING.name),
+            InlineKeyboardButton('Редагувати подію', callback_data=State.EVENT_EDITING.name),
         ],
         [
-            InlineKeyboardButton("Дайджест", callback_data=State.CALENDAR_DIGEST.name),
-            InlineKeyboardButton("Оновити", callback_data=State.CALENDAR_CLEANUP.name),
+            InlineKeyboardButton('Дайджест', callback_data=State.CALENDAR_DIGEST.name),
+            InlineKeyboardButton('Оновити', callback_data=State.CALENDAR_CLEANUP.name),
         ],
         [
-            InlineKeyboardButton("« Вийти", callback_data=State.EXIT.name),
+            InlineKeyboardButton('« Вийти', callback_data=State.EXIT.name),
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -132,12 +133,12 @@ async def event_menu(update: Update, context: CallbackContext, prefix_text: str 
             row = []
     keyboard.extend([
         [
-            InlineKeyboardButton("Препрінт 🖨️", callback_data=State.EVENT_PREPRINT.name),
-            InlineKeyboardButton("Пост 📺", callback_data=State.EVENT_POSTING.name),
+            InlineKeyboardButton('Препрінт 🖨️', callback_data=State.EVENT_PREPRINT.name),
+            InlineKeyboardButton('Пост 📺', callback_data=State.EVENT_POSTING.name),
         ],
         [
-            InlineKeyboardButton("Видалити ❌", callback_data=State.EVENT_DELETING.name),
-            InlineKeyboardButton("« Назад", callback_data=State.CALENDAR_MENU.name),
+            InlineKeyboardButton('Видалити ❌', callback_data=State.EVENT_DELETING.name),
+            InlineKeyboardButton('« Календар', callback_data=State.CALENDAR_MENU.name),
         ]
     ])
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -191,7 +192,7 @@ async def datetime_menu(update: Update, context: CallbackContext, prefix_text: s
             date_row.append(InlineKeyboardButton(text + (' ✅' if value else ' 🚫'), callback_data=state.name))
         keyboard = [date_row]
     keyboard.append(time_row)
-    keyboard.append([InlineKeyboardButton("« Назад", callback_data=State.EVENT_MENU.name)])
+    keyboard.append([InlineKeyboardButton('« Назад', callback_data=State.EVENT_MENU.name)])
     reply_markup = InlineKeyboardMarkup(keyboard)
     text = event.get_full_repr()
     if prefix_text:

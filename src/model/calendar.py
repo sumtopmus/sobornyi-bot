@@ -55,10 +55,10 @@ class Event:
 
     def __hash__(self) -> int:
         return hash((self.title, self.date, self.time))
-    
+
     def get_hash(self) -> int:
         return self.__hash__()
-    
+
     def has_poster(self) -> bool:
         return bool(self.image)
 
@@ -127,7 +127,7 @@ class Event:
             result += f'{self.description}\n\n'
         if self.date:
             result += f'`🗓️{self.date.strftime("%m/%d")}`'
-            if self.end_date:
+            if self.end_date and self.end_date > self.date:
                 if self.date.month != self.end_date.month:
                     result += f'`-{self.end_date.strftime("%m/%d")}`'
                 else:
@@ -144,13 +144,13 @@ class Event:
                 result += f'📍[Location]({self.location}\n\n'
         else:
             if self.venue:
-                result += f'📍{self.venue}\n\n'        
+                result += f'📍{self.venue}\n\n'
         if self.url:
             result += f'🔗 [{link.provider(self.url)}]({self.url})\n\n'
         result += '_#events_'
         result = re.sub(r'\n{3,}', '\n\n', result)
         return result
-    
+
     def post(self) -> Dict[str, str]:
         result = {'text': self.get_full_repr()}
         if self.image:
@@ -188,7 +188,7 @@ class Calendar:
         self.__events[event_id] = event
         self.__next_id += 1
         return event_id
-    
+
     def delete_event(self, event: Event) -> bool:
         for event_id, calendar_event in self.__events.items():
             if calendar_event == event:

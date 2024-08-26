@@ -13,32 +13,32 @@ def create_handlers() -> list:
     """Creates handlers that process all event editing requests."""
     return [ConversationHandler(
         entry_points= [
-            CallbackQueryHandler(on_add_event, pattern="^" + State.EVENT_ADDING.name + "$"),
-            CallbackQueryHandler(on_pick_event, pattern="^" + State.EVENT.name),
+            CallbackQueryHandler(on_add_event, pattern='^' + State.EVENT_ADDING.name + '$'),
+            CallbackQueryHandler(on_pick_event, pattern='^' + State.EVENT.name + ':'),
         ],
         states={
             State.EVENT_MENU: [
-                CallbackQueryHandler(on_edit_title, pattern="^" + State.EVENT_EDITING_TITLE.name + "$"),
-                CallbackQueryHandler(on_edit_emoji, pattern="^" + State.EVENT_EDITING_EMOJI.name + "$"),
-                CallbackQueryHandler(on_edit_description, pattern="^" + State.EVENT_EDITING_DESCRIPTION.name + "$"),
-                CallbackQueryHandler(on_edit_category, pattern="^" + State.EVENT_EDITING_CATEGORY.name + "$"),
-                CallbackQueryHandler(on_edit_occurrence, pattern="^" + State.EVENT_EDITING_OCCURRENCE.name + "$"),
-                CallbackQueryHandler(on_edit_datetime, pattern="^" + State.EVENT_EDITING_DATETIME.name + "$"),
-                CallbackQueryHandler(on_edit_venue, pattern="^" + State.EVENT_EDITING_VENUE.name + "$"),
-                CallbackQueryHandler(on_edit_location, pattern="^" + State.EVENT_EDITING_LOCATION.name + "$"),
-                CallbackQueryHandler(on_edit_url, pattern="^" + State.EVENT_EDITING_URL.name + "$"),
-                CallbackQueryHandler(on_edit_image, pattern="^" + State.EVENT_EDITING_IMAGE.name + "$"),
-                CallbackQueryHandler(on_preprint_event, pattern="^" + State.EVENT_PREPRINT.name + "$"),
-                CallbackQueryHandler(on_post_event, pattern="^" + State.EVENT_POSTING.name + "$"),
-                CallbackQueryHandler(on_delete_event, pattern="^" + State.EVENT_DELETING.name + "$"),
-                CallbackQueryHandler(back, pattern="^" + State.CALENDAR_MENU.name + "$"),
+                CallbackQueryHandler(on_edit_title, pattern='^' + State.EVENT_EDITING_TITLE.name + '$'),
+                CallbackQueryHandler(on_edit_emoji, pattern='^' + State.EVENT_EDITING_EMOJI.name + '$'),
+                CallbackQueryHandler(on_edit_description, pattern='^' + State.EVENT_EDITING_DESCRIPTION.name + '$'),
+                CallbackQueryHandler(on_edit_category, pattern='^' + State.EVENT_EDITING_CATEGORY.name + '$'),
+                CallbackQueryHandler(on_edit_occurrence, pattern='^' + State.EVENT_EDITING_OCCURRENCE.name + '$'),
+                CallbackQueryHandler(on_edit_datetime, pattern='^' + State.EVENT_EDITING_DATETIME.name + '$'),
+                CallbackQueryHandler(on_edit_venue, pattern='^' + State.EVENT_EDITING_VENUE.name + '$'),
+                CallbackQueryHandler(on_edit_location, pattern='^' + State.EVENT_EDITING_LOCATION.name + '$'),
+                CallbackQueryHandler(on_edit_url, pattern='^' + State.EVENT_EDITING_URL.name + '$'),
+                CallbackQueryHandler(on_edit_image, pattern='^' + State.EVENT_EDITING_IMAGE.name + '$'),
+                CallbackQueryHandler(on_preprint_event, pattern='^' + State.EVENT_PREPRINT.name + '$'),
+                CallbackQueryHandler(on_post_event, pattern='^' + State.EVENT_POSTING.name + '$'),
+                CallbackQueryHandler(on_delete_event, pattern='^' + State.EVENT_DELETING.name + '$'),
+                CallbackQueryHandler(back, pattern='^' + State.CALENDAR_MENU.name + '$'),
             ],
             State.DATETIME_MENU: [
-                CallbackQueryHandler(on_edit_date, pattern="^" + State.EVENT_EDITING_DATE.name + "$"),
-                CallbackQueryHandler(on_edit_end_date, pattern="^" + State.EVENT_EDITING_END_DATE.name + "$"),
-                CallbackQueryHandler(on_edit_time, pattern="^" + State.EVENT_EDITING_TIME.name + "$"),
-                CallbackQueryHandler(on_edit_end_time, pattern="^" + State.EVENT_EDITING_END_TIME.name + "$"),
-                CallbackQueryHandler(edit_days, pattern="^" + State.WEEKDAY.name), 
+                CallbackQueryHandler(on_edit_date, pattern='^' + State.EVENT_EDITING_DATE.name + '$'),
+                CallbackQueryHandler(on_edit_end_date, pattern='^' + State.EVENT_EDITING_END_DATE.name + '$'),
+                CallbackQueryHandler(on_edit_time, pattern='^' + State.EVENT_EDITING_TIME.name + '$'),
+                CallbackQueryHandler(on_edit_end_time, pattern='^' + State.EVENT_EDITING_END_TIME.name + '$'),
+                CallbackQueryHandler(edit_days, pattern='^' + State.WEEKDAY.name),
             ],
             State.EVENT_WAITING_FOR_TITLE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, add_event),
@@ -51,12 +51,12 @@ def create_handlers() -> list:
             ],
             State.EVENT_EDITING_DESCRIPTION: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, edit_description),
-            ],       
+            ],
             State.EVENT_EDITING_CATEGORY: [
-                CallbackQueryHandler(edit_category, pattern="^" + State.CATEGORY.name),
+                CallbackQueryHandler(edit_category, pattern='^' + State.CATEGORY.name),
             ],
             State.EVENT_EDITING_OCCURRENCE: [
-                CallbackQueryHandler(edit_occurrence, pattern="^" + State.OCCURRENCE.name),
+                CallbackQueryHandler(edit_occurrence, pattern='^' + State.OCCURRENCE.name),
             ],
             State.EVENT_EDITING_DATE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, edit_date),
@@ -69,7 +69,7 @@ def create_handlers() -> list:
             ],
             State.EVENT_EDITING_END_TIME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, edit_end_time),
-            ],          
+            ],
             State.EVENT_EDITING_VENUE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, edit_venue),
             ],
@@ -83,17 +83,17 @@ def create_handlers() -> list:
                 MessageHandler(filters.PHOTO, edit_image),
             ],
             State.EVENT_POSTING: [
-                CallbackQueryHandler(event_menu, pattern="^" + State.EVENT_MENU.name + "$"),
+                CallbackQueryHandler(event_menu, pattern='^' + State.EVENT_MENU.name + '$'),
             ],
             State.EVENT_DELETING_CONFIRMATION: [
-                CallbackQueryHandler(delete_event, pattern="^" + State.EVENT_DELETING_CONFIRMATION.name + "$"),
+                CallbackQueryHandler(delete_event, pattern='^' + State.EVENT_DELETING_CONFIRMATION.name + '$'),
             ],
         },
         fallbacks=[
             CommandHandler('cancel', event_menu),
-            CallbackQueryHandler(event_menu, pattern="^" + State.EVENT_MENU.name + "$"),
-            CallbackQueryHandler(datetime_menu, pattern="^" + State.DATETIME_MENU.name + "$"),
-            CallbackQueryHandler(exit, pattern="^" + State.EXIT.name + "$")
+            CallbackQueryHandler(event_menu, pattern='^' + State.EVENT_MENU.name + '$'),
+            CallbackQueryHandler(datetime_menu, pattern='^' + State.DATETIME_MENU.name + '$'),
+            CallbackQueryHandler(exit, pattern='^' + State.EXIT.name + '$')
         ],
         map_to_parent={
             State.CALENDAR_MENU: State.CALENDAR_MENU,
@@ -387,7 +387,7 @@ async def on_preprint_event(update: Update, context: CallbackContext) -> State:
         await update.effective_user.send_photo(**event.post())
     else:
         await update.callback_query.edit_message_text(**event.post())
-    text = f'Так буде виглядати пост з цією подією.\n\n[{event.tg_url}]'
+    text = f'Так виглядатиме пост з цією подією.\n\n[{event.tg_url}]'
     return await event_menu(update, context, prefix_text=text, new_message=True)
 
 
@@ -402,7 +402,7 @@ async def on_post_event(update: Update, context: CallbackContext) -> State:
         message = await context.bot.send_message(chat_id=settings.channel_username, **event.post())
     event.tg_url = message.link
     text = 'Захід було опубліковано.'
-    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))  
+    await update.callback_query.edit_message_text(text, **construct_back_button(State.EVENT_MENU))
     return State.EVENT_POSTING
 
 
