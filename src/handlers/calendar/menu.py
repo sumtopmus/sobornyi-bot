@@ -4,7 +4,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
 
-from model.calendar import Days, Occurrence
+from model.calendar import Day, Occurrence
 from utils import log
 
 
@@ -114,13 +114,14 @@ def events_menu(events: dict, add_search_button: bool = True) -> dict:
 async def event_menu(update: Update, context: CallbackContext, prefix_text: str = None, new_message: bool = False) -> State:
     log('event_menu')
     event = context.bot_data['current_event']
+    datetime_value = event.time and (event.date or len(event.days) > 0)
     buttons = [
         ('Емоджи', event.emoji, State.EVENT_EDITING_EMOJI),
         ('Назва', event.title, State.EVENT_EDITING_TITLE),
         ('Опис', event.description, State.EVENT_EDITING_DESCRIPTION),
         ('Категорія', event.category, State.EVENT_EDITING_CATEGORY),
         ('Формат', event.occurrence, State.EVENT_EDITING_OCCURRENCE),
-        ('Дата і час', event.date, State.EVENT_EDITING_DATETIME),
+        ('Дата і час', datetime_value, State.EVENT_EDITING_DATETIME),
         ('Локація', event.venue, State.EVENT_EDITING_VENUE),
         ('Мапа', event.location, State.EVENT_EDITING_LOCATION),
         ('Посилання', event.url, State.EVENT_EDITING_URL),
@@ -167,15 +168,15 @@ async def datetime_menu(update: Update, context: CallbackContext, prefix_text: s
         time_row.append(InlineKeyboardButton(text + (' ✅' if value else ' 🚫'), callback_data=state.name))
     if event.occurrence == Occurrence.REGULAR:
         buttons = [
-            ('Пн', 0, {Days.Monday}),
-            ('Вт', 1, {Days.Tuesday}),
-            ('Ср', 2, {Days.Wednesday}),
-            ('Чт', 3, {Days.Thursday}),
-            ('Пт', 4, {Days.Friday}),
-            ('Будні', 10, {Days.Monday, Days.Tuesday, Days.Wednesday, Days.Thursday, Days.Friday}),
-            ('Сб', 5, {Days.Saturday}),
-            ('Нд', 6, {Days.Sunday}),
-            ('Вихідні', 20, {Days.Saturday, Days.Sunday}),
+            ('Пн', 0, {Day.Monday}),
+            ('Вт', 1, {Day.Tuesday}),
+            ('Ср', 2, {Day.Wednesday}),
+            ('Чт', 3, {Day.Thursday}),
+            ('Пт', 4, {Day.Friday}),
+            ('Будні', 31, {Day.Monday, Day.Tuesday, Day.Wednesday, Day.Thursday, Day.Friday}),
+            ('Сб', 5, {Day.Saturday}),
+            ('Нд', 6, {Day.Sunday}),
+            ('Вихідні', 96, {Day.Saturday, Day.Sunday}),
         ]
         keyboard, row = [], []
         for text, value, days in buttons:

@@ -23,15 +23,14 @@ Occurrence = Enum('Occurrence', [
 ])
 
 
-Days = Enum('Days', [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-])
+class Day(Enum):
+    Monday = 0
+    Tuesday = 1
+    Wednesday = 2
+    Thursday = 3
+    Friday = 4
+    Saturday = 5
+    Sunday = 6
 
 
 @dataclass
@@ -44,7 +43,7 @@ class Event:
     time: Optional[datetime.time] = field(default=None)
     end_date: Optional[str] = field(default=None)
     end_time: Optional[str] = field(default=None)
-    days: Set[Days] = field(default_factory=set)
+    days: Set[Day] = field(default_factory=set)
     venue: Optional[str] = field(default=None)
     location: Optional[str] = field(default=None)
     url: Optional[str] = field(default=None)
@@ -61,6 +60,45 @@ class Event:
 
     def has_poster(self) -> bool:
         return bool(self.image)
+    
+    def get_weekdays(self) -> str:
+        result = ''
+        if len(self.days) == 1:
+            return weekday.name[next(iter(self.days)).value]
+        value = sum([2 ** day.value for day in self.days])
+        if value in weekday.name.keys():
+            return weekday.name[value]
+        
+        previous_sequence = False
+        current_sequence = False
+        long_sequence = False
+        log(self.days)
+        for day in range(7):
+            log(day)
+            if Day(day) in self.days:
+                log('in')
+                if current_sequence:
+                    log('current')
+                    long_sequence = True
+                else:
+                    log('not current')
+                    current_sequence = True
+                    if previous_sequence:
+                        log('previous')
+                        result += ','
+                    result += weekday.name[day]
+            else:
+                log('out')
+                if current_sequence:
+                    log('current')
+                    if long_sequence:
+                        log('long')
+                        result += f'-{weekday.name[day - 1]}'
+                    log('reset')
+                    previous_sequence = True
+                    current_sequence = False
+                    long_sequence = False
+        return result
 
     def get_title(self) -> Optional[str]:
         if not self.title:
@@ -86,10 +124,13 @@ class Event:
         if not self.title:
             return None
         result = ''
-        if self.date:
-            result = f'`🗓️{weekday.name[self.date.weekday()]}`'
-        if self.end_date:
-            result += f'`-{weekday.name[self.end_date.weekday()]}`'
+        if self.occurrence != Occurrence.REGULAR:
+            if self.date:
+                result = f'`🗓️{weekday.name[self.date.weekday()]}`'
+            if self.end_date:
+                result += f'`-{weekday.name[self.end_date.weekday()]}`'
+        else:
+            result = f'`🗓️{self.get_weekdays()}`'
         if self.time:
             result += f' `{clock.emoji(self.time)}'
             if self.time.minute == 0:
@@ -102,7 +143,7 @@ class Event:
         return result
 
     def get_future_repr(self) -> Optional[str]:
-        if not self.title:
+        if not self.title or self.occurrence == Occurrence.REGULAR:
             return None
         result = ''
         if self.date:
@@ -125,23 +166,31 @@ class Event:
         result += f'{self.title}*\n\n'
         if self.description:
             result += f'{self.description}\n\n'
-        if self.date:
-            result += f'`🗓️{self.date.strftime("%m/%d")}`'
-            if self.end_date and self.end_date > self.date:
-                if self.date.month != self.end_date.month:
-                    result += f'`-{self.end_date.strftime("%m/%d")}`'
-                else:
-                    result += f'`-{self.end_date.strftime("%d")}`'
-            if self.time:
-                result += f' `{clock.emoji(self.time)}{self.time.strftime("%H:%M")}`'
-            result += '\n'
-        if self.date and not (self.location or self.venue):
-            result += '\n'
+        date_or_days = False
+        if self.occurrence != Occurrence.REGULAR:            
+            if self.date:
+                date_or_days = True
+                result += f'`🗓️{self.date.strftime("%m/%d")}`'
+                if self.end_date and self.end_date > self.date:
+                    if self.date.month != self.end_date.month:
+                        result += f'`-{self.end_date.strftime("%m/%d")}`'
+                    else:
+                        result += f'`-{self.end_date.strftime("%d")}`'
+        else:
+            if len(self.days) > 0:
+                date_or_days = True
+                result += f'`🗓️{self.get_weekdays()}`'
+        if self.time:
+            if date_or_days:
+                result += ' '
+            result += f'`{clock.emoji(self.time)}{self.time.strftime("%H:%M")}`'
+        if (date_or_days or self.time) and not (self.location or self.venue):
+            result += '\n\n'
         if self.location:
             if self.venue:
                 result += f'📍[{self.venue}]({self.location})\n\n'
             else:
-                result += f'📍[Location]({self.location}\n\n'
+                result += f'📍[Location]({self.location})\n\n'
         else:
             if self.venue:
                 result += f'📍{self.venue}\n\n'

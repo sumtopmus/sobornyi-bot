@@ -81,7 +81,7 @@ async def on_agenda_preview(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.effective_user.send_photo(image, text)
     else:
         await update.effective_user.send_photo(settings.DEFAULT_AGENDA_IMAGE, text)
-    text = f'Так виглядатиме порядок тижневий. Якщо все вірно, натисніть "Опублікувати".'
+    text = f'Так виглядатиме порядок тижневий. Якщо все вірно, Ви можете опублікувати його.'
     keyboard = [
         [
             InlineKeyboardButton('📺 Опублікувати', callback_data=State.AGENDA_PUBLISHING.name),

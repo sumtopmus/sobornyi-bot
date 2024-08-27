@@ -4,7 +4,7 @@ from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, 
 
 from config import settings
 from .menu import State, calendar_menu, datetime_menu, event_menu, construct_back_button
-from model import Category, Days, Event, Occurrence
+from model import Category, Day, Event, Occurrence
 from utils import log
 
 
@@ -306,12 +306,20 @@ async def edit_days(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State
     event = context.bot_data['current_event']
     choice = int(update.callback_query.data.split(':')[-1])
     log(choice)
-    if choice == 10:
-        event.days ^= {Days.Monday, Days.Tuesday, Days.Wednesday, Days.Thursday, Days.Friday}
-    elif choice == 20:
-        event.days ^= {Days.Saturday, Days.Sunday}
+    if choice == 31:
+        workdays = {Day.Monday, Day.Tuesday, Day.Wednesday, Day.Thursday, Day.Friday}
+        if event.days.issuperset(workdays):
+            event.days -= workdays
+        else:
+            event.days |= workdays
+    elif choice == 96:
+        weekend = {Day.Saturday, Day.Sunday}
+        if event.days.issuperset(weekend):
+            event.days -= weekend
+        else:
+            event.days |= weekend
     else:
-        event.days ^= {Days(choice + 1)}
+        event.days ^= {Day(choice)}
     return await datetime_menu(update, context)
 
 
@@ -388,7 +396,7 @@ async def on_preview(update: Update, context: CallbackContext) -> State:
         await update.effective_user.send_photo(**event.post())
     else:
         await update.callback_query.edit_message_text(**event.post())
-    text = f'Так виглядатиме пост з цією подією. Якщо все вірно, натисніть "Опублікувати".'
+    text = f'Так виглядатиме пост з цією подією. Якщо все вірно, Ви можете опублікувати його.'
     keyboard = [
         [
             InlineKeyboardButton('📺 Опублікувати', callback_data=State.EVENT_PUBLISHING.name),
