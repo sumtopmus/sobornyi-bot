@@ -26,6 +26,7 @@ chat_link_id = 'PLACEHOLDER'
 chat_invite_link = 'PLACEHOLDER'
 channel_username = '@PLACEHOLDER'
 admins = ['@PLACEHOLDER']
+moderators = ['@PLACEHOLDER']
 
 token = 'SECRET_PLACEHOLDER'
 
@@ -46,5 +47,6 @@ chat_link_id = 'PLACEHOLDER'
 chat_invite_link = 'PLACEHOLDER'
 channel_username = '@PLACEHOLDER'
 admins = ['@PLACEHOLDER']
+moderators = ['@PLACEHOLDER']
 
 token = 'SECRET_PLACEHOLDER'

@@ -12,7 +12,7 @@ def create_handlers() -> list:
     """Creates handlers that process all calendar requests."""
     return [ConversationHandler(
         entry_points= [
-            CommandHandler('calendar', calendar_menu)
+            CommandHandler('calendar', calendar_menu, filters.User(username=settings.ADMINS + settings.MODERATORS))
         ],
         states={
             State.CALENDAR_MENU: [
