@@ -72,29 +72,19 @@ class Event:
         previous_sequence = False
         current_sequence = False
         long_sequence = False
-        log(self.days)
         for day in range(7):
-            log(day)
             if Day(day) in self.days:
-                log('in')
                 if current_sequence:
-                    log('current')
                     long_sequence = True
                 else:
-                    log('not current')
                     current_sequence = True
                     if previous_sequence:
-                        log('previous')
                         result += ','
                     result += weekday.name[day]
             else:
-                log('out')
                 if current_sequence:
-                    log('current')
                     if long_sequence:
-                        log('long')
                         result += f'-{weekday.name[day - 1]}'
-                    log('reset')
                     previous_sequence = True
                     current_sequence = False
                     long_sequence = False
