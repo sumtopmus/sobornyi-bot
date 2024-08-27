@@ -59,7 +59,7 @@ async def on_edit_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
     """When a user wants to edit the image for the agenda."""
     log('on_edit_image')
     await update.callback_query.answer()
-    text = 'Будь ласка, завантажте фото.'
+    text = 'Будь ласка, завантажте фото (картинкою).'
     await update.callback_query.edit_message_text(text)
     return State.AGENDA_EDITING_IMAGE
 
@@ -84,8 +84,8 @@ async def on_agenda_preview(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     text = f'Так виглядатиме порядок тижневий. Якщо все вірно, Ви можете опублікувати його.'
     keyboard = [
         [
-            InlineKeyboardButton('📺 Опублікувати', callback_data=State.AGENDA_PUBLISHING.name),
-            InlineKeyboardButton('« Назад', callback_data=State.CALENDAR_MENU.name),
+            InlineKeyboardButton('📺 Publish', callback_data=State.AGENDA_PUBLISHING.name),
+            InlineKeyboardButton('🔙', callback_data=State.CALENDAR_MENU.name),
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)

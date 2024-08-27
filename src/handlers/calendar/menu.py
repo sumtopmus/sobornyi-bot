@@ -69,16 +69,16 @@ async def calendar_menu(update: Update, context: CallbackContext, prefix_text: s
     image = context.bot_data['agenda']['image']
     keyboard = [
         [
-            InlineKeyboardButton('➕ Додати подію', callback_data=State.EVENT_ADDING.name),
-            InlineKeyboardButton('📝 Редагувати подію', callback_data=State.EVENT_EDITING.name),
+            InlineKeyboardButton('➕ Add', callback_data=State.EVENT_ADDING.name),
+            InlineKeyboardButton('📝 Edit', callback_data=State.EVENT_EDITING.name),
         ],
         [
-            InlineKeyboardButton('🎨 Картинка ' + ('✅' if image else '🚫'), callback_data=State.AGENDA_EDITING_IMAGE.name),
-            InlineKeyboardButton('🖼️ Превʼю', callback_data=State.AGENDA_PREVIEW.name),
+            InlineKeyboardButton('🖼️ Poster ' + ('✅' if image else '🚫'), callback_data=State.AGENDA_EDITING_IMAGE.name),
+            InlineKeyboardButton('👓 Preview', callback_data=State.AGENDA_PREVIEW.name),
         ],        
         [
-            InlineKeyboardButton('🔄 Оновити', callback_data=State.CALENDAR_CLEANUP.name),
-            InlineKeyboardButton('« Вийти', callback_data=State.EXIT.name),
+            InlineKeyboardButton('🔄 Update', callback_data=State.CALENDAR_CLEANUP.name),
+            InlineKeyboardButton('« Exit', callback_data=State.EXIT.name),
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -91,7 +91,7 @@ async def calendar_menu(update: Update, context: CallbackContext, prefix_text: s
 def events_menu(events: dict, add_search_button: bool = True) -> dict:
     sorted_events = sorted(events, key=lambda item: (item[1].date is None, item[1].date))
     ids_and_titles = [(id, event.get_title()) for id, event in sorted_events]
-    back_button = InlineKeyboardButton('« Назад', callback_data=State.CALENDAR_MENU.name)
+    back_button = InlineKeyboardButton('🔙', callback_data=State.CALENDAR_MENU.name)
     if len(ids_and_titles) == 0:
         text = 'Жодних подій не знайдено.'
         reply_markup = InlineKeyboardMarkup([[back_button]])
@@ -104,7 +104,7 @@ def events_menu(events: dict, add_search_button: bool = True) -> dict:
             break
     last_row = []
     if add_search_button:
-        last_row.append(InlineKeyboardButton('🔍 Пошук', callback_data=State.EVENT_FINDING.name))
+        last_row.append(InlineKeyboardButton('🔍 Search', callback_data=State.EVENT_FINDING.name))
     last_row.append(back_button)
     keyboard.append(last_row)
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -135,12 +135,12 @@ async def event_menu(update: Update, context: CallbackContext, prefix_text: str 
             row = []
     keyboard.extend([
         [
-            InlineKeyboardButton('🖼️ Превʼю', callback_data=State.EVENT_PREVIEW.name),
-            InlineKeyboardButton('📺 Опублікувати', callback_data=State.EVENT_PUBLISHING.name),
+            InlineKeyboardButton('👓 Preview', callback_data=State.EVENT_PREVIEW.name),
+            InlineKeyboardButton('📺 Publish', callback_data=State.EVENT_PUBLISHING.name),
         ],
         [
-            InlineKeyboardButton('❌ Видалити', callback_data=State.EVENT_DELETING.name),
-            InlineKeyboardButton('« Календар', callback_data=State.CALENDAR_MENU.name),
+            InlineKeyboardButton('❌ Delete', callback_data=State.EVENT_DELETING.name),
+            InlineKeyboardButton('🔙', callback_data=State.CALENDAR_MENU.name),
         ]
     ])
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -194,7 +194,7 @@ async def datetime_menu(update: Update, context: CallbackContext, prefix_text: s
             date_row.append(InlineKeyboardButton(text + (' ✅' if value else ' 🚫'), callback_data=state.name))
         keyboard = [date_row]
     keyboard.append(time_row)
-    keyboard.append([InlineKeyboardButton('« Назад', callback_data=State.EVENT_MENU.name)])
+    keyboard.append([InlineKeyboardButton('🔙', callback_data=State.EVENT_MENU.name)])
     reply_markup = InlineKeyboardMarkup(keyboard)
     text = event.get_full_repr()
     if prefix_text:
@@ -209,6 +209,6 @@ async def datetime_menu(update: Update, context: CallbackContext, prefix_text: s
 
 
 def construct_back_button(state: State = State.BACK) -> dict:
-    keyboard = [[InlineKeyboardButton('« Назад', callback_data=state.name)]]
+    keyboard = [[InlineKeyboardButton('🔙', callback_data=state.name)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return {'reply_markup': reply_markup}

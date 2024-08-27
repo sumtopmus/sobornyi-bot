@@ -399,8 +399,8 @@ async def on_preview(update: Update, context: CallbackContext) -> State:
     text = f'Так виглядатиме пост з цією подією. Якщо все вірно, Ви можете опублікувати його.'
     keyboard = [
         [
-            InlineKeyboardButton('📺 Опублікувати', callback_data=State.EVENT_PUBLISHING.name),
-            InlineKeyboardButton('« Назад', callback_data=State.EVENT_MENU.name),
+            InlineKeyboardButton('📺 Publish', callback_data=State.EVENT_PUBLISHING.name),
+            InlineKeyboardButton('🔙', callback_data=State.EVENT_MENU.name),
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -430,8 +430,8 @@ async def on_delete_event(update: Update, context: CallbackContext) -> State:
     text = 'Ви впевнені, що хочете видалити цей захід?'
     keyboard = [
         [
-            InlineKeyboardButton('Так', callback_data=State.EVENT_DELETING_CONFIRMATION.name),
-            InlineKeyboardButton('Ні', callback_data=State.EVENT_MENU.name),
+            InlineKeyboardButton('🗑️ Так', callback_data=State.EVENT_DELETING_CONFIRMATION.name),
+            InlineKeyboardButton('🚫 Ні', callback_data=State.EVENT_MENU.name),
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -483,5 +483,5 @@ def construct_picker_keyboard(value, prefix: str, buttons: list, num_cols: int =
         if len(row) == num_cols:
             keyboard.append(row)
             row = []
-    keyboard.append([InlineKeyboardButton('« Назад', callback_data=State.EVENT_MENU.name)])
+    keyboard.append([InlineKeyboardButton('🔙', callback_data=State.EVENT_MENU.name)])
     return InlineKeyboardMarkup(keyboard)
