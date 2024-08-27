@@ -1,5 +1,4 @@
-from datetime import date, datetime
-from hmac import new
+from datetime import datetime
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, ContextTypes, ConversationHandler, filters, MessageHandler
 
@@ -28,8 +27,8 @@ def create_handlers() -> list:
                 CallbackQueryHandler(on_edit_location, pattern='^' + State.EVENT_EDITING_LOCATION.name + '$'),
                 CallbackQueryHandler(on_edit_url, pattern='^' + State.EVENT_EDITING_URL.name + '$'),
                 CallbackQueryHandler(on_edit_image, pattern='^' + State.EVENT_EDITING_IMAGE.name + '$'),
-                CallbackQueryHandler(on_preview_event, pattern='^' + State.EVENT_PREVIEW.name + '$'),
-                CallbackQueryHandler(on_post_event, pattern='^' + State.EVENT_POSTING.name + '$'),
+                CallbackQueryHandler(on_preview, pattern='^' + State.EVENT_PREVIEW.name + '$'),
+                CallbackQueryHandler(on_publish, pattern='^' + State.EVENT_PUBLISHING.name + '$'),
                 CallbackQueryHandler(on_delete_event, pattern='^' + State.EVENT_DELETING.name + '$'),
                 CallbackQueryHandler(back, pattern='^' + State.CALENDAR_MENU.name + '$'),
             ],
@@ -83,9 +82,9 @@ def create_handlers() -> list:
                 MessageHandler(filters.PHOTO, edit_image),
             ],
             State.EVENT_PREVIEW: [
-                CallbackQueryHandler(on_post_event, pattern='^' + State.EVENT_POSTING.name + '$'),
+                CallbackQueryHandler(on_publish, pattern='^' + State.EVENT_PUBLISHING.name + '$'),
             ],
-            State.EVENT_POSTING: [],
+            State.EVENT_PUBLISHING: [],
             State.EVENT_DELETING_CONFIRMATION: [
                 CallbackQueryHandler(delete_event, pattern='^' + State.EVENT_DELETING_CONFIRMATION.name + '$'),
             ],
@@ -380,7 +379,7 @@ async def edit_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Stat
     return await event_menu(update, context)
 
 
-async def on_preview_event(update: Update, context: CallbackContext) -> State:
+async def on_preview(update: Update, context: CallbackContext) -> State:
     """When a user wants to see the event before publishing it."""
     log('on_preview_event')
     await update.callback_query.answer()
@@ -392,7 +391,7 @@ async def on_preview_event(update: Update, context: CallbackContext) -> State:
     text = f'Так виглядатиме пост з цією подією. Якщо все вірно, натисніть "Опублікувати".'
     keyboard = [
         [
-            InlineKeyboardButton('Опублікувати 📺', callback_data=State.EVENT_POSTING.name),
+            InlineKeyboardButton('📺 Опублікувати', callback_data=State.EVENT_PUBLISHING.name),
             InlineKeyboardButton('« Назад', callback_data=State.EVENT_MENU.name),
         ]
     ]
@@ -401,7 +400,7 @@ async def on_preview_event(update: Update, context: CallbackContext) -> State:
     return State.EVENT_PREVIEW
 
 
-async def on_post_event(update: Update, context: CallbackContext) -> State:
+async def on_publish(update: Update, context: CallbackContext) -> State:
     """When a user wants to post the event to the channel."""
     log('on_post_event')
     await update.callback_query.answer()
@@ -413,7 +412,7 @@ async def on_post_event(update: Update, context: CallbackContext) -> State:
     event.tg_url = message.link
     text = 'Захід було опубліковано.'
     await update.callback_query.edit_message_text(text, **construct_back_button(State.CALENDAR_MENU))
-    return State.EVENT_POSTING
+    return State.EVENT_PUBLISHING
 
 
 async def on_delete_event(update: Update, context: CallbackContext) -> State:

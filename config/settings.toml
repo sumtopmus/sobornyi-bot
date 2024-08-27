@@ -8,6 +8,8 @@ timezone = 'US/Eastern'
 war_mode = true
 war_start_date = '2022-02-24'
 morning_time = '09:00:00'
+agenda_mode = true
+agenda_time = '07:00:00'
 # Internal parameters
 date_format = '%Y-%m-%d'
 datetime_format = '%Y-%m-%d %H:%M:%S'

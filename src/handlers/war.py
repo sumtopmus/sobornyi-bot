@@ -1,10 +1,8 @@
-# coding=UTF-8
-
-from config import settings
 from datetime import datetime, time
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes, filters
 
+from config import settings
 import utils
 
 

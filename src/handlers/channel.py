@@ -1,10 +1,8 @@
-# coding=UTF-8
-
-from config import settings
 import logging
 from telegram import Update
 from telegram.ext import MessageHandler, ContextTypes, filters
 
+from config import settings
 import utils
 
 

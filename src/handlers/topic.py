@@ -1,9 +1,9 @@
-from config import settings
 import logging
 from telegram import Update
 import telegram.error
 from telegram.ext import CommandHandler, ContextTypes, filters
 
+from config import settings
 import utils
 
 

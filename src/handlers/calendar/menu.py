@@ -1,10 +1,7 @@
-from hmac import new
-from operator import le
-import time
 from dynaconf import settings
 from enum import Enum
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import CallbackContext, ContextTypes
+from telegram.ext import CallbackContext
 
 
 from model.calendar import Days, Occurrence
@@ -24,14 +21,16 @@ State = Enum('State', [
     'OCCURRENCE',
     'WEEKDAY',
     # Process states:
-    'CALENDAR_DIGEST',
     'CALENDAR_CLEANUP',
+    'AGENDA_PREVIEW',
+    'AGENDA_EDITING_IMAGE',
+    'AGENDA_PUBLISHING',
     'EVENT_ADDING',
     'EVENT_EDITING',
     'EVENT_PICKING',
     'EVENT_NOT_FOUND',
     'EVENT_PREVIEW',
-    'EVENT_POSTING',
+    'EVENT_PUBLISHING',
     'EVENT_DELETING',
     'EVENT_DELETING_CONFIRMATION',
     'EVENT_FINDING',
@@ -67,16 +66,18 @@ async def calendar_menu(update: Update, context: CallbackContext, prefix_text: s
     text = 'Ви знаходитесь в меню редагування календаря. Що Ви хочете зробити?'
     if prefix_text:
         text = prefix_text + '\n\n' + text
+    image = context.bot_data['agenda']['image']
     keyboard = [
         [
             InlineKeyboardButton('➕ Додати подію', callback_data=State.EVENT_ADDING.name),
             InlineKeyboardButton('📝 Редагувати подію', callback_data=State.EVENT_EDITING.name),
         ],
         [
-            InlineKeyboardButton('🖼️ Превʼю', callback_data=State.CALENDAR_DIGEST.name),
-            InlineKeyboardButton('🔄 Оновити', callback_data=State.CALENDAR_CLEANUP.name),
-        ],
+            InlineKeyboardButton('🎨 Картинка ' + ('✅' if image else '🚫'), callback_data=State.AGENDA_EDITING_IMAGE.name),
+            InlineKeyboardButton('🖼️ Превʼю', callback_data=State.AGENDA_PREVIEW.name),
+        ],        
         [
+            InlineKeyboardButton('🔄 Оновити', callback_data=State.CALENDAR_CLEANUP.name),
             InlineKeyboardButton('« Вийти', callback_data=State.EXIT.name),
         ],
     ]
@@ -134,7 +135,7 @@ async def event_menu(update: Update, context: CallbackContext, prefix_text: str 
     keyboard.extend([
         [
             InlineKeyboardButton('🖼️ Превʼю', callback_data=State.EVENT_PREVIEW.name),
-            InlineKeyboardButton('📺 Опублікувати', callback_data=State.EVENT_POSTING.name),
+            InlineKeyboardButton('📺 Опублікувати', callback_data=State.EVENT_PUBLISHING.name),
         ],
         [
             InlineKeyboardButton('❌ Видалити', callback_data=State.EVENT_DELETING.name),

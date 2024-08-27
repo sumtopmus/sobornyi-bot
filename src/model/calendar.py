@@ -201,8 +201,8 @@ class Calendar:
 
     def get_nearest_events(self) -> List[Event]:
         result = []
-        this_week = self.get_this_week()
-        next_week = self.get_next_week()
+        this_week = Calendar.get_this_week()
+        next_week = Calendar.get_next_week()
         for _, event in self.__events.items():
             if not event.date or this_week <= event.date < next_week or (event.end_date and this_week <= event.end_date < next_week):
                 result.append(event)
@@ -210,44 +210,44 @@ class Calendar:
 
     def get_future_events(self) -> List[Event]:
         result = []
-        next_week = self.get_next_week()
+        next_week = Calendar.get_next_week()
         for _, event in self.__events.items():
             if event.date and next_week <= event.date:
                 result.append(event)
         return result
 
-    def get_simple_digest(self, events: List[Event], category: Category = Category.GENERAL) -> str:
+    def get_simple_agenda(self, events: List[Event], category: Category = Category.GENERAL) -> str:
         return '\n'.join([event.get_title_repr() for event in events if event.category == category])
 
-    def get_nearest_digest(self, events: List[Event], category: Category = Category.GENERAL) -> str:
+    def get_nearest_agenda(self, events: List[Event], category: Category = Category.GENERAL) -> str:
         return '\n'.join([event.get_current_repr() for event in events if event.category == category])
 
-    def get_future_digest(self, events: List[Event], category: Category = Category.GENERAL) -> str:
+    def get_future_agenda(self, events: List[Event], category: Category = Category.GENERAL) -> str:
         return '\n'.join([event.get_future_repr() for event in events if event.category == category])
 
-    def get_digest(self) -> str:
+    def get_agenda(self) -> str:
         result = f"*Порядок тижневий*\n\n"
         nearest_events = self.get_nearest_events()
-        events_repr = self.get_nearest_digest(nearest_events)
+        events_repr = self.get_nearest_agenda(nearest_events)
         if events_repr:
             result += f"*🎟 Заходи:*\n{events_repr}\n\n"
-        events_repr = self.get_nearest_digest(nearest_events, Category.RALLY)
+        events_repr = self.get_nearest_agenda(nearest_events, Category.RALLY)
         if events_repr:
             result += f"*📢 Ралі:*\n{events_repr}\n\n"
-        events_repr = self.get_future_digest(self.get_future_events())
+        events_repr = self.get_future_agenda(self.get_future_events())
         if events_repr:
             result += f"*📰 Анонси:*\n{events_repr}\n\n"
-        events_repr = self.get_simple_digest(nearest_events, Category.FUNDRAISER)
+        events_repr = self.get_simple_agenda(nearest_events, Category.FUNDRAISER)
         if events_repr:
             result += f"*💰 Збори коштів:*\n{events_repr}\n\n"
-        events_repr = self.get_simple_digest(nearest_events, Category.VOLUNTEER)
+        events_repr = self.get_simple_agenda(nearest_events, Category.VOLUNTEER)
         if events_repr:
             result += f"*🤲 Волонтерство:*\n{events_repr}\n\n"
         result += '_#agenda_'
         return result
 
     def remove_past_events(self) -> bool:
-        this_week = self.get_this_week()
+        this_week = Calendar.get_this_week()
         events_to_remove = [
             event_id for event_id, event in self.__events.items()
             if event.date and event.date < this_week and (not event.end_date or event.end_date < this_week)
@@ -256,13 +256,13 @@ class Calendar:
             del self.__events[event_id]
         return len(events_to_remove) > 0
 
-    def get_this_week(self) -> date:
+    def get_this_week() -> date:
         today = date.today()
         this_monday = today - timedelta(days=today.weekday())
         return this_monday
 
-    def get_next_week(self) -> date:
-        next_monday = self.get_this_week() + timedelta(days=7)
+    def get_next_week() -> date:
+        next_monday = Calendar.get_this_week() + timedelta(days=7)
         return next_monday
 
     def __getitem__(self, event_id: int) -> Optional[Event]:

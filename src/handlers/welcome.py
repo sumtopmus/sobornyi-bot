@@ -1,6 +1,3 @@
-# coding=UTF-8
-
-from config import settings
 from datetime import timedelta
 from enum import Enum
 import logging
@@ -8,6 +5,7 @@ from telegram import  InlineKeyboardButton, InlineKeyboardMarkup, Update
 import telegram.error
 from telegram.ext import ContextTypes, ConversationHandler, filters, MessageHandler
 
+from config import settings
 from handlers import topic
 import utils
 

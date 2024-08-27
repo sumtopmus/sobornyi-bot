@@ -1,9 +1,7 @@
-# coding=UTF-8
-
-from config import settings
 from telegram import Update
 from telegram.ext import ChatJoinRequestHandler, ContextTypes
 
+from config import settings
 import utils
 
 
