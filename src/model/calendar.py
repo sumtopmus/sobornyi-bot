@@ -116,19 +116,30 @@ class Event:
         result = ''
         if self.occurrence != Occurrence.REGULAR:
             if self.date:
-                result = f'`🗓️{weekday.name[self.date.weekday()]}`'
-            if self.end_date:
-                result += f'`-{weekday.name[self.end_date.weekday()]}`'
+                if self.date < Calendar.get_this_week():
+                    result = f'`🗓️до`'
+                else:
+                    result = f'`🗓️{weekday.name[self.date.weekday()]}`'
+            if self.end_date and self.end_date > self.date:
+                if self.date < Calendar.get_this_week():
+                    if self.end_date < Calendar.get_next_week():
+                        result += f' `{weekday.name[6]}`'
+                    else:
+                        result += f' `{self.end_date.strftime("%m/%d")}`'
+                elif self.end_date >= Calendar.get_next_week():
+                    result += f' до `{self.end_date.strftime("%m/%d")}`'
+                else:
+                    result += f'`-{weekday.name[self.end_date.weekday()]}`'
         else:
             result = f'`🗓️{self.get_weekdays()}`'
         if self.time:
             result += f' `{clock.emoji(self.time)}'
             if self.time.minute == 0:
-                result += f'{self.time.strftime("%H")}'
+                result += f'{self.time.strftime("%H")}`'
             else:
-                result += f'{self.time.strftime("%H:%M")}'
+                result += f'{self.time.strftime("%H:%M")}`'
         if self.date or self.time:
-            result += ':`'
+            result += '`:`'
         result += f'{self.get_title_repr()}'
         return result
 
@@ -138,7 +149,7 @@ class Event:
         result = ''
         if self.date:
             result = f'`🗓️{self.date.strftime("%m/%d")}`'
-            if self.end_date:
+            if self.end_date and self.end_date > self.date:
                 if self.date.month != self.end_date.month:
                     result += f'`-{self.end_date.strftime("%m/%d")}`'
                 else:
@@ -243,7 +254,7 @@ class Calendar:
         this_week = Calendar.get_this_week()
         next_week = Calendar.get_next_week()
         for _, event in self.__events.items():
-            if not event.date or this_week <= event.date < next_week or (event.end_date and this_week <= event.end_date < next_week):
+            if not event.date or this_week <= event.date < next_week or (event.end_date and event.date < this_week <= event.end_date):
                 result.append(event)
         return result
 
