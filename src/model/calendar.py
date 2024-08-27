@@ -5,7 +5,6 @@ import re
 from typing import Dict, List, Optional, Set
 
 from format import clock, link, weekday
-from utils import log
 
 
 Category = Enum('Category', [

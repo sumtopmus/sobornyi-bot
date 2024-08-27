@@ -107,7 +107,7 @@ async def on_pick_event(update: Update, context: CallbackContext) -> State:
     """When a user goes to the event editing menu."""
     log('on_pick_event')
     id = int(update.callback_query.data.split(':')[-1])
-    context.bot_data['current_event'] = context.bot_data['calendar'][id]
+    context.user_data['current_event'] = context.bot_data['calendar'][id]
     return await event_menu(update, context)
 
 
@@ -124,8 +124,8 @@ async def add_event(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State
     """When a user enters the title of a new event."""
     log('add_event')
     title = update.message.text
-    context.bot_data['current_event'] = Event(title)
-    context.bot_data['calendar'].add_event(context.bot_data['current_event'])
+    context.user_data['current_event'] = Event(title)
+    context.bot_data['calendar'].add_event(context.user_data['current_event'])
     return await event_menu(update, context)
 
 
@@ -141,7 +141,7 @@ async def on_edit_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
 async def edit_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the title."""
     log('edit_title')
-    context.bot_data['current_event'].title = update.message.text
+    context.user_data['current_event'].title = update.message.text
     return await event_menu(update, context)
 
 
@@ -157,7 +157,7 @@ async def on_edit_emoji(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
 async def edit_emoji(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the emoji."""
     log('edit_emoji')
-    context.bot_data['current_event'].emoji = update.message.text
+    context.user_data['current_event'].emoji = update.message.text
     return await event_menu(update, context)
 
 
@@ -173,7 +173,7 @@ async def on_edit_description(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def edit_description(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the description."""
     log('edit_description')
-    context.bot_data['current_event'].description = update.message.text
+    context.user_data['current_event'].description = update.message.text
     return await event_menu(update, context)
 
 
@@ -182,7 +182,7 @@ async def on_edit_category(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     log('on_edit_category')
     await update.callback_query.answer()
     text = 'Оберіть категорію, під яку підпадає цей захід:'
-    category = context.bot_data['current_event'].category
+    category = context.user_data['current_event'].category
     prefix = State.CATEGORY.name + ':'
     buttons = [
         ('Ралі', Category.RALLY),
@@ -199,7 +199,7 @@ async def edit_category(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
     """When a user enters the category."""
     log('edit_category')
     category = Category[update.callback_query.data.split(':')[-1]]
-    context.bot_data['current_event'].category = category
+    context.user_data['current_event'].category = category
     return await on_edit_category(update, context)
 
 
@@ -208,7 +208,7 @@ async def on_edit_occurrence(update: Update, context: ContextTypes.DEFAULT_TYPE)
     log('on_edit_occurrence')
     await update.callback_query.answer()
     text = 'Як довго захід триватиме?'
-    occurrence = context.bot_data['current_event'].occurrence
+    occurrence = context.user_data['current_event'].occurrence
     prefix = State.OCCURRENCE.name + ':'
     buttons = [
         ('В межах одного дня', Occurrence.WITHIN_DAY),
@@ -224,7 +224,7 @@ async def edit_occurrence(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     """When a user enters the occurrence."""
     log('edit_occurrence')
     occurrence = Occurrence[update.callback_query.data.split(':')[-1]]
-    context.bot_data['current_event'].occurrence = occurrence
+    context.user_data['current_event'].occurrence = occurrence
     return await event_menu(update, context)
 
 
@@ -247,7 +247,7 @@ async def on_edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
 async def edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the date."""
     log('edit_date')
-    context.bot_data['current_event'].date = datetime.strptime(update.message.text, '%m/%d/%y').date()
+    context.user_data['current_event'].date = datetime.strptime(update.message.text, '%m/%d/%y').date()
     return await datetime_menu(update, context)
 
 
@@ -263,7 +263,7 @@ async def on_edit_end_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 async def edit_end_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the end date."""
     log('edit_end_date')
-    context.bot_data['current_event'].end_date = datetime.strptime(update.message.text, '%m/%d/%y').date()
+    context.user_data['current_event'].end_date = datetime.strptime(update.message.text, '%m/%d/%y').date()
     return await datetime_menu(update, context)
 
 
@@ -279,7 +279,7 @@ async def on_edit_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
 async def edit_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the time."""
     log('edit_time')
-    context.bot_data['current_event'].time = datetime.strptime(update.message.text, '%H:%M').time()
+    context.user_data['current_event'].time = datetime.strptime(update.message.text, '%H:%M').time()
     return await datetime_menu(update, context)
 
 
@@ -295,7 +295,7 @@ async def on_edit_end_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 async def edit_end_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the end time."""
     log('edit_end_time')
-    context.bot_data['current_event'].end_time = datetime.strptime(update.message.text, '%H:%M').time()
+    context.user_data['current_event'].end_time = datetime.strptime(update.message.text, '%H:%M').time()
     return await datetime_menu(update, context)
 
 
@@ -303,7 +303,7 @@ async def edit_days(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State
     """When a user picks days for a regular event."""
     log('edit_days')
     await update.callback_query.answer()
-    event = context.bot_data['current_event']
+    event = context.user_data['current_event']
     choice = int(update.callback_query.data.split(':')[-1])
     log(choice)
     if choice == 31:
@@ -335,7 +335,7 @@ async def on_edit_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Sta
 async def edit_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the url."""
     log('edit_url')
-    context.bot_data['current_event'].url = update.message.text
+    context.user_data['current_event'].url = update.message.text
     return await event_menu(update, context)
 
 
@@ -351,7 +351,7 @@ async def on_edit_venue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
 async def edit_venue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the venue."""
     log('edit_venue')
-    context.bot_data['current_event'].venue = update.message.text
+    context.user_data['current_event'].venue = update.message.text
     return await event_menu(update, context)
 
 
@@ -367,7 +367,7 @@ async def on_edit_location(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 async def edit_location(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the location."""
     log('edit_location')
-    context.bot_data['current_event'].location = update.message.text
+    context.user_data['current_event'].location = update.message.text
     return await event_menu(update, context)
 
 
@@ -383,7 +383,7 @@ async def on_edit_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> S
 async def edit_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the image."""
     log('edit_image')
-    context.bot_data['current_event'].image = update.message.photo[0].file_id
+    context.user_data['current_event'].image = update.message.photo[0].file_id
     return await event_menu(update, context)
 
 
@@ -391,7 +391,7 @@ async def on_preview(update: Update, context: CallbackContext) -> State:
     """When a user wants to see the event before publishing it."""
     log('on_preview_event')
     await update.callback_query.answer()
-    event = context.bot_data['current_event']
+    event = context.user_data['current_event']
     if event.image:
         await update.effective_user.send_photo(**event.post())
     else:
@@ -412,7 +412,7 @@ async def on_publish(update: Update, context: CallbackContext) -> State:
     """When a user wants to post the event to the channel."""
     log('on_post_event')
     await update.callback_query.answer()
-    event = context.bot_data['current_event']
+    event = context.user_data['current_event']
     if event.image:
         message = await context.bot.send_photo(chat_id=settings.channel_username, **event.post())
     else:
@@ -443,7 +443,7 @@ async def delete_event(update: Update, context: CallbackContext) -> State:
     """When a user confirms deleting the event."""
     log('delete_event')
     await update.callback_query.answer()
-    context.bot_data['calendar'].delete_event(context.bot_data['current_event'])
+    context.bot_data['calendar'].delete_event(context.user_data['current_event'])
     text = 'Захід було видалено з календаря.'
     return await calendar_menu(update, context, text)
 
@@ -452,7 +452,7 @@ async def back(update: Update, context: CallbackContext) -> State:
     """When a user presses the back button."""
     log('back')
     await update.callback_query.answer()
-    context.bot_data['current_event'] = None
+    context.user_data['current_event'] = None
     return await calendar_menu(update, context)
 
 
