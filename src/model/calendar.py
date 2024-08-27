@@ -176,24 +176,24 @@ class Event:
                         result += f'`-{self.end_date.strftime("%m/%d")}`'
                     else:
                         result += f'`-{self.end_date.strftime("%d")}`'
-        else:
-            if len(self.days) > 0:
+        elif len(self.days) > 0:
                 date_or_days = True
                 result += f'`🗓️{self.get_weekdays()}`'
         if self.time:
             if date_or_days:
                 result += ' '
             result += f'`{clock.emoji(self.time)}{self.time.strftime("%H:%M")}`'
-        if (date_or_days or self.time) and not (self.location or self.venue):
-            result += '\n\n'
+        if date_or_days or self.time:
+            result += '\n'
         if self.location:
             if self.venue:
                 result += f'📍[{self.venue}]({self.location})\n\n'
             else:
                 result += f'📍[Location]({self.location})\n\n'
-        else:
-            if self.venue:
+        elif self.venue:
                 result += f'📍{self.venue}\n\n'
+        else:
+            result += '\n'
         if self.url:
             result += f'🔗 [{link.provider(self.url)}]({self.url})\n\n'
         result += '_#events_'
