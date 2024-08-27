@@ -1,4 +1,5 @@
 from enum import Enum
+import logging
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes, ConversationHandler, filters, MessageHandler, TypeHandler
 
@@ -37,7 +38,7 @@ async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     log('upload')
     photos = update.message.photo
     for photo in photos:
-        log(photo)
+        log(photo, logging.INFO)
     message = 'Фото було додано в базу даних.'
     await update.effective_user.send_message(message)
     return ConversationHandler.END
