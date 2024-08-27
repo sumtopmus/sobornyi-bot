@@ -142,13 +142,18 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
 async def welcome_timeout(context: ContextTypes.DEFAULT_TYPE) -> int:
     """When #about was not written in time."""
     utils.log('welcome_timeout')
-    chat_member = await context.bot.get_chat_member(settings.CHAT_ID, context.job.data)
-    message = f'На жаль, {utils.mention(chat_member.user)} покидає Соборний.'
-    utils.log(f'kicked: {chat_member.user.id} ({chat_member.user.full_name})', logging.INFO)
-    bot_message = await context.bot.sendMessage(
-        chat_id=settings.CHAT_ID, message_thread_id=settings.TOPICS['welcome'], text=message)
-    utils.add_message_cleanup_job(context.application, bot_message.id)
-    await context.bot.ban_chat_member(settings.CHAT_ID, context.job.data, revoke_messages=False)
-    await context.bot.unban_chat_member(settings.CHAT_ID, context.job.data)
+    chat_member = None
+    try:
+        chat_member = await context.bot.get_chat_member(settings.CHAT_ID, context.job.data)
+    except telegram.error.BadRequest as e:
+        utils.log(f'{e.__class__.__name__}: {e.message} ({context.job.data})', logging.ERROR)
+    if chat_member:
+        message = f'На жаль, {utils.mention(chat_member.user)} покидає Соборний.'
+        bot_message = await context.bot.sendMessage(
+            chat_id=settings.CHAT_ID, message_thread_id=settings.TOPICS['welcome'], text=message)
+        utils.add_message_cleanup_job(context.application, bot_message.id)
+        await context.bot.ban_chat_member(settings.CHAT_ID, context.job.data, revoke_messages=False)
+        await context.bot.unban_chat_member(settings.CHAT_ID, context.job.data)
+        utils.log(f'kicked: {chat_member.user.id} ({chat_member.user.full_name})', logging.INFO)
     utils.clear_jobs(context.application, WELCOME_TIMEOUT_JOB, context.job.data)
     return ConversationHandler.END
