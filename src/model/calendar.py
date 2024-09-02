@@ -59,7 +59,7 @@ class Event:
 
     def has_poster(self) -> bool:
         return bool(self.image)
-    
+
     def get_weekdays(self) -> str:
         result = ''
         if len(self.days) == 1:
@@ -67,7 +67,7 @@ class Event:
         value = sum([2 ** day.value for day in self.days])
         if value in weekday.name.keys():
             return weekday.name[value]
-        
+
         previous_sequence = False
         current_sequence = False
         long_sequence = False
@@ -167,7 +167,7 @@ class Event:
         if self.description:
             result += f'{self.description}\n\n'
         date_or_days = False
-        if self.occurrence != Occurrence.REGULAR:            
+        if self.occurrence != Occurrence.REGULAR:
             if self.date:
                 date_or_days = True
                 result += f'`🗓️{self.date.strftime("%m/%d")}`'

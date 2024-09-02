@@ -75,7 +75,7 @@ async def calendar_menu(update: Update, context: CallbackContext, prefix_text: s
         [
             InlineKeyboardButton('🖼️ Poster ' + ('✅' if image else '🚫'), callback_data=State.AGENDA_EDITING_IMAGE.name),
             InlineKeyboardButton('👓 Preview', callback_data=State.AGENDA_PREVIEW.name),
-        ],        
+        ],
         [
             InlineKeyboardButton('🔄 Update', callback_data=State.CALENDAR_CLEANUP.name),
             InlineKeyboardButton('« Exit', callback_data=State.EXIT.name),
