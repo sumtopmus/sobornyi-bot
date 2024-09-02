@@ -1,5 +1,3 @@
-# coding=UTF-8
-
 from datetime import datetime, timedelta
 from config import settings
 import logging
