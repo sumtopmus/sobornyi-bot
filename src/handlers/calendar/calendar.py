@@ -3,7 +3,7 @@ from telegram.ext import CallbackQueryHandler, CommandHandler, ContextTypes, Con
 
 from config import settings
 from utils import log
-from .agenda import publish_agenda
+from .agenda import publish_agenda_on_demand
 from .event import create_handlers as event_handlers
 from .menu import State, calendar_menu, construct_back_button, events_menu, update_menu
 
@@ -97,7 +97,7 @@ async def on_agenda_publish(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     """When a user requests to publish the agenda."""
     log('on_agenda_publish')
     await update.callback_query.answer()
-    await publish_agenda(update, context)
+    await publish_agenda_on_demand(update, context)
     text = 'Порядок тижневий було опубліковано.'
     return await calendar_menu(update, context, prefix_text=text)
 

@@ -37,3 +37,7 @@ async def publish_agenda(context: CallbackContext):
             chat_id=settings.channel_username, photo=settings.DEFAULT_AGENDA_IMAGE, caption=text)
     context.bot_data['agenda']['message_id'] = message.message_id
     context.bot_data['agenda']['image'] = None
+
+
+async def publish_agenda_on_demand(update: Update, context: CallbackContext):
+    await publish_agenda(context)
