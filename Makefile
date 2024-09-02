@@ -1,10 +1,17 @@
-.PHONY: run debug clean clean-state clean-cache clean-logs clean-data clean-conversations
+.PHONY: run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations
 
 run: clean-cache
 	@ENV_FOR_DYNACONF=prod python src/bot.py
 
 debug: clean-state
 	@ENV_FOR_DYNACONF=dev python src/bot.py
+
+backup:
+	@timestamp=$$(date +%Y%m%d) && \
+	mkdir -p backup/$$timestamp && \
+	cp -r data backup/$$timestamp/. && \
+	cp -r logs/bot.log backup/$$timestamp/. && \
+	cp -r backup/$$timestamp/* backup/.
 
 clean: clean-cache clean-logs clean-data
 
