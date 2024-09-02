@@ -10,7 +10,8 @@ settings = Dynaconf(
 )
 
 if settings.current_env == 'dev':
-    settings.MORNING_TIME = (datetime.now() + timedelta(seconds=settings.MORNING_TIME_OFFSET)).time().isoformat()
+    settings.MORNING_TIME = (datetime.now() + timedelta(seconds=settings.TIME_OFFSET)).time().isoformat()
+    settings.AGENDA_TIME = (datetime.now() + timedelta(seconds=settings.TIME_OFFSET)).time().isoformat()
 
 
 def debug_mode_on():

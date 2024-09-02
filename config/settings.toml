@@ -37,7 +37,7 @@ token = 'SECRET_PLACEHOLDER'
 [dev]
 debug = true
 forum = false
-morning_time_offset = 10  # in seconds
+time_offset = 10  # in seconds
 conversation_timeout = 10   # in seconds
 welcome_timeout = 10  # in seconds
 cleanup_period = 20   # in seconds
