@@ -1,4 +1,7 @@
-.PHONY: run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations
+.PHONY: init run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations
+
+init:
+	conda env create -f environment.yaml
 
 run: clean-cache
 	@ENV_FOR_DYNACONF=prod python src/bot.py
