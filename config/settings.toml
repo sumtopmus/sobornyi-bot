@@ -17,6 +17,10 @@ conversation_timeout = 60   # in seconds
 welcome_timeout = 86400     # 1 day (in seconds)
 cleanup_period = 129600     # 1.5 days (in seconds)
 
+[default.TOPICS]
+[default.TAGS]
+[default.PRIORITIES]
+
 [prod]
 debug = false
 forum = true
@@ -29,10 +33,6 @@ admins = ['@PLACEHOLDER']
 moderators = ['@PLACEHOLDER']
 
 token = 'SECRET_PLACEHOLDER'
-
-[prod.TOPICS]
-[prod.TAGS]
-[prod.PRIORITIES]
 
 [dev]
 debug = true
