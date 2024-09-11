@@ -7,8 +7,8 @@ from telegram.ext import ContextTypes
 def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Error handler."""
     logging.getLogger(__name__).error(
-        f'Exception while handling the update {update}:',
-        exc_info=context.error)
+        f"Exception while handling the update {update}:", exc_info=context.error
+    )
     # TODO: add actual error handling.
     try:
         raise context.error

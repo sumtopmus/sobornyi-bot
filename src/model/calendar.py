@@ -7,19 +7,17 @@ from typing import Dict, List, Optional, Set
 from format import clock, link, weekday
 
 
-Category = Enum('Category', [
-    'GENERAL',
-    'FUNDRAISER',
-    'RALLY',
-    'VOLUNTEER',
-])
+Category = Enum(
+    "Category",
+    [
+        "GENERAL",
+        "FUNDRAISER",
+        "RALLY",
+        "VOLUNTEER",
+    ],
+)
 
-
-Occurrence = Enum('Occurrence', [
-    'WITHIN_DAY',
-    'WITHIN_DAYS',
-    'REGULAR'
-])
+Occurrence = Enum("Occurrence", ["WITHIN_DAY", "WITHIN_DAYS", "REGULAR"])
 
 
 class Day(Enum):
@@ -61,10 +59,10 @@ class Event:
         return bool(self.image)
 
     def get_weekdays(self) -> str:
-        result = ''
+        result = ""
         if len(self.days) == 1:
             return weekday.name[next(iter(self.days)).value]
-        value = sum([2 ** day.value for day in self.days])
+        value = sum([2**day.value for day in self.days])
         if value in weekday.name.keys():
             return weekday.name[value]
 
@@ -78,12 +76,12 @@ class Event:
                 else:
                     current_sequence = True
                     if previous_sequence:
-                        result += ','
+                        result += ","
                     result += weekday.name[day]
             else:
                 if current_sequence:
                     if long_sequence:
-                        result += f'-{weekday.name[day - 1]}'
+                        result += f"-{weekday.name[day - 1]}"
                     previous_sequence = True
                     current_sequence = False
                     long_sequence = False
@@ -94,58 +92,58 @@ class Event:
             return None
         if not self.emoji:
             return self.title
-        return f'{self.emoji} {self.title}'
+        return f"{self.emoji} {self.title}"
 
     def get_title_repr(self) -> Optional[str]:
         if not self.title:
             return None
         if self.tg_url:
-            title = f'[{self.title}]({self.tg_url})'
+            title = f"[{self.title}]({self.tg_url})"
         elif self.url:
-            title = f'[{self.title}]({self.url})'
+            title = f"[{self.title}]({self.url})"
         else:
             title = self.title
         if not self.emoji:
             return title
-        return f'{self.emoji} {title}'
+        return f"{self.emoji} {title}"
 
     def get_current_repr(self) -> Optional[str]:
         if not self.title:
             return None
-        result = ''
+        result = ""
         if self.occurrence != Occurrence.REGULAR:
             if self.date:
                 if self.date < Calendar.get_this_week():
-                    result = f'`🗓️до`'
+                    result = f"`🗓️до`"
                 else:
-                    result = f'`🗓️{weekday.name[self.date.weekday()]}`'
+                    result = f"`🗓️{weekday.name[self.date.weekday()]}`"
             if self.end_date and self.end_date > self.date:
                 if self.date < Calendar.get_this_week():
                     if self.end_date < Calendar.get_next_week():
-                        result += f' `{weekday.name[6]}`'
+                        result += f" `{weekday.name[6]}`"
                     else:
                         result += f' `{self.end_date.strftime("%m/%d")}`'
                 elif self.end_date >= Calendar.get_next_week():
                     result += f' до `{self.end_date.strftime("%m/%d")}`'
                 else:
-                    result += f'`-{weekday.name[self.end_date.weekday()]}`'
+                    result += f"`-{weekday.name[self.end_date.weekday()]}`"
         else:
-            result = f'`🗓️{self.get_weekdays()}`'
+            result = f"`🗓️{self.get_weekdays()}`"
         if self.time:
-            result += f' `{clock.emoji(self.time)}'
+            result += f" `{clock.emoji(self.time)}"
             if self.time.minute == 0:
                 result += f'{self.time.strftime("%H")}`'
             else:
                 result += f'{self.time.strftime("%H:%M")}`'
         if self.date or self.time:
-            result += '`:`'
-        result += f'{self.get_title_repr()}'
+            result += "`:`"
+        result += f"{self.get_title_repr()}"
         return result
 
     def get_future_repr(self) -> Optional[str]:
         if not self.title or self.occurrence == Occurrence.REGULAR:
             return None
-        result = ''
+        result = ""
         if self.date:
             result = f'`🗓️{self.date.strftime("%m/%d")}`'
             if self.end_date and self.end_date > self.date:
@@ -153,19 +151,19 @@ class Event:
                     result += f'`-{self.end_date.strftime("%m/%d")}`'
                 else:
                     result += f'`-{self.end_date.strftime("%d")}`'
-            result += '`:`'
-        result += f'{self.get_title_repr()}'
+            result += "`:`"
+        result += f"{self.get_title_repr()}"
         return result
 
     def get_full_repr(self) -> Optional[str]:
         if not self.title:
             return None
-        result = '*'
+        result = "*"
         if self.emoji:
-            result += f'{self.emoji} '
-        result += f'{self.title}*\n\n'
+            result += f"{self.emoji} "
+        result += f"{self.title}*\n\n"
         if self.description:
-            result += f'{self.description}\n\n'
+            result += f"{self.description}\n\n"
         date_or_days = False
         if self.occurrence != Occurrence.REGULAR:
             if self.date:
@@ -177,53 +175,53 @@ class Event:
                     else:
                         result += f'`-{self.end_date.strftime("%d")}`'
         elif len(self.days) > 0:
-                date_or_days = True
-                result += f'`🗓️{self.get_weekdays()}`'
+            date_or_days = True
+            result += f"`🗓️{self.get_weekdays()}`"
         if self.time:
             if date_or_days:
-                result += ' '
+                result += " "
             result += f'`{clock.emoji(self.time)}{self.time.strftime("%H:%M")}`'
         if date_or_days or self.time:
-            result += '\n'
+            result += "\n"
         if self.location:
             if self.venue:
-                result += f'📍[{self.venue}]({self.location})\n\n'
+                result += f"📍[{self.venue}]({self.location})\n\n"
             else:
-                result += f'📍[Location]({self.location})\n\n'
+                result += f"📍[Location]({self.location})\n\n"
         elif self.venue:
-                result += f'📍{self.venue}\n\n'
+            result += f"📍{self.venue}\n\n"
         else:
-            result += '\n'
+            result += "\n"
         if self.url:
-            result += f'🔗 [{link.provider(self.url)}]({self.url})\n\n'
-        result += '_#events_'
-        result = re.sub(r'\n{3,}', '\n\n', result)
+            result += f"🔗 [{link.provider(self.url)}]({self.url})\n\n"
+        result += "_#events_"
+        result = re.sub(r"\n{3,}", "\n\n", result)
         return result
 
     def post(self) -> Dict[str, str]:
-        result = {'text': self.get_full_repr()}
+        result = {"text": self.get_full_repr()}
         if self.image:
-            result = {'photo': self.image, 'caption': self.get_full_repr()}
+            result = {"photo": self.image, "caption": self.get_full_repr()}
         return result
 
     def to_dict(self, recursive: bool = False) -> dict:
         return {
-            'title': self.title,
-            'emoji': self.emoji,
-            'description': self.description,
-            'occurrence': self.occurrence.name if self.occurrence else None,
-            'date': self.date.isoformat() if self.date else None,
-            'time': self.time.isoformat() if self.time else None,
-            'end_date': self.end_date.isoformat() if self.end_date else None,
-            'end_time': self.end_time.isoformat() if self.end_time else None,
-            'days': [day.name for day in self.days],
-            'venue': self.venue,
-            'location': self.location,
-            'url': self.url,
-            'tg_url': self.tg_url,
-            'image': self.image,
-            'category': self.category.name,
-            'cancelled': self.cancelled,
+            "title": self.title,
+            "emoji": self.emoji,
+            "description": self.description,
+            "occurrence": self.occurrence.name if self.occurrence else None,
+            "date": self.date.isoformat() if self.date else None,
+            "time": self.time.isoformat() if self.time else None,
+            "end_date": self.end_date.isoformat() if self.end_date else None,
+            "end_time": self.end_time.isoformat() if self.end_time else None,
+            "days": [day.name for day in self.days],
+            "venue": self.venue,
+            "location": self.location,
+            "url": self.url,
+            "tg_url": self.tg_url,
+            "image": self.image,
+            "category": self.category.name,
+            "cancelled": self.cancelled,
         }
 
 
@@ -253,7 +251,11 @@ class Calendar:
         this_week = Calendar.get_this_week()
         next_week = Calendar.get_next_week()
         for _, event in self.__events.items():
-            if not event.date or this_week <= event.date < next_week or (event.end_date and event.date < this_week <= event.end_date):
+            if (
+                not event.date
+                or this_week <= event.date < next_week
+                or (event.end_date and event.date < this_week <= event.end_date)
+            ):
                 result.append(event)
         return result
 
@@ -265,14 +267,26 @@ class Calendar:
                 result.append(event)
         return result
 
-    def get_simple_agenda(self, events: List[Event], category: Category = Category.GENERAL) -> str:
-        return '\n'.join([event.get_title_repr() for event in events if event.category == category])
+    def get_simple_agenda(
+        self, events: List[Event], category: Category = Category.GENERAL
+    ) -> str:
+        return "\n".join(
+            [event.get_title_repr() for event in events if event.category == category]
+        )
 
-    def get_nearest_agenda(self, events: List[Event], category: Category = Category.GENERAL) -> str:
-        return '\n'.join([event.get_current_repr() for event in events if event.category == category])
+    def get_nearest_agenda(
+        self, events: List[Event], category: Category = Category.GENERAL
+    ) -> str:
+        return "\n".join(
+            [event.get_current_repr() for event in events if event.category == category]
+        )
 
-    def get_future_agenda(self, events: List[Event], category: Category = Category.GENERAL) -> str:
-        return '\n'.join([event.get_future_repr() for event in events if event.category == category])
+    def get_future_agenda(
+        self, events: List[Event], category: Category = Category.GENERAL
+    ) -> str:
+        return "\n".join(
+            [event.get_future_repr() for event in events if event.category == category]
+        )
 
     def get_agenda(self) -> str:
         result = f"*Порядок тижневий*\n\n"
@@ -292,14 +306,17 @@ class Calendar:
         events_repr = self.get_simple_agenda(nearest_events, Category.VOLUNTEER)
         if events_repr:
             result += f"*🤲 Волонтерство:*\n{events_repr}\n\n"
-        result += '_#agenda_'
+        result += "_#agenda_"
         return result
 
     def remove_past_events(self) -> bool:
         this_week = Calendar.get_this_week()
         events_to_remove = [
-            event_id for event_id, event in self.__events.items()
-            if event.date and event.date < this_week and (not event.end_date or event.end_date < this_week)
+            event_id
+            for event_id, event in self.__events.items()
+            if event.date
+            and event.date < this_week
+            and (not event.end_date or event.end_date < this_week)
         ]
         for event_id in events_to_remove:
             del self.__events[event_id]

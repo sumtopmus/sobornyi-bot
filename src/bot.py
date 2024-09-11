@@ -18,11 +18,19 @@ def main() -> None:
     init.setup_logging()
 
     # Setup the bot.
-    defaults = Defaults(parse_mode=ParseMode.MARKDOWN, tzinfo=pytz.timezone(settings.TIMEZONE))
+    defaults = Defaults(
+        parse_mode=ParseMode.MARKDOWN, tzinfo=pytz.timezone(settings.TIMEZONE)
+    )
     persistence = PicklePersistence(filepath=settings.DB_PATH, single_file=False)
-    app = Application.builder().token(settings.TOKEN).defaults(defaults)\
-        .persistence(persistence).arbitrary_callback_data(True)\
-        .post_init(init.post_init).build()
+    app = (
+        Application.builder()
+        .token(settings.TOKEN)
+        .defaults(defaults)
+        .persistence(persistence)
+        .arbitrary_callback_data(True)
+        .post_init(init.post_init)
+        .build()
+    )
     # Add handlers.
     init.add_handlers(app)
     # Start the bot.

@@ -2,6 +2,7 @@
 
 init:
 	conda env create -f environment.yaml
+	pre-commit install
 
 run: clean-cache
 	@ENV_FOR_DYNACONF=prod python src/bot.py
