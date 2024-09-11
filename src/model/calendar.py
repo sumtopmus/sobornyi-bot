@@ -247,7 +247,7 @@ class Calendar:
         return self.__events.get(event_id)
 
     def get_nearest_events(self) -> List[Event]:
-        result = []
+        nearest_events = []
         this_week = Calendar.get_this_week()
         next_week = Calendar.get_next_week()
         for _, event in self.__events.items():
@@ -256,16 +256,20 @@ class Calendar:
                 or this_week <= event.date < next_week
                 or (event.end_date and event.date < this_week <= event.end_date)
             ):
-                result.append(event)
-        return result
+                nearest_events.append(event)
+        sorted_nearest_events = sorted(
+            nearest_events, key=lambda event: (event.date is not None, event.date)
+        )
+        return sorted_nearest_events
 
     def get_future_events(self) -> List[Event]:
-        result = []
+        future_events = []
         next_week = Calendar.get_next_week()
         for _, event in self.__events.items():
             if event.date and next_week <= event.date:
-                result.append(event)
-        return result
+                future_events.append(event)
+        sorted_future_events = sorted(future_events, key=lambda event: event.date)
+        return sorted_future_events
 
     def get_simple_agenda(
         self, events: List[Event], category: Category = Category.GENERAL
