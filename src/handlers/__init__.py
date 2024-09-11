@@ -10,7 +10,8 @@ from . import topic
 from . import war
 from . import welcome
 
-__all__ = ['all', 'calendar', 'error', 'war', 'welcome']
+
+__all__ = ["all", "calendar", "error", "war", "welcome"]
 
 # Debug handlers
 debug_handlers = []
