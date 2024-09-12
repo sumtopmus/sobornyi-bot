@@ -33,11 +33,11 @@ async def publish_agenda(context: CallbackContext):
     image = context.bot_data["agenda"]["image"]
     if image:
         message = await context.bot.send_photo(
-            chat_id=settings.channel_username, photo=image, caption=text
+            chat_id=settings.CHANNEL_USERNAME, photo=image, caption=text
         )
     else:
         message = await context.bot.send_photo(
-            chat_id=settings.channel_username,
+            chat_id=settings.CHANNEL_USERNAME,
             photo=settings.DEFAULT_AGENDA_IMAGE,
             caption=text,
         )

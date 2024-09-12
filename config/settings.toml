@@ -17,6 +17,9 @@ conversation_timeout = 60   # in seconds
 welcome_timeout = 86400     # 1 day (in seconds)
 cleanup_period = 129600     # 1.5 days (in seconds)
 
+admins = ['@PLACEHOLDER']
+default_agenda_image = 'PLACEHOLDER'
+
 [default.TOPICS]
 [default.TAGS]
 [default.PRIORITIES]
@@ -24,12 +27,11 @@ cleanup_period = 129600     # 1.5 days (in seconds)
 [prod]
 debug = false
 forum = true
-bot_username = '@PLACEHOLDER'
+
 chat_id = 'PLACEHOLDER'
 chat_link_id = 'PLACEHOLDER'
 chat_invite_link = 'PLACEHOLDER'
 channel_username = '@PLACEHOLDER'
-admins = ['@PLACEHOLDER']
 moderators = ['@PLACEHOLDER']
 
 token = 'SECRET_PLACEHOLDER'
@@ -41,12 +43,11 @@ time_offset = 10  # in seconds
 conversation_timeout = 10   # in seconds
 welcome_timeout = 10  # in seconds
 cleanup_period = 20   # in seconds
-bot_username = '@PLACEHOLDER'
+
 chat_id = 'PLACEHOLDER'
 chat_link_id = 'PLACEHOLDER'
 chat_invite_link = 'PLACEHOLDER'
 channel_username = '@PLACEHOLDER'
-admins = ['@PLACEHOLDER']
 moderators = ['@PLACEHOLDER']
 
 token = 'SECRET_PLACEHOLDER'
