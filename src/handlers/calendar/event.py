@@ -530,11 +530,11 @@ async def on_publish(update: Update, context: CallbackContext) -> State:
     event = context.user_data["current_event"]
     if event.image:
         message = await context.bot.send_photo(
-            chat_id=settings.channel_username, **event.post()
+            chat_id=settings.CHANNEL_USERNAME, **event.post()
         )
     else:
         message = await context.bot.send_message(
-            chat_id=settings.channel_username, **event.post()
+            chat_id=settings.CHANNEL_USERNAME, **event.post()
         )
     event.tg_url = message.link
     text = "Захід було опубліковано."
