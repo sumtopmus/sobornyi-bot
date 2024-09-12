@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 from enum import Enum
 import re
 from typing import Dict, List, Optional, Set
+from telegram.helpers import escape_markdown
 
 from format import clock, link, weekday
 
@@ -122,9 +123,9 @@ class Event:
                     if self.end_date < Calendar.get_next_week():
                         result += f" `{weekday.name[6]}`"
                     else:
-                        result += f' `{self.end_date.strftime("%m/%d")}`'
+                        result += f" `{self.end_date.strftime('%m/%d')}`"
                 elif self.end_date >= Calendar.get_next_week():
-                    result += f' до `{self.end_date.strftime("%m/%d")}`'
+                    result += f" до `{self.end_date.strftime('%m/%d')}`"
                 else:
                     result += f"`-{weekday.name[self.end_date.weekday()]}`"
         else:
@@ -132,9 +133,9 @@ class Event:
         if self.time:
             result += f" `{clock.emoji(self.time)}"
             if self.time.minute == 0:
-                result += f'{self.time.strftime("%H")}`'
+                result += f"{self.time.strftime('%H')}`"
             else:
-                result += f'{self.time.strftime("%H:%M")}`'
+                result += f"{self.time.strftime('%H:%M')}`"
         if self.date or self.time:
             result += "`:`"
         result += f"{self.get_title_repr()}"
@@ -145,12 +146,12 @@ class Event:
             return None
         result = ""
         if self.date:
-            result = f'`🗓️{self.date.strftime("%m/%d")}`'
+            result = f"`🗓️{self.date.strftime('%m/%d')}`"
             if self.end_date and self.end_date > self.date:
                 if self.date.month != self.end_date.month:
-                    result += f'`-{self.end_date.strftime("%m/%d")}`'
+                    result += f"`-{self.end_date.strftime('%m/%d')}`"
                 else:
-                    result += f'`-{self.end_date.strftime("%d")}`'
+                    result += f"`-{self.end_date.strftime('%d')}`"
             result += "`:`"
         result += f"{self.get_title_repr()}"
         return result
@@ -163,24 +164,24 @@ class Event:
             result += f"{self.emoji} "
         result += f"{self.title}*\n\n"
         if self.description:
-            result += f"{self.description}\n\n"
+            result += f"{escape_markdown(self.description)}\n\n"
         date_or_days = False
         if self.occurrence != Occurrence.REGULAR:
             if self.date:
                 date_or_days = True
-                result += f'`🗓️{self.date.strftime("%m/%d")}`'
+                result += f"`🗓️{self.date.strftime('%m/%d')}`"
                 if self.end_date and self.end_date > self.date:
                     if self.date.month != self.end_date.month:
-                        result += f'`-{self.end_date.strftime("%m/%d")}`'
+                        result += f"`-{self.end_date.strftime('%m/%d')}`"
                     else:
-                        result += f'`-{self.end_date.strftime("%d")}`'
+                        result += f"`-{self.end_date.strftime('%d')}`"
         elif len(self.days) > 0:
             date_or_days = True
             result += f"`🗓️{self.get_weekdays()}`"
         if self.time:
             if date_or_days:
                 result += " "
-            result += f'`{clock.emoji(self.time)}{self.time.strftime("%H:%M")}`'
+            result += f"`{clock.emoji(self.time)}{self.time.strftime('%H:%M')}`"
         if date_or_days or self.time:
             result += "\n"
         if self.location:
