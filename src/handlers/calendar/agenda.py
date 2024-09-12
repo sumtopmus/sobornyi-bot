@@ -1,10 +1,10 @@
 from config import settings
-from datetime import time, timedelta, datetime
+from datetime import date, datetime, time, timedelta
 from telegram import Update
 from telegram.ext import Application, CallbackContext
 
 from model import Calendar
-from utils import log
+from utils import log, calculate_hash
 
 
 JOB_NAME = "weekly_agenda"
@@ -42,7 +42,31 @@ async def publish_agenda(context: CallbackContext):
             caption=text,
         )
     context.bot_data["agenda"]["message_id"] = message.message_id
+    context.bot_data["agenda"]["date"] = Calendar.get_this_week().isoformat()
+    context.bot_data["agenda"]["hash"] = calculate_hash(text)
     context.bot_data["agenda"]["image"] = None
+
+
+async def sync_agenda(context: CallbackContext):
+    """Syncs the agenda."""
+    log("sync_agenda")
+    # TODO: temporary solution during migration
+    if (
+        "date" not in context.bot_data["agenda"]
+        or "hash" not in context.bot_data["agenda"]
+    ):
+        return
+    # end of temporary solution
+    agenda_date = date.fromisoformat(context.bot_data["agenda"]["date"])
+    if agenda_date == Calendar.get_this_week():
+        text = context.bot_data["calendar"].get_agenda()
+        if calculate_hash(text) == context.bot_data["agenda"]["hash"]:
+            return
+        context.bot_data["agenda"]["hash"] = calculate_hash(text)
+        message_id = context.bot_data["agenda"]["message_id"]
+        await context.bot.edit_message_caption(
+            chat_id=settings.CHANNEL_USERNAME, message_id=message_id, caption=text
+        )
 
 
 async def publish_agenda_on_demand(update: Update, context: CallbackContext):

@@ -11,6 +11,7 @@ from telegram.ext import (
 )
 
 from config import settings
+from .agenda import sync_agenda
 from .menu import State, calendar_menu, datetime_menu, event_menu, construct_back_button
 from model import Category, Day, Event, Occurrence
 from utils import log
@@ -594,6 +595,7 @@ async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
         await update.callback_query.edit_message_text(text)
     else:
         await update.effective_user.send_message(text)
+    await sync_agenda(context)
     context.user_data["state"] = None
     return ConversationHandler.END
 

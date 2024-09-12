@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from config import settings
+import hashlib
 import logging
 from telegram import User
 import telegram.error
@@ -14,6 +15,16 @@ def log(message: str, level=logging.DEBUG) -> None:
     logging.getLogger(__name__).log(level, message)
     if settings.DEBUG:
         print(f"⌚️ {datetime.now().strftime(settings.DATETIME_FORMAT)}: {message}")
+
+
+def calculate_hash(text: str) -> str:
+    # Encode the text to bytes
+    text_bytes = text.encode("utf-8")
+    # Calculate the SHA-256 hash
+    hash_object = hashlib.sha256(text_bytes)
+    # Get the hexadecimal representation of the hash
+    hash_hex = hash_object.hexdigest()
+    return hash_hex
 
 
 def mention(user: User) -> str:

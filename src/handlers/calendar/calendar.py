@@ -10,7 +10,7 @@ from telegram.ext import (
 
 from config import settings
 from utils import log
-from .agenda import publish_agenda_on_demand
+from .agenda import publish_agenda_on_demand, sync_agenda
 from .event import create_handlers as event_handlers
 from .menu import State, calendar_menu, construct_back_button, events_menu, update_menu
 
@@ -146,7 +146,8 @@ async def on_cleanup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Stat
     """When a user requests a cleanup of the calendar."""
     log("on_cleanup")
     context.bot_data["calendar"].remove_past_events()
-    text = "Минулі події було видалено."
+    await sync_agenda(context)
+    text = "Минулі події було видалено та порядок оновлено."
     return await calendar_menu(update, context, prefix_text=text)
 
 
@@ -194,6 +195,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
 async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user exits the conversation."""
     log("exit")
+    await sync_agenda(context)
     text = "Роботу з календарем завершено."
     menu = {"text": text}
     await update_menu(update, menu)
