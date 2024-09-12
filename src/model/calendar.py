@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 from enum import Enum
 import re
 from typing import Dict, List, Optional, Set
+from telegram.helpers import escape_markdown
 
 from format import clock, link, weekday
 
@@ -165,7 +166,7 @@ class Event:
             result += f'{self.emoji} '
         result += f'{self.title}*\n\n'
         if self.description:
-            result += f'{self.description}\n\n'
+            result += f'{escape_markdown(self.description)}\n\n'
         date_or_days = False
         if self.occurrence != Occurrence.REGULAR:
             if self.date:
