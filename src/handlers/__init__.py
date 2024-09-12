@@ -19,7 +19,8 @@ for module in [debug, info, upload]:
     debug_handlers.extend(module.create_handlers())
 # Business logic handlers
 logic_handlers = []
-for module in [calendar, channel, request, topic, war, welcome]:
+handlers = [calendar, channel, request, topic, war, welcome]
+for module in handlers:
     logic_handlers.extend(module.create_handlers())
 # All handlers (debug + logic)
 all = debug_handlers + logic_handlers
