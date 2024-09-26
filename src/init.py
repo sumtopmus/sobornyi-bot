@@ -48,14 +48,6 @@ async def post_init(app: Application) -> None:
                     utils.MESSAGE_CLEANUP_JOB,
                     job_params["data"],
                 )
-            case "welcome_timeout":
-                utils.add_job(
-                    handlers.welcome.welcome_timeout,
-                    delay,
-                    app,
-                    handlers.welcome.WELCOME_TIMEOUT_JOB,
-                    job_params["data"],
-                )
             case _:
                 pass
     channel = await app.bot.get_chat(settings.CHANNEL_USERNAME)

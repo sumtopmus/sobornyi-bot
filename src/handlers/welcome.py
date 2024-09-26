@@ -3,14 +3,18 @@ from enum import Enum
 import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 import telegram.error
-from telegram.ext import ContextTypes, ConversationHandler, filters, MessageHandler
+from telegram.ext import (
+    ContextTypes,
+    ConversationHandler,
+    filters,
+    MessageHandler,
+    TypeHandler,
+)
 
 from config import settings
 from handlers import topic
 import utils
 
-
-WELCOME_TIMEOUT_JOB = "welcome_timeout"
 
 State = Enum("State", ["JOIN", "AWAITING"])
 
@@ -35,7 +39,8 @@ def create_handlers() -> list:
                     MessageHandler(
                         filters.Chat(settings.CHAT_ID) & filters.Regex(r"#about"), about
                     ),
-                ]
+                ],
+                ConversationHandler.TIMEOUT: [TypeHandler(Update, timeout)],
             },
             fallbacks=[
                 # TODO: add bot's goodbye message as a fallback.
@@ -87,14 +92,7 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
             reply_to_message_id=reply_to_message_id,
             reply_markup=reply_markup,
         )
-        # timeout & cleanup jobs
-        utils.add_job(
-            welcome_timeout,
-            timedelta(seconds=settings.WELCOME_TIMEOUT),
-            context.application,
-            WELCOME_TIMEOUT_JOB,
-            user.id,
-        )
+        # cleanup job
         utils.add_message_cleanup_job(context.application, bot_message.id)
     return State.AWAITING
 
@@ -137,19 +135,30 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     context.user_data["about"] = incoming_message.text
     user = incoming_message.from_user
     utils.log(f"user introduced themselves: {user.id} ({user.full_name})", logging.INFO)
-    message = (
-        f"Вітаємо тебе, {utils.mention(user)}!\n\n"
-        f"#️⃣ [Соборний](https://t.me/c/{settings.CHAT_LINK_ID}/1) – основна гілка\n"
-        f'🧭 [Навігація](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.TOPICS["navigation"]}) '
-        f"– що у нас є\n"
-        f'🗂️ [Довідник](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.TOPICS["guides"]}) '
-        f"– місцевий довідник\n"
-        f'🗓 [Порядок тижневий](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.TOPICS["agenda"]}) '
-        f"– календар українських заходів в DMV"
-    )
+    message = f"Вітаємо тебе, {utils.mention(user)}!"
+    if settings.FORUM:
+        message += f"\n\n#️⃣ [Соборний](https://t.me/c/{settings.CHAT_LINK_ID}/1) – основна гілка\n"
+        if "navigation" in settings.TOPICS:
+            message += (
+                f"🧭 [Навігація](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.TOPICS['navigation']})"
+                f" – що у нас є\n"
+            )
+        if "guides" in settings.TOPICS:
+            message += (
+                f"🗂️ [Довідник](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.TOPICS['guides']})"
+                f" – місцевий довідник\n"
+            )
+        if "agenda" in settings.TOPICS:
+            message += (
+                f"🗓 [Порядок тижневий](https://t.me/c/{settings.CHAT_LINK_ID}/{settings.TOPICS['agenda']})"
+                f" – календар українських заходів в DMV\n"
+            )
     utils.log(f"about: {user.id} ({user.full_name})", logging.INFO)
     reply_to_message_id = incoming_message.id
-    if incoming_message.message_thread_id != settings.TOPICS["welcome"]:
+    if (
+        incoming_message.message_thread_id
+        and incoming_message.message_thread_id != settings.TOPICS["welcome"]
+    ):
         try:
             if incoming_message.has_protected_content:
                 raise telegram.error.Forbidden(
@@ -179,37 +188,21 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
         reply_to_message_id=reply_to_message_id,
     )
     utils.add_message_cleanup_job(context.application, bot_message.id)
-    utils.clear_jobs(context.application, WELCOME_TIMEOUT_JOB, user.id)
     return ConversationHandler.END
 
 
-async def welcome_timeout(context: ContextTypes.DEFAULT_TYPE) -> int:
-    """When #about was not written in time."""
-    utils.log("welcome_timeout")
-    chat_member = None
-    try:
-        chat_member = await context.bot.get_chat_member(
-            settings.CHAT_ID, context.job.data
-        )
-    except telegram.error.BadRequest as e:
-        utils.log(
-            f"{e.__class__.__name__}: {e.message} ({context.job.data})", logging.ERROR
-        )
-    if chat_member:
-        message = f"На жаль, {utils.mention(chat_member.user)} покидає Соборний."
-        bot_message = await context.bot.sendMessage(
-            chat_id=settings.CHAT_ID,
-            message_thread_id=settings.TOPICS["welcome"],
-            text=message,
-        )
-        utils.add_message_cleanup_job(context.application, bot_message.id)
-        await context.bot.ban_chat_member(
-            settings.CHAT_ID, context.job.data, revoke_messages=False
-        )
-        await context.bot.unban_chat_member(settings.CHAT_ID, context.job.data)
-        utils.log(
-            f"kicked: {chat_member.user.id} ({chat_member.user.full_name})",
-            logging.INFO,
-        )
-    utils.clear_jobs(context.application, WELCOME_TIMEOUT_JOB, context.job.data)
+async def timeout(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """When the conversation timepout is exceeded."""
+    utils.log("timeout")
+    user = update.effective_user
+    message = f"На жаль, {utils.mention(user)} покидає Соборний."
+    bot_message = await context.bot.sendMessage(
+        chat_id=settings.CHAT_ID,
+        message_thread_id=settings.TOPICS["welcome"],
+        text=message,
+    )
+    utils.add_message_cleanup_job(context.application, bot_message.id)
+    await context.bot.ban_chat_member(settings.CHAT_ID, user.id, revoke_messages=False)
+    await context.bot.unban_chat_member(settings.CHAT_ID, user.id)
+    utils.log(f"kicked: {user.id} ({user.full_name})", logging.INFO)
     return ConversationHandler.END

@@ -13,7 +13,7 @@ agenda_time = '07:00:00'
 # Internal parameters
 date_format = '%Y-%m-%d'
 datetime_format = '%Y-%m-%d %H:%M:%S'
-conversation_timeout = 60   # in seconds
+conversation_timeout = 900  # 15 minutes (in seconds)
 welcome_timeout = 86400     # 1 day (in seconds)
 cleanup_period = 129600     # 1.5 days (in seconds)
 
@@ -21,6 +21,7 @@ admins = ['@PLACEHOLDER']
 default_agenda_image = 'PLACEHOLDER'
 
 [default.TOPICS]
+welcome = 0
 [default.TAGS]
 [default.PRIORITIES]
 
@@ -39,10 +40,10 @@ token = 'SECRET_PLACEHOLDER'
 [dev]
 debug = true
 forum = false
-time_offset = 10  # in seconds
-conversation_timeout = 10   # in seconds
-welcome_timeout = 10  # in seconds
-cleanup_period = 20   # in seconds
+time_offset = 10            # in seconds
+conversation_timeout = 30   # in seconds
+welcome_timeout = 10        # in seconds
+cleanup_period = 20         # in seconds
 
 chat_id = 'PLACEHOLDER'
 chat_link_id = 'PLACEHOLDER'

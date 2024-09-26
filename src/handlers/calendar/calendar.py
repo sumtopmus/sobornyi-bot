@@ -6,6 +6,7 @@ from telegram.ext import (
     ConversationHandler,
     filters,
     MessageHandler,
+    TypeHandler,
 )
 
 from config import settings
@@ -66,6 +67,7 @@ def create_handlers() -> list:
                         pattern="^" + State.AGENDA_PUBLISHING.name + "$",
                     ),
                 ],
+                ConversationHandler.TIMEOUT: [TypeHandler(Update, timeout)],
             },
             fallbacks=[
                 CallbackQueryHandler(
@@ -75,6 +77,8 @@ def create_handlers() -> list:
                 CommandHandler("cancel", cancel),
                 CommandHandler("exit", exit),
             ],
+            allow_reentry=True,
+            conversation_timeout=settings.CONVERSATION_TIMEOUT,
             name="calendar_menu",
             persistent=True,
         )
@@ -190,6 +194,20 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     log("cancel")
     text = "Операцію скасовано."
     return await calendar_menu(update, context, text)
+
+
+async def timeout(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """When the conversation timepout is exceeded."""
+    log("timeout")
+    await sync_agenda(context)
+    text = "Ви були неактивні протягом 15 хвилин. Роботу з календарем завершено автоматично."
+    menu = {"text": text}
+    if update.callback_query:
+        await update.callback_query.edit_message_text(**menu)
+    else:
+        await update.effective_user.send_message(**menu, disable_notification=True)
+    context.user_data["state"] = None
+    return ConversationHandler.END
 
 
 async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
