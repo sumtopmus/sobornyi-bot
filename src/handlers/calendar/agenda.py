@@ -3,6 +3,7 @@ from datetime import date, datetime, time, timedelta
 from telegram import Update
 from telegram.ext import Application, CallbackContext
 
+from handlers.channel import cross_post
 from model import Calendar
 from utils import log, calculate_hash
 
@@ -41,6 +42,7 @@ async def publish_agenda(context: CallbackContext):
             photo=settings.DEFAULT_AGENDA_IMAGE,
             caption=text,
         )
+    await cross_post(message, context)
     context.bot_data["agenda"]["message_id"] = message.message_id
     context.bot_data["agenda"]["date"] = Calendar.get_this_week().isoformat()
     context.bot_data["agenda"]["hash"] = calculate_hash(text)

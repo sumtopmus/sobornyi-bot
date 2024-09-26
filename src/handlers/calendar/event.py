@@ -11,10 +11,11 @@ from telegram.ext import (
 )
 
 from config import settings
-from .agenda import sync_agenda
-from .menu import State, calendar_menu, datetime_menu, event_menu, construct_back_button
+from handlers.channel import cross_post
 from model import Category, Day, Event, Occurrence
 from utils import log
+from .agenda import sync_agenda
+from .menu import State, calendar_menu, datetime_menu, event_menu, construct_back_button
 
 
 def create_handlers() -> list:
@@ -537,6 +538,7 @@ async def on_publish(update: Update, context: CallbackContext) -> State:
         message = await context.bot.send_message(
             chat_id=settings.CHANNEL_USERNAME, **event.post()
         )
+    await cross_post(message, context)
     event.tg_url = message.link
     text = "Захід було опубліковано."
     await update.callback_query.edit_message_text(
