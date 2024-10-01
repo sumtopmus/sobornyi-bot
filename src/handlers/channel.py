@@ -28,7 +28,7 @@ async def post(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.channel_post.text or update.channel_post.caption:
         await cross_post(update.channel_post, context)
     elif update.channel_post.pinned_message:
-        message_to_pin_id = context.chat_data["cross-posts"].setdefault(
+        message_to_pin_id = context.bot_data["cross-posts"].setdefault(
             update.channel_post.pinned_message.id, None
         )
         if not message_to_pin_id:
@@ -51,13 +51,13 @@ async def cross_post(message: Message, context: ContextTypes.DEFAULT_TYPE) -> No
             target_thread_id = settings.TOPICS[thread]
             current_priority = settings.PRIORITIES[thread]
     copy = await message.copy(settings.CHAT_ID, message_thread_id=target_thread_id)
-    context.chat_data["cross-posts"][message.id] = copy.message_id
+    context.bot_data["cross-posts"][message.id] = copy.message_id
 
 
 async def edit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """When a post is edited on the channel."""
     utils.log("edit")
-    copied_message_id = context.chat_data["cross-posts"].setdefault(
+    copied_message_id = context.bot_data["cross-posts"].setdefault(
         update.edited_channel_post.id, None
     )
     if not copied_message_id:
