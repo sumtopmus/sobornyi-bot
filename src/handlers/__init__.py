@@ -15,12 +15,13 @@ __all__ = ["all", "calendar", "error", "war", "welcome"]
 
 # Debug handlers
 debug_handlers = []
-for module in [debug, info, upload]:
+modules = [debug, info, upload]
+for module in modules:
     debug_handlers.extend(module.create_handlers())
 # Business logic handlers
 logic_handlers = []
-handlers = [calendar, channel, request, topic, war, welcome]
-for module in handlers:
+modules = [calendar, channel, request, topic, war, welcome]
+for module in modules:
     logic_handlers.extend(module.create_handlers())
 # All handlers (debug + logic)
 all = debug_handlers + logic_handlers
