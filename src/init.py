@@ -50,8 +50,7 @@ async def post_init(app: Application) -> None:
                 )
             case _:
                 pass
-    channel = await app.bot.get_chat(settings.CHANNEL_USERNAME)
-    app.chat_data[channel.id].setdefault("cross-posts", {})
+    app.bot_data.setdefault("cross-posts", {})
 
 
 def add_handlers(app: Application) -> None:
