@@ -18,7 +18,7 @@ State = Enum("State", ["AWAITING"])
 
 
 def create_handlers() -> list:
-    """Creates handlers that process new users."""
+    """Creates handlers that process the /upload command."""
     return [
         ConversationHandler(
             entry_points=[

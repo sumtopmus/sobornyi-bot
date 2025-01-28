@@ -1,7 +1,10 @@
 [default]
-# Pathes
+# Data
 db_path = 'data/db'
+# Logging
 log_path = 'logs/bot.log'
+max_bytes = 1048576         # 1 MB
+backup_count = 5
 # General
 timezone = 'US/Eastern'
 # Behavior
@@ -44,6 +47,7 @@ time_offset = 10            # in seconds
 conversation_timeout = 30   # in seconds
 welcome_timeout = 10        # in seconds
 cleanup_period = 20         # in seconds
+max_bytes = 1024
 
 chat_id = 'PLACEHOLDER'
 chat_link_id = 'PLACEHOLDER'
