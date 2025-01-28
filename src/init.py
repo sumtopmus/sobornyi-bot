@@ -14,11 +14,17 @@ import utils
 def setup_logging() -> None:
     # Logging
     logging_level = logging.DEBUG if settings.DEBUG else logging.INFO
-    logging.basicConfig(
+    handler = logging.handlers.RotatingFileHandler(
         filename=settings.LOG_PATH,
-        level=logging_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        maxBytes=settings.MAX_BYTES,
+        backupCount=settings.BACKUP_COUNT,
     )
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    handler.setFormatter(formatter)
+    logging.getLogger().addHandler(handler)
+    logging.getLogger().setLevel(logging_level)
     logging.getLogger("apscheduler").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
     # Debugging
