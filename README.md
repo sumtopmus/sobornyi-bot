@@ -1,7 +1,9 @@
 # Sobornyi Bot
+
 Telegram bot to control the Sobornyi group.
 
 In order to run it:
+
 1. Create a bot here: [@BotFather](https://t.me/BotFather).
 1. Create a chat group in Telegram.
 1. Create a channel in Telegram.
