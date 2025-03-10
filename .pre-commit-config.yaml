@@ -17,3 +17,14 @@ repos:
     hooks:
       - id: black
         language_version: python3.12
+-   repo: local
+    hooks:
+    -   id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        pass_filenames: true
+        types: [python]
+        verbose: true
+        stages: [commit]
+        args: ["-v", "--cov=src", "--cov-report=term-missing", "--cov-report=html", "--testmon"]
