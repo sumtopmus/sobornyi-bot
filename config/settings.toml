@@ -28,31 +28,24 @@ welcome = 0
 [default.TAGS]
 [default.PRIORITIES]
 
+chat_id = 'PLACEHOLDER'
+chat_link_id = 'PLACEHOLDER'
+chat_invite_link = 'PLACEHOLDER'
+channel_username = '@PLACEHOLDER'
+moderators = ['@PLACEHOLDER']
+
+token = 'SECRET_PLACEHOLDER'
+
 [prod]
 debug = false
 forum = true
 
-chat_id = 'PLACEHOLDER'
-chat_link_id = 'PLACEHOLDER'
-chat_invite_link = 'PLACEHOLDER'
-channel_username = '@PLACEHOLDER'
-moderators = ['@PLACEHOLDER']
-
-token = 'SECRET_PLACEHOLDER'
-
 [dev]
 debug = true
 forum = false
+
 time_offset = 10            # in seconds
 conversation_timeout = 30   # in seconds
 welcome_timeout = 10        # in seconds
 cleanup_period = 20         # in seconds
-max_bytes = 1024
-
-chat_id = 'PLACEHOLDER'
-chat_link_id = 'PLACEHOLDER'
-chat_invite_link = 'PLACEHOLDER'
-channel_username = '@PLACEHOLDER'
-moderators = ['@PLACEHOLDER']
-
-token = 'SECRET_PLACEHOLDER'
+max_bytes = 1024            # in bytes

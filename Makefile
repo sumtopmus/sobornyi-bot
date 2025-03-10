@@ -1,4 +1,4 @@
-.PHONY: init run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations
+.PHONY: init run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-cov
 
 init:
 	conda env create -f environment.yaml
@@ -16,6 +16,12 @@ backup:
 	cp -r data backup/$$timestamp/. && \
 	cp -r logs/bot.log backup/$$timestamp/. && \
 	cp -r backup/$$timestamp/* backup/.
+
+test:
+	@pytest
+
+test-cov:
+	@pytest --cov=src --cov-report=term --cov-report=html
 
 clean: clean-cache clean-logs clean-data
 

@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from config import settings
+from src.config import settings
 import hashlib
 import logging
 from telegram import User
