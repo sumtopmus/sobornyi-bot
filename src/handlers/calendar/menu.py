@@ -1,11 +1,11 @@
-from calendar import Calendar
+from calendar import Calendar as PythonCalendar
 from dynaconf import settings
 from enum import Enum
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
 from .agenda import sync_agenda
-from model.calendar import Calendar, Day, Occurrence
+from src.model.calendar import Calendar, Day, Occurrence
 from utils import log
 
 
@@ -105,7 +105,7 @@ async def calendar_menu(
 
 
 def events_menu(events: dict, add_search_button: bool = True) -> dict:
-    this_week = Calendar.get_this_week()
+    this_week = PythonCalendar.get_this_week()
     upcoming_events = [
         event
         for event in events

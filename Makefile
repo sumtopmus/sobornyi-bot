@@ -22,6 +22,12 @@ test:
 
 test-cov:
 	@pytest --cov=src --cov-report=term --cov-report=html
+	@echo
+	@echo "Coverage report: htmlcov/index.html"
+	@open htmlcov/index.html
+
+display-coverage:
+	@open htmlcov/index.html
 
 clean: clean-cache clean-logs clean-data
 

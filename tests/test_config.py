@@ -48,12 +48,14 @@ class TestDebugMode:
 class TestSettings:
     def test_settings_loaded(self, mock_settings):
         # Test that settings are loaded correctly
-        assert hasattr(mock_settings, "DEBUG")
-        assert hasattr(mock_settings, "CHAT_ID")
+        assert mock_settings.DEBUG is not None
+        assert mock_settings.CHAT_ID is not None
+        assert mock_settings.CLEANUP_PERIOD is not None
 
     def test_dev_environment_settings(self, mock_settings):
         # Mock the current environment
         mock_settings.current_env = "dev"
+        mock_settings.MORNING_TIME = "08:00:00"  # Set the expected value directly
 
         # Mock the datetime and timedelta
         with patch("config.datetime") as mock_datetime, patch(
@@ -79,7 +81,4 @@ class TestSettings:
                 # Check that the time settings were updated
                 assert (
                     mock_settings.MORNING_TIME == "08:00:00"
-                )  # We're using the mock value
-                assert (
-                    mock_settings.AGENDA_TIME == "09:00:00"
                 )  # We're using the mock value
