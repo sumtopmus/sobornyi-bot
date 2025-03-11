@@ -26,10 +26,10 @@ def create_handlers() -> list:
 
 def war_on(_: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Switch to the war mode (morning minute of silence)."""
-    war_on(context.application)
+    enable_war_mode(context.application)
 
 
-def war_on(app: Application) -> None:
+def enable_war_mode(app: Application) -> None:
     """Switch to the war mode (morning minute of silence)."""
     utils.log("war_on")
     if not app.job_queue.get_jobs_by_name(JOB_NAME):

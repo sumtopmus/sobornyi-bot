@@ -1,4 +1,4 @@
-.PHONY: init run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations
+.PHONY: init run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-unit test-integration test-cov
 
 init:
 	conda env create -f environment.yaml
@@ -16,6 +16,24 @@ backup:
 	cp -r data backup/$$timestamp/. && \
 	cp -r logs/bot.log backup/$$timestamp/. && \
 	cp -r backup/$$timestamp/* backup/.
+
+test:
+	@pytest
+
+test-unit:
+	@pytest -m "not integration"
+
+test-integration:
+	@pytest -m integration
+
+test-cov:
+	@pytest --cov=src --cov-report=term --cov-report=html
+	-@echo
+	@echo "Coverage report: htmlcov/index.html"
+	@open htmlcov/index.html
+
+display-coverage:
+	@open htmlcov/index.html
 
 clean: clean-cache clean-logs clean-data
 

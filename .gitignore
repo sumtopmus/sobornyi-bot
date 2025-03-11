@@ -9,7 +9,7 @@ logs
 # Dev and local environment
 .vscode
 **/*.local*
-debug
+/debug
 
 # macOS environment
 .DS_Store
@@ -66,6 +66,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+.testmondata
 
 # Translations
 *.mo
