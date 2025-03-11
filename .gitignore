@@ -9,7 +9,7 @@ logs
 # Dev and local environment
 .vscode
 **/*.local*
-debug
+/debug
 
 # macOS environment
 .DS_Store

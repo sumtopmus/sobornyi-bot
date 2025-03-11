@@ -6,7 +6,6 @@ from telegram import Bot, Chat, Message, Update, User
 from telegram.ext import Application, ContextTypes
 import sys
 
-# Import the real Calendar class
 from src.model.calendar import Calendar
 
 
@@ -87,8 +86,6 @@ def mock_settings():
         mock_settings.CLEANUP_PERIOD = 60
         mock_settings.WAR_MODE = False
         mock_settings.AGENDA_MODE = False
-        mock_settings.ADMIN_ID = 123456789
-        mock_settings.ADMIN_USERNAME = "admin"
         mock_settings.CHANNEL_ID = -1001234567890
         mock_settings.CHANNEL_USERNAME = "channel"
         mock_settings.CHANNEL_TITLE = "Channel"

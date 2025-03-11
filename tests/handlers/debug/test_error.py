@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import patch
 import telegram
 
-from handlers.error import handler
+from handlers.debug.error import handler
 
 
 class TestError:
@@ -17,7 +17,7 @@ class TestError:
         mock_context.error = telegram.error.BadRequest("Bad request error")
 
         # Mock the logger
-        with patch("handlers.error.logger") as mock_logger:
+        with patch("handlers.debug.error.logger") as mock_logger:
             # Call the function
             await handler(mock_update, mock_context)
 
@@ -34,7 +34,7 @@ class TestError:
         mock_context.error = telegram.error.TimedOut("Timed out error")
 
         # Mock the logger
-        with patch("handlers.error.logger") as mock_logger:
+        with patch("handlers.debug.error.logger") as mock_logger:
             # Call the function
             await handler(mock_update, mock_context)
 
@@ -51,7 +51,7 @@ class TestError:
         mock_context.error = telegram.error.NetworkError("Network error")
 
         # Mock the logger
-        with patch("handlers.error.logger") as mock_logger:
+        with patch("handlers.debug.error.logger") as mock_logger:
             # Call the function
             await handler(mock_update, mock_context)
 
@@ -68,7 +68,7 @@ class TestError:
         mock_context.error = telegram.error.Forbidden("Forbidden error")
 
         # Mock the logger
-        with patch("handlers.error.logger") as mock_logger:
+        with patch("handlers.debug.error.logger") as mock_logger:
             # Call the function
             await handler(mock_update, mock_context)
 
@@ -78,12 +78,14 @@ class TestError:
             mock_logger.critical.assert_not_called()
             mock_logger.info.assert_not_called()
 
+    # TODO: Difficult to mock ChatMigrated exception properly
     @pytest.mark.skip(reason="Difficult to mock ChatMigrated exception properly")
     @pytest.mark.asyncio
     async def test_handler_chat_migrated(self, mock_update, mock_context):
         """Test the handler function with a ChatMigrated error."""
         pass
 
+    # TODO: Difficult to mock RetryAfter exception properly
     @pytest.mark.skip(reason="Difficult to mock RetryAfter exception properly")
     @pytest.mark.asyncio
     async def test_handler_retry_after(self, mock_update, mock_context):
@@ -98,7 +100,7 @@ class TestError:
 
         # Mock the logger and SystemExit
         with (
-            patch("handlers.error.logger") as mock_logger,
+            patch("handlers.debug.error.logger") as mock_logger,
             pytest.raises(SystemExit) as excinfo,
         ):
             # Call the function
@@ -121,7 +123,7 @@ class TestError:
         )
 
         # Mock the logger
-        with patch("handlers.error.logger") as mock_logger:
+        with patch("handlers.debug.error.logger") as mock_logger:
             # Call the function
             await handler(mock_update, mock_context)
 
@@ -140,7 +142,7 @@ class TestError:
         mock_context.error = telegram.error.Conflict("Conflict error")
 
         # Mock the logger
-        with patch("handlers.error.logger") as mock_logger:
+        with patch("handlers.debug.error.logger") as mock_logger:
             # Call the function
             await handler(mock_update, mock_context)
 
@@ -157,7 +159,7 @@ class TestError:
         mock_context.error = telegram.error.TelegramError("Telegram error")
 
         # Mock the logger
-        with patch("handlers.error.logger") as mock_logger:
+        with patch("handlers.debug.error.logger") as mock_logger:
             # Call the function
             await handler(mock_update, mock_context)
 
@@ -174,7 +176,7 @@ class TestError:
         mock_context.error = Exception("Generic error")
 
         # Mock the logger
-        with patch("handlers.error.logger") as mock_logger:
+        with patch("handlers.debug.error.logger") as mock_logger:
             # Call the function
             await handler(mock_update, mock_context)
 
@@ -195,7 +197,7 @@ class TestError:
         mock_context.error = Exception("Generic error")
 
         # Mock the logger
-        with patch("handlers.error.logger") as mock_logger:
+        with patch("handlers.debug.error.logger") as mock_logger:
             # Call the function
             await handler(None, mock_context)
 

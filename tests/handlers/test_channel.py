@@ -2,8 +2,7 @@
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from telegram import Message, Update
-from telegram.ext import ContextTypes
+from telegram import Message
 
 from handlers.channel import create_handlers, post, cross_post, edit
 

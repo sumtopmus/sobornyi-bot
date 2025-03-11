@@ -1,7 +1,7 @@
 """Tests for the request module."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, call
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from handlers.request import create_handlers, request
 
