@@ -1,11 +1,23 @@
 import copy
-import logging
 from datetime import datetime, timedelta
+import logging
+import logging.handlers
 from telegram.ext import Application
 from telegram.warnings import PTBUserWarning
 from warnings import filterwarnings
 
-from config import settings
+
+# Suppress specific PTBUserWarning about CallbackQueryHandler and per_message=False
+filterwarnings(
+    action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning
+)
+# Suppress warning about nested conversations with conversation_timeout
+filterwarnings(
+    action="ignore", message=r".*nested conversations.*", category=PTBUserWarning
+)
+
+
+from config import settings, debug_mode_on, debug_mode_off
 import handlers
 from model import Calendar
 import utils
@@ -13,7 +25,6 @@ import utils
 
 def setup_logging() -> None:
     # Logging
-    logging_level = logging.DEBUG if settings.DEBUG else logging.INFO
     handler = logging.handlers.RotatingFileHandler(
         filename=settings.LOG_PATH,
         maxBytes=settings.MAX_BYTES,
@@ -24,13 +35,10 @@ def setup_logging() -> None:
     )
     handler.setFormatter(formatter)
     logging.getLogger().addHandler(handler)
-    logging.getLogger().setLevel(logging_level)
-    logging.getLogger("apscheduler").setLevel(logging.WARNING)
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    # Debugging
-    filterwarnings(
-        action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning
-    )
+    if settings.DEBUG:
+        debug_mode_on()
+    else:
+        debug_mode_off()
 
 
 async def post_init(app: Application) -> None:
@@ -41,7 +49,11 @@ async def post_init(app: Application) -> None:
         handlers.calendar.agenda_on(app)
     app.bot_data.setdefault("calendar", Calendar())
     app.bot_data.setdefault("agenda", {"image": None})
-    jobs = copy.deepcopy(app.bot_data.setdefault("jobs", {}))
+    app.bot_data.setdefault("jobs", {})
+    app.bot_data.setdefault("cross-posts", {})
+
+    # Process existing jobs
+    jobs = copy.deepcopy(app.bot_data["jobs"])
     app.bot_data["jobs"] = {}
     for job_name, job_params in jobs.items():
         delay = max(timedelta(seconds=0), job_params["time"] - datetime.now())
@@ -56,7 +68,6 @@ async def post_init(app: Application) -> None:
                 )
             case _:
                 pass
-    app.bot_data.setdefault("cross-posts", {})
 
 
 def add_handlers(app: Application) -> None:
