@@ -1,8 +1,8 @@
+"""Tests for the init module."""
+
 import pytest
 import sys
-from unittest.mock import patch, MagicMock, AsyncMock
-import logging
-from datetime import datetime, timedelta
+from unittest.mock import patch, MagicMock
 
 # Import the real Calendar class
 from src.model.calendar import Calendar

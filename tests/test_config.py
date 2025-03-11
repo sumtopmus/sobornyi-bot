@@ -1,6 +1,6 @@
-import pytest
+"""Tests for the config module."""
+
 from unittest.mock import patch, MagicMock
-import logging
 
 from config import debug_mode_on, debug_mode_off
 

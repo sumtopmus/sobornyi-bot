@@ -1,5 +1,7 @@
+"""Tests for the utils module."""
+
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch, MagicMock
 import hashlib
 from datetime import datetime, timedelta
 import telegram.error
