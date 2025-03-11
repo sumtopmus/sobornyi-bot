@@ -14,7 +14,7 @@ from handlers.calendar.menu import (
     construct_back_button,
     State,
 )
-from model.calendar import Day, Occurrence
+from model import Day, Occurrence
 
 
 # Mock the PythonCalendar.get_this_week method at the module level

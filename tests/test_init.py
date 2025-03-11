@@ -1,8 +1,6 @@
 """Tests for the init module."""
 
 import pytest
-import sys
-import logging
 from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 
@@ -11,114 +9,7 @@ from model.calendar import Calendar
 
 # Import the module to test with patched settings
 from init import add_handlers, setup_logging, post_init
-from utils import MESSAGE_CLEANUP_JOB
-
-
-# Set up mock modules before importing init
-def setup_mock_modules():
-    """Set up mock modules for tests."""
-    # Mock handlers
-    error = MagicMock()
-    all = []
-
-    # Mock war module
-    class War:
-        war_on = MagicMock()
-
-    war = War()
-
-    # Mock calendar module
-    class CalendarModule:
-        agenda_on = MagicMock()
-
-    calendar = CalendarModule()
-
-    # Store original modules if they exist
-    original_handlers = sys.modules.get("handlers", None)
-    original_model = sys.modules.get("model", None)
-
-    # Add mock modules to sys.modules
-    sys.modules["handlers"] = type(
-        "handlers", (), {"error": error, "all": all, "war": war, "calendar": calendar}
-    )
-
-    # Use the real Calendar class
-    sys.modules["model"] = type("model", (), {"Calendar": Calendar})
-
-    return {
-        "error": error,
-        "all": all,
-        "war": war,
-        "calendar": calendar,
-        "original_handlers": original_handlers,
-        "original_model": original_model,
-    }
-
-
-# Set up mock modules
-mock_data = setup_mock_modules()
-
-# Set up mock settings
-mock_settings = MagicMock()
-mock_settings.DEBUG = False
-mock_settings.CHAT_ID = -1001234567890
-mock_settings.CLEANUP_PERIOD = 60
-mock_settings.WAR_MODE = False
-mock_settings.AGENDA_MODE = False
-mock_settings.ADMIN_ID = 123456789
-mock_settings.ADMIN_USERNAME = "admin"
-mock_settings.CHANNEL_ID = -1001234567890
-mock_settings.CHANNEL_USERNAME = "channel"
-mock_settings.CHANNEL_TITLE = "Channel"
-mock_settings.CHANNEL_INVITE_LINK = "https://t.me/channel"
-mock_settings.ADMINS = ["admin1", "admin2"]
-mock_settings.MODERATORS = ["moderator1", "moderator2"]
-mock_settings.LOG_PATH = "test_log.log"
-mock_settings.MAX_BYTES = 1024
-mock_settings.BACKUP_COUNT = 3
-mock_settings.MORNING_TIME = "08:00:00"
-mock_settings.AGENDA_TIME = "09:00:00"
-mock_settings.TIME_OFFSET = 3600
-mock_settings.current_env = "dev"
-
-
-# Create a patched version of setup_logging
-def patched_setup_logging():
-    """Patched version of setup_logging for testing."""
-    pass
-
-
-# Create a patched version of post_init
-async def patched_post_init(app):
-    """Patched version of post_init for testing."""
-    if mock_settings.WAR_MODE:
-        mock_data["war"].war_on(app)
-    if mock_settings.AGENDA_MODE:
-        mock_data["calendar"].agenda_on(app)
-    app.bot_data.setdefault("calendar", Calendar())
-    app.bot_data.setdefault("agenda", {"image": None})
-    app.bot_data.setdefault("jobs", {})
-    app.bot_data.setdefault("cross-posts", {})
-
-
-# Create a patched version of add_handlers
-def patched_add_handlers(app):
-    """Patched version of add_handlers for testing."""
-    app.add_error_handler(mock_data["error"])
-
-
-# Clean up after tests
-def teardown_module(module):
-    """Restore original modules after tests."""
-    if mock_data["original_handlers"]:
-        sys.modules["handlers"] = mock_data["original_handlers"]
-    else:
-        sys.modules.pop("handlers", None)
-
-    if mock_data["original_model"]:
-        sys.modules["model"] = mock_data["original_model"]
-    else:
-        sys.modules.pop("model", None)
+from utils import MESSAGE_CLEANUP_JOB, message_cleanup
 
 
 class TestWarningFilters:
@@ -137,7 +28,6 @@ class TestWarningFilters:
             importlib.reload(init)
 
             # Check that filterwarnings was called with the expected arguments
-            # The actual number of calls may vary, so we'll just check that the specific calls we're interested in were made
             mock_filterwarnings.assert_any_call(
                 action="ignore",
                 message=r".*CallbackQueryHandler",
@@ -153,16 +43,14 @@ class TestWarningFilters:
 class TestSetupLogging:
     """Tests for the setup_logging function."""
 
-    def test_setup_logging_debug_mode(self):
+    def test_setup_logging_debug_mode(self, mock_settings):
         """Test setup_logging with DEBUG=True."""
-        # Test setup_logging with DEBUG=True
         with (
             patch("logging.handlers.RotatingFileHandler") as mock_handler_class,
             patch("logging.Formatter") as mock_formatter_class,
             patch("logging.getLogger") as mock_get_logger,
             patch("init.debug_mode_on") as mock_debug_mode_on,
             patch("init.debug_mode_off") as mock_debug_mode_off,
-            patch("init.settings", mock_settings),
         ):
             # Configure mocks
             mock_settings.DEBUG = True
@@ -195,12 +83,12 @@ class TestSetupLogging:
             mock_debug_mode_on.assert_called_once()
             mock_debug_mode_off.assert_not_called()
 
-    def test_setup_logging_production_mode(self):
+    def test_setup_logging_production_mode(self, mock_settings):
         """Test setup_logging with DEBUG=False."""
-        # Test setup_logging with DEBUG=False
         with (
             patch("logging.handlers.RotatingFileHandler") as mock_handler_class,
             patch("logging.Formatter") as mock_formatter_class,
+            patch("logging.getLogger") as mock_get_logger,
             patch("init.debug_mode_on") as mock_debug_mode_on,
             patch("init.debug_mode_off") as mock_debug_mode_off,
         ):
@@ -210,6 +98,8 @@ class TestSetupLogging:
             mock_handler_class.return_value = mock_handler
             mock_formatter = MagicMock()
             mock_formatter_class.return_value = mock_formatter
+            mock_root_logger = MagicMock()
+            mock_get_logger.return_value = mock_root_logger
 
             setup_logging()
 
@@ -234,16 +124,17 @@ class TestSetupLogging:
 class TestPostInit:
     """Tests for the post_init function."""
 
-    @pytest.mark.asyncio
-    async def test_bot_data_initialization(self):
-        """Test that bot_data is properly initialized."""
-        # Mock the application
-        mock_application = MagicMock()
-        mock_application.bot_data = {}
+    @pytest.fixture
+    def mock_application(self):
+        """Create a mock application for testing."""
+        app = MagicMock()
+        app.bot_data = {}
+        return app
 
-        # Patch settings and handlers to avoid side effects
+    @pytest.mark.asyncio
+    async def test_bot_data_initialization(self, mock_application, mock_settings):
+        """Test that bot_data is properly initialized."""
         with (
-            patch("init.settings", mock_settings),
             patch("init.handlers.war.war_on") as mock_war_on,
             patch("init.handlers.calendar.agenda_on") as mock_agenda_on,
         ):
@@ -252,60 +143,184 @@ class TestPostInit:
 
             await post_init(mock_application)
 
-        # Check that war and agenda modes were not activated
-        mock_war_on.assert_not_called()
-        mock_agenda_on.assert_not_called()
-        # Check that bot_data was initialized correctly
-        assert "calendar" in mock_application.bot_data
-        assert isinstance(mock_application.bot_data["calendar"], Calendar)
-        assert "agenda" in mock_application.bot_data
-        assert mock_application.bot_data["agenda"] == {"image": None}
-        assert "jobs" in mock_application.bot_data
-        assert mock_application.bot_data["jobs"] == {}
-        assert "cross-posts" in mock_application.bot_data
-        assert mock_application.bot_data["cross-posts"] == {}
+            # Check that bot_data was initialized with the expected values
+            assert "calendar" in mock_application.bot_data
+            assert isinstance(mock_application.bot_data["calendar"], Calendar)
+            assert mock_application.bot_data["agenda"] == {"image": None}
+            assert mock_application.bot_data["jobs"] == {}
+            assert mock_application.bot_data["cross-posts"] == {}
+
+            # Check that war_on and agenda_on were not called
+            mock_war_on.assert_not_called()
+            mock_agenda_on.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_war_mode_activation(self):
-        """Test that war_on is called when WAR_MODE is True."""
-        with patch("init.handlers.war.war_on") as mock_war_on:
-            # Configure settings
+    async def test_war_mode_activation(self, mock_application, mock_settings):
+        """Test that war mode is activated when WAR_MODE is True."""
+        with (
+            patch("init.handlers.war.war_on") as mock_war_on,
+            patch("init.handlers.calendar.agenda_on") as mock_agenda_on,
+        ):
             mock_settings.WAR_MODE = True
+            mock_settings.AGENDA_MODE = False
 
-            # Mock the application
-            mock_application = MagicMock()
-            mock_application.bot_data = {}
+            await post_init(mock_application)
 
-            # Patch settings and other functions that might be called
-            with (
-                patch("init.settings", mock_settings),
-                patch("init.handlers.calendar.agenda_on"),
-            ):
-                await post_init(mock_application)
-
-            # Verify war_on was called with the application
+            # Check that war_on was called and agenda_on was not
             mock_war_on.assert_called_once_with(mock_application)
+            mock_agenda_on.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_agenda_mode_activation(self):
-        """Test that agenda_on is called when AGENDA_MODE is True."""
-        with patch("init.handlers.calendar.agenda_on") as mock_agenda_on:
-            # Configure settings
+    async def test_agenda_mode_activation(self, mock_application, mock_settings):
+        """Test that agenda mode is activated when AGENDA_MODE is True."""
+        with (
+            patch("init.handlers.war.war_on") as mock_war_on,
+            patch("init.handlers.calendar.agenda_on") as mock_agenda_on,
+        ):
+            mock_settings.WAR_MODE = False
             mock_settings.AGENDA_MODE = True
 
-            # Mock the application
-            mock_application = MagicMock()
-            mock_application.bot_data = {}
+            await post_init(mock_application)
 
-            # Patch settings and other functions that might be called
-            with (
-                patch("init.settings", mock_settings),
-                patch("init.handlers.war.war_on"),
-            ):
-                await post_init(mock_application)
-
-            # Verify agenda_on was called with the application
+            # Check that agenda_on was called and war_on was not
             mock_agenda_on.assert_called_once_with(mock_application)
+            mock_war_on.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_process_existing_message_cleanup_jobs(self, mock_application):
+        """Test that existing message_cleanup jobs are processed correctly."""
+        # Create a job in bot_data
+        job_name = f"{MESSAGE_CLEANUP_JOB}:12345"
+        job_time = datetime.now() + timedelta(minutes=5)
+        job_data = 12345
+
+        mock_application.bot_data = {
+            "jobs": {job_name: {"time": job_time, "data": job_data}}
+        }
+
+        # Patch utils.add_job to verify it's called correctly
+        with (
+            patch("init.utils.add_job") as mock_add_job,
+            patch("init.datetime") as mock_datetime,
+        ):
+            # Set up datetime.now() to return a fixed time
+            current_time = datetime.now()
+            mock_datetime.now.return_value = current_time
+
+            # Expected delay calculation
+            expected_delay = max(timedelta(seconds=0), job_time - current_time)
+
+            await post_init(mock_application)
+
+            # Verify add_job was called with correct parameters
+            mock_add_job.assert_called_once_with(
+                message_cleanup,
+                expected_delay,
+                mock_application,
+                MESSAGE_CLEANUP_JOB,
+                job_data,
+            )
+
+            # Verify jobs dict was reset
+            assert mock_application.bot_data["jobs"] == {}
+
+    @pytest.mark.asyncio
+    async def test_process_existing_jobs_with_past_time(self, mock_application):
+        """Test that jobs with past times are processed with zero delay."""
+        # Create a job in bot_data with a time in the past
+        job_name = f"{MESSAGE_CLEANUP_JOB}:12345"
+        job_time = datetime.now() - timedelta(minutes=5)  # 5 minutes in the past
+        job_data = 12345
+
+        mock_application.bot_data = {
+            "jobs": {job_name: {"time": job_time, "data": job_data}}
+        }
+
+        # Patch utils.add_job to verify it's called correctly
+        with (
+            patch("init.utils.add_job") as mock_add_job,
+            patch("init.datetime") as mock_datetime,
+        ):
+            # Set up datetime.now() to return a fixed time
+            current_time = datetime.now()
+            mock_datetime.now.return_value = current_time
+
+            # For past times, delay should be 0
+            expected_delay = timedelta(seconds=0)
+
+            await post_init(mock_application)
+
+            # Verify add_job was called with zero delay
+            mock_add_job.assert_called_once_with(
+                message_cleanup,
+                expected_delay,
+                mock_application,
+                MESSAGE_CLEANUP_JOB,
+                job_data,
+            )
+
+    @pytest.mark.asyncio
+    async def test_process_multiple_existing_jobs(self, mock_application):
+        """Test processing multiple existing jobs of different types."""
+        # Create multiple jobs in bot_data
+        current_time = datetime.now()
+
+        # Message cleanup job
+        cleanup_job_name = f"{MESSAGE_CLEANUP_JOB}:12345"
+        cleanup_job_time = current_time + timedelta(minutes=5)
+        cleanup_job_data = 12345
+
+        # Unknown job type that should be ignored
+        unknown_job_name = "unknown_job:67890"
+        unknown_job_time = current_time + timedelta(minutes=10)
+        unknown_job_data = 67890
+
+        mock_application.bot_data = {
+            "jobs": {
+                cleanup_job_name: {"time": cleanup_job_time, "data": cleanup_job_data},
+                unknown_job_name: {"time": unknown_job_time, "data": unknown_job_data},
+            }
+        }
+
+        # Patch utils.add_job to verify it's called correctly
+        with (
+            patch("init.utils.add_job") as mock_add_job,
+            patch("init.datetime") as mock_datetime,
+        ):
+            # Set up datetime.now() to return a fixed time
+            mock_datetime.now.return_value = current_time
+
+            # Expected delay calculation for cleanup job
+            expected_delay = timedelta(minutes=5)
+
+            await post_init(mock_application)
+
+            # Verify add_job was called only for the message_cleanup job
+            mock_add_job.assert_called_once_with(
+                message_cleanup,
+                expected_delay,
+                mock_application,
+                MESSAGE_CLEANUP_JOB,
+                cleanup_job_data,
+            )
+
+            # Verify jobs dict was reset
+            assert mock_application.bot_data["jobs"] == {}
+
+    @pytest.mark.asyncio
+    async def test_empty_jobs_dict(self, mock_application):
+        """Test that post_init handles an empty jobs dict correctly."""
+        mock_application.bot_data = {"jobs": {}}
+
+        # Patch utils.add_job to verify it's not called
+        with patch("init.utils.add_job") as mock_add_job:
+            await post_init(mock_application)
+
+            # Verify add_job was not called
+            mock_add_job.assert_not_called()
+
+            # Verify jobs dict is still empty
+            assert mock_application.bot_data["jobs"] == {}
 
 
 class TestAddHandlers:

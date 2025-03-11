@@ -24,7 +24,7 @@ class TestAgenda:
 
         # Mock Calendar.get_next_week to return a known date
         next_week = date(2023, 1, 8)
-        with patch("model.calendar.Calendar.get_next_week", return_value=next_week):
+        with patch("handlers.calendar.agenda.next_week", return_value=next_week):
             # Call the function
             agenda_on(app)
 
@@ -71,7 +71,7 @@ class TestAgenda:
         # Mock the current week date
         this_week = date(2023, 1, 1)
         with (
-            patch("model.calendar.Calendar.get_this_week", return_value=this_week),
+            patch("handlers.calendar.agenda.this_week", return_value=this_week),
             patch("handlers.calendar.agenda.cross_post", new=AsyncMock()),
         ):
             # Call the function
@@ -104,7 +104,7 @@ class TestAgenda:
         # Mock the current week date
         this_week = date(2023, 1, 1)
         with (
-            patch("model.calendar.Calendar.get_this_week", return_value=this_week),
+            patch("handlers.calendar.agenda.this_week", return_value=this_week),
             patch("handlers.calendar.agenda.cross_post", new=AsyncMock()),
         ):
             # Call the function
@@ -146,7 +146,7 @@ class TestAgenda:
         context.bot_data["calendar"].get_agenda.return_value = agenda_text
 
         # Mock the current week date
-        with patch("model.calendar.Calendar.get_this_week", return_value=this_week):
+        with patch("model.this_week", return_value=this_week):
             # Call the function
             await sync_agenda(context)
 
@@ -174,7 +174,7 @@ class TestAgenda:
         context.bot_data["calendar"].get_agenda.return_value = new_agenda_text
 
         # Mock the current week date
-        with patch("model.calendar.Calendar.get_this_week", return_value=this_week):
+        with patch("handlers.calendar.agenda.this_week", return_value=this_week):
             # Call the function
             await sync_agenda(context)
 
@@ -209,7 +209,7 @@ class TestAgenda:
         context.bot_data["calendar"].get_agenda.return_value = agenda_text
 
         # Mock the current week date
-        with patch("model.calendar.Calendar.get_this_week", return_value=this_week):
+        with patch("model.this_week", return_value=this_week):
             # Call the function
             await sync_agenda(context)
 

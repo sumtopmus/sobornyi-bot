@@ -3,7 +3,13 @@
 import pytest
 from datetime import date, time
 
-from model.calendar import Calendar, Event, Day, Category, Occurrence
+from model import Calendar, Event, Day, Category, Occurrence
+
+
+@pytest.fixture
+def mock_empty_event():
+    """Create an empty mock event for testing."""
+    return Event(title="Test Event")
 
 
 @pytest.fixture

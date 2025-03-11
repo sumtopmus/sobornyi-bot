@@ -4,7 +4,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
 from .agenda import sync_agenda
-from model.calendar import Day, Occurrence
+from model import Day, Occurrence
 from utils import log
 
 

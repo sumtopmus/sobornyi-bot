@@ -4,7 +4,7 @@ from telegram import Update
 from telegram.ext import Application, CallbackContext
 
 from handlers.channel import cross_post
-from model import Calendar
+from model import this_week, next_week
 from utils import log, calculate_hash
 
 
@@ -17,7 +17,7 @@ def agenda_on(app: Application) -> None:
     if not app.job_queue.get_jobs_by_name(JOB_NAME):
         log(f"job_added: {JOB_NAME}")
         first_post_time = datetime.combine(
-            Calendar.get_next_week(), time.fromisoformat(settings.AGENDA_TIME)
+            next_week(), time.fromisoformat(settings.AGENDA_TIME)
         )
         app.job_queue.run_repeating(
             publish_agenda,
@@ -44,7 +44,7 @@ async def publish_agenda(context: CallbackContext):
         )
     await cross_post(message, context)
     context.bot_data["agenda"]["message_id"] = message.message_id
-    context.bot_data["agenda"]["date"] = Calendar.get_this_week().isoformat()
+    context.bot_data["agenda"]["date"] = this_week().isoformat()
     context.bot_data["agenda"]["hash"] = calculate_hash(text)
     context.bot_data["agenda"]["image"] = None
 
@@ -60,7 +60,7 @@ async def sync_agenda(context: CallbackContext):
         return
     # end of temporary solution
     agenda_date = date.fromisoformat(context.bot_data["agenda"]["date"])
-    if agenda_date == Calendar.get_this_week():
+    if agenda_date == this_week():
         text = context.bot_data["calendar"].get_agenda()
         if calculate_hash(text) == context.bot_data["agenda"]["hash"]:
             return
