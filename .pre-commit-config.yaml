@@ -27,4 +27,4 @@ repos:
         types: [python]
         verbose: true
         stages: [commit]
-        args: ["-v", "--cov=src", "--cov-report=term-missing", "--cov-report=html", "--testmon"]
+        args: ["-v", "--cov=src", "--cov-report=term", "--cov-report=html"]

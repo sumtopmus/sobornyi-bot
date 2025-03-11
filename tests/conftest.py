@@ -1,7 +1,7 @@
 import pytest
 import logging
 from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime, timedelta
+from datetime import datetime
 from telegram import Bot, Chat, Message, Update, User
 from telegram.ext import Application, ContextTypes
 import sys
@@ -74,11 +74,13 @@ def disable_logging():
 
 
 # Mock settings fixture
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_settings():
-    with patch("config.settings") as mock_settings, patch(
-        "utils.settings", new=mock_settings
-    ), patch("init.settings", new=mock_settings):
+    with (
+        patch("config.settings") as mock_settings,
+        patch("utils.settings", new=mock_settings),
+        patch("init.settings", new=mock_settings),
+    ):
         # Set default values for commonly used settings
         mock_settings.DEBUG = False
         mock_settings.CHAT_ID = -1001234567890
@@ -99,6 +101,7 @@ def mock_settings():
         mock_settings.MORNING_TIME = "08:00:00"
         mock_settings.AGENDA_TIME = "09:00:00"
         mock_settings.TIME_OFFSET = 3600
+        mock_settings.DEFAULT_AGENDA_IMAGE = "default_image.jpg"
         mock_settings.current_env = "dev"
         yield mock_settings
 
@@ -165,7 +168,7 @@ def mock_context():
     context.application.job_queue = MagicMock()
     context.application.job_queue.run_once = MagicMock()
     context.application.job_queue.get_jobs_by_name = MagicMock(return_value=[])
-
+    context.user_data = {}
     # Mock job
     context.job = MagicMock()
     context.job.data = 1

@@ -2,7 +2,6 @@
 
 import pytest
 from datetime import date, time, timedelta
-from unittest.mock import patch
 
 from model.calendar import Calendar, Event, Occurrence
 

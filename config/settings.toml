@@ -23,11 +23,6 @@ cleanup_period = 129600     # 1.5 days (in seconds)
 admins = ['@PLACEHOLDER']
 default_agenda_image = 'PLACEHOLDER'
 
-[default.TOPICS]
-welcome = 0
-[default.TAGS]
-[default.PRIORITIES]
-
 chat_id = 'PLACEHOLDER'
 chat_link_id = 'PLACEHOLDER'
 chat_invite_link = 'PLACEHOLDER'
@@ -35,6 +30,11 @@ channel_username = '@PLACEHOLDER'
 moderators = ['@PLACEHOLDER']
 
 token = 'SECRET_PLACEHOLDER'
+
+[default.TOPICS]
+welcome = 0
+[default.TAGS]
+[default.PRIORITIES]
 
 [prod]
 debug = false
