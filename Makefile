@@ -1,4 +1,4 @@
-.PHONY: init run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-cov
+.PHONY: init run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-unit test-integration test-cov
 
 init:
 	conda env create -f environment.yaml
@@ -19,6 +19,12 @@ backup:
 
 test:
 	@pytest
+
+test-unit:
+	@pytest -m "not integration"
+
+test-integration:
+	@pytest -m integration
 
 test-cov:
 	@pytest --cov=src --cov-report=term --cov-report=html

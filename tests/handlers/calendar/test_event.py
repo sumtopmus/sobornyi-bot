@@ -516,14 +516,17 @@ class TestEventHandlers:
         # Setup
         mock_update.callback_query.answer = AsyncMock()
         mock_update.callback_query.edit_message_text = AsyncMock()
+        mock_sync_agenda = AsyncMock()
 
         # Call the function
-        result = await exit(mock_update, mock_context)
+        with patch("handlers.calendar.event.sync_agenda", new=mock_sync_agenda):
+            result = await exit(mock_update, mock_context)
 
-        # Assertions
-        assert result == ConversationHandler.END
-        mock_update.callback_query.answer.assert_called_once()
-        mock_update.callback_query.edit_message_text.assert_called_once()
+            # Assertions
+            assert result == ConversationHandler.END
+            mock_update.callback_query.answer.assert_called_once()
+            mock_update.callback_query.edit_message_text.assert_called_once()
+            mock_sync_agenda.assert_called_once()
 
     def test_construct_picker_keyboard(self):
         """Test the construct_picker_keyboard function."""
