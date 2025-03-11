@@ -1,4 +1,7 @@
 [default]
+# Switchers
+debug = false
+forum = false
 # Data
 db_path = 'data/db'
 # Logging
@@ -23,6 +26,14 @@ cleanup_period = 129600     # 1.5 days (in seconds)
 admins = ['@PLACEHOLDER']
 default_agenda_image = 'PLACEHOLDER'
 
+chat_id = 'PLACEHOLDER'
+chat_link_id = 'PLACEHOLDER'
+chat_invite_link = 'PLACEHOLDER'
+channel_username = '@PLACEHOLDER'
+moderators = ['@PLACEHOLDER']
+
+token = 'SECRET_PLACEHOLDER'
+
 [default.TOPICS]
 welcome = 0
 [default.TAGS]
@@ -32,27 +43,12 @@ welcome = 0
 debug = false
 forum = true
 
-chat_id = 'PLACEHOLDER'
-chat_link_id = 'PLACEHOLDER'
-chat_invite_link = 'PLACEHOLDER'
-channel_username = '@PLACEHOLDER'
-moderators = ['@PLACEHOLDER']
-
-token = 'SECRET_PLACEHOLDER'
-
 [dev]
 debug = true
 forum = false
+
 time_offset = 10            # in seconds
 conversation_timeout = 30   # in seconds
 welcome_timeout = 10        # in seconds
 cleanup_period = 20         # in seconds
-max_bytes = 1024
-
-chat_id = 'PLACEHOLDER'
-chat_link_id = 'PLACEHOLDER'
-chat_invite_link = 'PLACEHOLDER'
-channel_username = '@PLACEHOLDER'
-moderators = ['@PLACEHOLDER']
-
-token = 'SECRET_PLACEHOLDER'
+max_bytes = 8096            # in bytes

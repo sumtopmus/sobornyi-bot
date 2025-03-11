@@ -20,13 +20,13 @@ if settings.current_env == "dev":
 
 def debug_mode_on():
     settings.DEBUG = True
-    logging.getLogger(__name__).setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.DEBUG)
     logging.getLogger("httpx").setLevel(logging.INFO)
     logging.getLogger("apscheduler").setLevel(logging.INFO)
 
 
 def debug_mode_off():
     settings.DEBUG = False
-    logging.getLogger(__name__).setLevel(logging.INFO)
+    logging.getLogger().setLevel(logging.INFO)
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("apscheduler").setLevel(logging.WARNING)
