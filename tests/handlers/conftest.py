@@ -13,5 +13,6 @@ def patch_settings(mock_settings):
         patch("handlers.channel.settings", mock_settings),
         patch("handlers.debug.settings", mock_settings),
         patch("handlers.info.settings", mock_settings),
+        patch("handlers.request.settings", mock_settings),
     ):
         yield
