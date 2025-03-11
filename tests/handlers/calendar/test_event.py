@@ -19,6 +19,28 @@ from handlers.calendar.event import (
     edit_emoji,
     on_edit_description,
     edit_description,
+    on_edit_category,
+    edit_category,
+    on_edit_occurrence,
+    edit_occurrence,
+    on_edit_datetime,
+    on_edit_date,
+    edit_date,
+    on_edit_end_date,
+    edit_end_date,
+    on_edit_time,
+    edit_time,
+    on_edit_end_time,
+    edit_end_time,
+    edit_days,
+    on_edit_url,
+    edit_url,
+    on_edit_venue,
+    edit_venue,
+    on_edit_location,
+    edit_location,
+    on_edit_image,
+    edit_image,
     on_preview,
     on_publish,
     on_delete_event,
@@ -30,6 +52,7 @@ from handlers.calendar.event import (
     sync_agenda,
 )
 from handlers.calendar.menu import State
+from model import Category, Day, Occurrence
 
 
 class TestEventHandlers:
@@ -521,3 +544,1025 @@ class TestEventHandlers:
         # Assertions
         assert isinstance(keyboard, InlineKeyboardMarkup)
         assert len(keyboard.inline_keyboard) > 0
+
+    @pytest.mark.asyncio
+    async def test_on_edit_category(self, mock_update, mock_context):
+        """Test the on_edit_category function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+
+        # Create a mock event
+        mock_event = MagicMock()
+        mock_event.category = Category.GENERAL
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Call the function
+        result = await on_edit_category(mock_update, mock_context)
+
+        # Assertions
+        assert result == State.EVENT_EDITING_CATEGORY
+        mock_update.callback_query.answer.assert_called_once()
+        mock_update.callback_query.edit_message_text.assert_called_once()
+
+        # Check that the keyboard has the expected buttons
+        call_args = mock_update.callback_query.edit_message_text.call_args
+        assert call_args is not None
+        kwargs = call_args[1]
+        assert "reply_markup" in kwargs
+
+        # Check for category buttons
+        keyboard = kwargs["reply_markup"].inline_keyboard
+        assert any(
+            button.text.startswith("Ралі")
+            and button.callback_data.startswith(f"{State.CATEGORY.name}:")
+            for row in keyboard
+            for button in row
+        )
+        assert any(
+            button.text.startswith("Фандрейзер")
+            and button.callback_data.startswith(f"{State.CATEGORY.name}:")
+            for row in keyboard
+            for button in row
+        )
+        assert any(
+            button.text.startswith("Волонтерство")
+            and button.callback_data.startswith(f"{State.CATEGORY.name}:")
+            for row in keyboard
+            for button in row
+        )
+        assert any(
+            button.text.startswith("Загальне")
+            and button.callback_data.startswith(f"{State.CATEGORY.name}:")
+            for row in keyboard
+            for button in row
+        )
+
+    @pytest.mark.asyncio
+    async def test_edit_category(self, mock_update, mock_context):
+        """Test the edit_category function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.data = f"{State.CATEGORY.name}:{Category.RALLY.name}"
+
+        # Create a mock event
+        mock_event = MagicMock()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the on_edit_category function
+        with patch(
+            "handlers.calendar.event.on_edit_category", new=AsyncMock()
+        ) as mock_on_edit:
+            mock_on_edit.return_value = State.EVENT_EDITING_CATEGORY
+
+            # Call the function
+            result = await edit_category(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_EDITING_CATEGORY
+            assert mock_context.user_data["current_event"].category == Category.RALLY
+            mock_on_edit.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_on_edit_occurrence(self, mock_update, mock_context):
+        """Test the on_edit_occurrence function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+
+        # Create a mock event
+        mock_event = MagicMock()
+        mock_event.occurrence = Occurrence.REGULAR
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Call the function
+        result = await on_edit_occurrence(mock_update, mock_context)
+
+        # Assertions
+        assert result == State.EVENT_EDITING_OCCURRENCE
+        mock_update.callback_query.answer.assert_called_once()
+        mock_update.callback_query.edit_message_text.assert_called_once()
+
+        # Check that the keyboard has the expected buttons
+        call_args = mock_update.callback_query.edit_message_text.call_args
+        assert call_args is not None
+        kwargs = call_args[1]
+        assert "reply_markup" in kwargs
+
+        # Check for occurrence buttons
+        keyboard = kwargs["reply_markup"].inline_keyboard
+        assert any(
+            button.text.startswith("В межах одного дня")
+            and button.callback_data.startswith(f"{State.OCCURRENCE.name}:")
+            for row in keyboard
+            for button in row
+        )
+        assert any(
+            button.text.startswith("В межах декількох днів")
+            and button.callback_data.startswith(f"{State.OCCURRENCE.name}:")
+            for row in keyboard
+            for button in row
+        )
+        assert any(
+            button.text.startswith("Регулярно")
+            and button.callback_data.startswith(f"{State.OCCURRENCE.name}:")
+            for row in keyboard
+            for button in row
+        )
+
+    @pytest.mark.asyncio
+    async def test_edit_occurrence(self, mock_update, mock_context):
+        """Test the edit_occurrence function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.data = (
+            f"{State.OCCURRENCE.name}:{Occurrence.WITHIN_DAY.name}"
+        )
+
+        # Create a mock event
+        mock_event = MagicMock()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the event_menu function
+        with patch("handlers.calendar.event.event_menu", new=AsyncMock()) as mock_menu:
+            mock_menu.return_value = State.EVENT_MENU
+
+            # Call the function
+            result = await edit_occurrence(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_MENU
+            assert (
+                mock_context.user_data["current_event"].occurrence
+                == Occurrence.WITHIN_DAY
+            )
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_on_edit_datetime(self, mock_update, mock_context):
+        """Test the on_edit_datetime function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+
+        # Create a mock event
+        mock_event = MagicMock()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the datetime_menu function
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+
+            # Call the function
+            result = await on_edit_datetime(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.DATETIME_MENU
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_on_edit_date(self, mock_update, mock_context):
+        """Test the on_edit_date function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+
+        # Mock the construct_back_button function
+        with patch("handlers.calendar.event.construct_back_button") as mock_back:
+            mock_back.return_value = {"reply_markup": MagicMock()}
+
+            # Call the function
+            result = await on_edit_date(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_EDITING_DATE
+            mock_update.callback_query.answer.assert_called_once()
+            mock_update.callback_query.edit_message_text.assert_called_once()
+
+            # Check that the text contains the expected message
+            call_args = mock_update.callback_query.edit_message_text.call_args
+            assert call_args is not None
+            args = call_args[0]
+            assert "Введіть дату заходу" in args[0]
+            mock_back.assert_called_once_with(State.DATETIME_MENU)
+
+    @pytest.mark.asyncio
+    async def test_edit_date(self, mock_update, mock_context):
+        """Test the edit_date function."""
+        # Setup
+        mock_update.message = MagicMock()
+        mock_update.message.text = "01/01/23"  # Format MM/DD/YY
+
+        # Create a mock event
+        mock_event = MagicMock()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the datetime_menu function
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+
+            # Call the function
+            result = await edit_date(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.DATETIME_MENU
+            # Check that the date was parsed correctly
+            from datetime import date
+
+            assert mock_context.user_data["current_event"].date == date(2023, 1, 1)
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_on_edit_end_date(self, mock_update, mock_context):
+        """Test the on_edit_end_date function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+
+        # Mock the construct_back_button function
+        with patch("handlers.calendar.event.construct_back_button") as mock_back:
+            mock_back.return_value = {"reply_markup": MagicMock()}
+
+            # Call the function
+            result = await on_edit_end_date(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_EDITING_END_DATE
+            mock_update.callback_query.answer.assert_called_once()
+            mock_update.callback_query.edit_message_text.assert_called_once()
+
+            # Check that the function was called with the right arguments
+            call_args = mock_update.callback_query.edit_message_text.call_args
+            assert call_args is not None
+            # The text is the first positional argument
+            assert "дату" in call_args[0][0]
+            mock_back.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_edit_end_date(self, mock_update, mock_context):
+        """Test the edit_end_date function."""
+        # Setup
+        mock_update.message = MagicMock()
+        mock_update.message.text = "01/02/23"  # Format MM/DD/YY
+
+        # Create a mock event
+        mock_event = MagicMock()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the datetime_menu function
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+
+            # Call the function
+            result = await edit_end_date(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.DATETIME_MENU
+            # Check that the date was parsed correctly
+            from datetime import date
+
+            assert mock_context.user_data["current_event"].end_date == date(2023, 1, 2)
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_on_edit_time(self, mock_update, mock_context):
+        """Test the on_edit_time function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+
+        # Mock the construct_back_button function
+        with patch("handlers.calendar.event.construct_back_button") as mock_back:
+            mock_back.return_value = {"reply_markup": MagicMock()}
+
+            # Call the function
+            result = await on_edit_time(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_EDITING_TIME
+            mock_update.callback_query.answer.assert_called_once()
+            mock_update.callback_query.edit_message_text.assert_called_once()
+
+            # Check that the function was called with the right arguments
+            call_args = mock_update.callback_query.edit_message_text.call_args
+            assert call_args is not None
+            # The text is the first positional argument
+            assert "час" in call_args[0][0]
+            mock_back.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_edit_time(self, mock_update, mock_context):
+        """Test the edit_time function."""
+        # Setup
+        mock_update.message = MagicMock()
+        mock_update.message.text = "10:00"
+
+        # Create a mock event
+        mock_event = MagicMock()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the datetime_menu function
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+
+            # Call the function
+            result = await edit_time(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.DATETIME_MENU
+            # The time is parsed to a datetime.time object, not a string
+            from datetime import time
+
+            assert isinstance(mock_context.user_data["current_event"].time, time)
+            assert mock_context.user_data["current_event"].time.hour == 10
+            assert mock_context.user_data["current_event"].time.minute == 0
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_on_edit_end_time(self, mock_update, mock_context):
+        """Test the on_edit_end_time function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+
+        # Mock the construct_back_button function
+        with patch("handlers.calendar.event.construct_back_button") as mock_back:
+            mock_back.return_value = {"reply_markup": MagicMock()}
+
+            # Call the function
+            result = await on_edit_end_time(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_EDITING_END_TIME
+            mock_update.callback_query.answer.assert_called_once()
+            mock_update.callback_query.edit_message_text.assert_called_once()
+
+            # Check that the function was called with the right arguments
+            call_args = mock_update.callback_query.edit_message_text.call_args
+            assert call_args is not None
+            # The text is the first positional argument
+            assert "час" in call_args[0][0]
+            mock_back.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_edit_end_time(self, mock_update, mock_context):
+        """Test the edit_end_time function."""
+        # Setup
+        mock_update.message = MagicMock()
+        mock_update.message.text = "12:00"
+
+        # Create a mock event
+        mock_event = MagicMock()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the datetime_menu function
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+
+            # Call the function
+            result = await edit_end_time(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.DATETIME_MENU
+            # The time is parsed to a datetime.time object, not a string
+            from datetime import time
+
+            assert isinstance(mock_context.user_data["current_event"].end_time, time)
+            assert mock_context.user_data["current_event"].end_time.hour == 12
+            assert mock_context.user_data["current_event"].end_time.minute == 0
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_edit_days(self, mock_update, mock_context):
+        """Test the edit_days function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        # The data format is different than we expected - it's an integer, not the enum name
+        mock_update.callback_query.data = (
+            f"{State.WEEKDAY.name}:1"  # 1 is Tuesday (Day enum starts at 0)
+        )
+        mock_update.callback_query.answer = AsyncMock()
+
+        # Create a mock event with empty days set
+        mock_event = MagicMock()
+        mock_event.days = set()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the datetime_menu function
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+
+            # Call the function
+            result = await edit_days(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.DATETIME_MENU
+            assert Day.Tuesday in mock_context.user_data["current_event"].days
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_edit_days_toggle_off(self, mock_update, mock_context):
+        """Test the edit_days function toggling a day off."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        # The data format is different than we expected - it's an integer, not the enum name
+        mock_update.callback_query.data = (
+            f"{State.WEEKDAY.name}:1"  # 1 is Tuesday (Day enum starts at 0)
+        )
+        mock_update.callback_query.answer = AsyncMock()
+
+        # Create a mock event with Tuesday already in days set
+        mock_event = MagicMock()
+        mock_event.days = {Day.Tuesday}
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the datetime_menu function
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+
+            # Call the function
+            result = await edit_days(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.DATETIME_MENU
+            assert Day.Tuesday not in mock_context.user_data["current_event"].days
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_edit_days_workdays(self, mock_update, mock_context):
+        """Test the edit_days function with workdays option."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        # 31 is the code for workdays
+        mock_update.callback_query.data = f"{State.WEEKDAY.name}:31"
+        mock_update.callback_query.answer = AsyncMock()
+
+        # Create a mock event with empty days set
+        mock_event = MagicMock()
+        mock_event.days = set()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the datetime_menu function
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+
+            # Call the function
+            result = await edit_days(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.DATETIME_MENU
+            # Check that all workdays were added
+            assert Day.Monday in mock_context.user_data["current_event"].days
+            assert Day.Tuesday in mock_context.user_data["current_event"].days
+            assert Day.Wednesday in mock_context.user_data["current_event"].days
+            assert Day.Thursday in mock_context.user_data["current_event"].days
+            assert Day.Friday in mock_context.user_data["current_event"].days
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_edit_days_workdays_toggle_off(self, mock_update, mock_context):
+        """Test the edit_days function toggling workdays off."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        # 31 is the code for workdays
+        mock_update.callback_query.data = f"{State.WEEKDAY.name}:31"
+        mock_update.callback_query.answer = AsyncMock()
+
+        # Create a mock event with all workdays already in days set
+        mock_event = MagicMock()
+        mock_event.days = {
+            Day.Monday,
+            Day.Tuesday,
+            Day.Wednesday,
+            Day.Thursday,
+            Day.Friday,
+        }
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the datetime_menu function
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+
+            # Call the function
+            result = await edit_days(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.DATETIME_MENU
+            # Check that all workdays were removed
+            assert Day.Monday not in mock_context.user_data["current_event"].days
+            assert Day.Tuesday not in mock_context.user_data["current_event"].days
+            assert Day.Wednesday not in mock_context.user_data["current_event"].days
+            assert Day.Thursday not in mock_context.user_data["current_event"].days
+            assert Day.Friday not in mock_context.user_data["current_event"].days
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_edit_days_weekend(self, mock_update, mock_context):
+        """Test the edit_days function with weekend option."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        # 96 is the code for weekend
+        mock_update.callback_query.data = f"{State.WEEKDAY.name}:96"
+        mock_update.callback_query.answer = AsyncMock()
+
+        # Create a mock event with empty days set
+        mock_event = MagicMock()
+        mock_event.days = set()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the datetime_menu function
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+
+            # Call the function
+            result = await edit_days(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.DATETIME_MENU
+            # Check that weekend days were added
+            assert Day.Saturday in mock_context.user_data["current_event"].days
+            assert Day.Sunday in mock_context.user_data["current_event"].days
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_edit_days_weekend_toggle_off(self, mock_update, mock_context):
+        """Test the edit_days function toggling weekend off."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        # 96 is the code for weekend
+        mock_update.callback_query.data = f"{State.WEEKDAY.name}:96"
+        mock_update.callback_query.answer = AsyncMock()
+
+        # Create a mock event with weekend days already in days set
+        mock_event = MagicMock()
+        mock_event.days = {Day.Saturday, Day.Sunday}
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the datetime_menu function
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+
+            # Call the function
+            result = await edit_days(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.DATETIME_MENU
+            # Check that weekend days were removed
+            assert Day.Saturday not in mock_context.user_data["current_event"].days
+            assert Day.Sunday not in mock_context.user_data["current_event"].days
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_on_edit_url(self, mock_update, mock_context):
+        """Test the on_edit_url function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+
+        # Mock the construct_back_button function
+        with patch("handlers.calendar.event.construct_back_button") as mock_back:
+            mock_back.return_value = {"reply_markup": MagicMock()}
+
+            # Call the function
+            result = await on_edit_url(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_EDITING_URL
+            mock_update.callback_query.answer.assert_called_once()
+            mock_update.callback_query.edit_message_text.assert_called_once_with(
+                "Будь ласка, вкажіть посилання на цей захід.", **mock_back.return_value
+            )
+            mock_back.assert_called_once_with(State.EVENT_MENU)
+
+    @pytest.mark.asyncio
+    async def test_on_edit_venue(self, mock_update, mock_context):
+        """Test the on_edit_venue function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+
+        # Mock the construct_back_button function
+        with patch("handlers.calendar.event.construct_back_button") as mock_back:
+            mock_back.return_value = {"reply_markup": MagicMock()}
+
+            # Call the function
+            result = await on_edit_venue(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_EDITING_VENUE
+            mock_update.callback_query.answer.assert_called_once()
+            mock_update.callback_query.edit_message_text.assert_called_once_with(
+                "Будь ласка, введіть назву локації.", **mock_back.return_value
+            )
+            mock_back.assert_called_once_with(State.EVENT_MENU)
+
+    @pytest.mark.asyncio
+    async def test_on_edit_location(self, mock_update, mock_context):
+        """Test the on_edit_location function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+
+        # Mock the construct_back_button function
+        with patch("handlers.calendar.event.construct_back_button") as mock_back:
+            mock_back.return_value = {"reply_markup": MagicMock()}
+
+            # Call the function
+            result = await on_edit_location(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_EDITING_LOCATION
+            mock_update.callback_query.answer.assert_called_once()
+            mock_update.callback_query.edit_message_text.assert_called_once_with(
+                "Будь ласка, вкажіть посилання на локацію на Google Maps.",
+                **mock_back.return_value,
+            )
+            mock_back.assert_called_once_with(State.EVENT_MENU)
+
+    @pytest.mark.asyncio
+    async def test_on_edit_image(self, mock_update, mock_context):
+        """Test the on_edit_image function."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+
+        # Mock the construct_back_button function
+        with patch("handlers.calendar.event.construct_back_button") as mock_back:
+            mock_back.return_value = {"reply_markup": MagicMock()}
+
+            # Call the function
+            result = await on_edit_image(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_EDITING_IMAGE
+            mock_update.callback_query.answer.assert_called_once()
+            mock_update.callback_query.edit_message_text.assert_called_once_with(
+                "Будь ласка, надішліть постер для цього заходу (картинкою).",
+                **mock_back.return_value,
+            )
+            mock_back.assert_called_once_with(State.EVENT_MENU)
+
+    @pytest.mark.asyncio
+    async def test_edit_image(self, mock_update, mock_context):
+        """Test the edit_image function."""
+        # Setup
+        mock_update.message = MagicMock()
+        # The function uses the first photo in the list
+        mock_update.message.photo = [MagicMock()]
+        file_id = "test_file_id"
+        mock_update.message.photo[0].file_id = file_id
+
+        # Create a mock event
+        mock_event = MagicMock()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the event_menu function
+        with patch("handlers.calendar.event.event_menu", new=AsyncMock()) as mock_menu:
+            mock_menu.return_value = State.EVENT_MENU
+
+            # Call the function
+            result = await edit_image(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_MENU
+            assert mock_context.user_data["current_event"].image == file_id
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_on_preview_with_image(self, mock_update, mock_context):
+        """Test the on_preview function with an event that has an image."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.effective_user = AsyncMock()
+
+        # Create a mock event with an image
+        mock_event = MagicMock()
+        mock_event.image = "test_image_id"
+        mock_event.post.return_value = {
+            "photo": "test_image_id",
+            "caption": "Event details",
+        }
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Call the function
+        result = await on_preview(mock_update, mock_context)
+
+        # Assertions
+        assert result == State.EVENT_PREVIEW
+        mock_update.callback_query.answer.assert_called_once()
+        mock_update.effective_user.send_photo.assert_called_once()
+
+        # Check that the message with buttons was sent
+        mock_update.effective_user.send_message.assert_called_once()
+        call_args = mock_update.effective_user.send_message.call_args
+        assert call_args is not None
+
+        # Check for Publish button
+        kwargs = call_args[1]
+        assert "reply_markup" in kwargs
+        keyboard = kwargs["reply_markup"].inline_keyboard
+        assert any(
+            button.text == "📺 Publish"
+            and button.callback_data == State.EVENT_PUBLISHING.name
+            for row in keyboard
+            for button in row
+        )
+
+    @pytest.mark.asyncio
+    async def test_on_preview_without_image(self, mock_update, mock_context):
+        """Test the on_preview function with an event that has no image."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+        mock_update.effective_user = AsyncMock()
+
+        # Create a mock event without an image
+        mock_event = MagicMock()
+        mock_event.image = None
+        mock_event.post.return_value = {"text": "Event details"}
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Call the function
+        result = await on_preview(mock_update, mock_context)
+
+        # Assertions
+        assert result == State.EVENT_PREVIEW
+        mock_update.callback_query.answer.assert_called_once()
+        mock_update.callback_query.edit_message_text.assert_called_once()
+
+        # Check that the message with buttons was sent
+        mock_update.effective_user.send_message.assert_called_once()
+        call_args = mock_update.effective_user.send_message.call_args
+        assert call_args is not None
+
+        # Check for Publish button
+        kwargs = call_args[1]
+        assert "reply_markup" in kwargs
+        keyboard = kwargs["reply_markup"].inline_keyboard
+        assert any(
+            button.text == "📺 Publish"
+            and button.callback_data == State.EVENT_PUBLISHING.name
+            for row in keyboard
+            for button in row
+        )
+
+    @pytest.mark.asyncio
+    async def test_on_publish_with_image(
+        self, mock_update, mock_context, mock_settings
+    ):
+        """Test the on_publish function with an event that has an image."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+
+        # Create a mock event with an image
+        mock_event = MagicMock()
+        mock_event.image = "test_image_id"
+        mock_event.post.return_value = {
+            "photo": "test_image_id",
+            "caption": "Event details",
+        }
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the bot's send_photo method
+        mock_context.bot.send_photo = AsyncMock()
+        mock_message = MagicMock()
+        mock_message.link = "https://t.me/channel/123"
+        mock_context.bot.send_photo.return_value = mock_message
+
+        # Mock the cross_post function
+        with patch(
+            "handlers.calendar.event.cross_post", new=AsyncMock()
+        ) as mock_cross_post:
+            # Call the function
+            result = await on_publish(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_PUBLISHING
+            mock_update.callback_query.answer.assert_called_once()
+            mock_context.bot.send_photo.assert_called_once_with(
+                chat_id=mock_settings.CHANNEL_USERNAME,
+                photo="test_image_id",
+                caption="Event details",
+            )
+            mock_cross_post.assert_called_once_with(mock_message, mock_context)
+            assert (
+                mock_context.user_data["current_event"].tg_url
+                == "https://t.me/channel/123"
+            )
+            mock_update.callback_query.edit_message_text.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_exit_with_callback_query(self, mock_update, mock_context):
+        """Test the exit function with a callback query."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+
+        mock_context.user_data = {}
+
+        # Mock the sync_agenda function
+        with patch("handlers.calendar.event.sync_agenda", new=AsyncMock()) as mock_sync:
+            # Call the function
+            result = await exit(mock_update, mock_context)
+
+            # Assertions
+            assert result == ConversationHandler.END
+            mock_update.callback_query.answer.assert_called_once()
+            mock_update.callback_query.edit_message_text.assert_called_once_with(
+                "Роботу з календарем завершено."
+            )
+            mock_sync.assert_called_once_with(mock_context)
+            assert mock_context.user_data["state"] is None
+
+    @pytest.mark.asyncio
+    async def test_exit_without_callback_query(self, mock_update, mock_context):
+        """Test the exit function without a callback query."""
+        # Setup
+        mock_update.callback_query = None
+        mock_update.effective_user = AsyncMock()
+
+        mock_context.user_data = {}
+
+        # Mock the sync_agenda function
+        with patch("handlers.calendar.event.sync_agenda", new=AsyncMock()) as mock_sync:
+            # Call the function
+            result = await exit(mock_update, mock_context)
+
+            # Assertions
+            assert result == ConversationHandler.END
+            mock_update.effective_user.send_message.assert_called_once_with(
+                "Роботу з календарем завершено."
+            )
+            mock_sync.assert_called_once_with(mock_context)
+            assert mock_context.user_data["state"] is None
+
+    @pytest.mark.asyncio
+    async def test_edit_url(self, mock_update, mock_context):
+        """Test the edit_url function."""
+        # Setup
+        mock_update.message = MagicMock()
+        mock_update.message.text = "https://example.com"
+
+        # Create a mock event
+        mock_event = MagicMock()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the event_menu function
+        with patch("handlers.calendar.event.event_menu", new=AsyncMock()) as mock_menu:
+            mock_menu.return_value = State.EVENT_MENU
+
+            # Call the function
+            result = await edit_url(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_MENU
+            assert mock_context.user_data["current_event"].url == "https://example.com"
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_edit_venue(self, mock_update, mock_context):
+        """Test the edit_venue function."""
+        # Setup
+        mock_update.message = MagicMock()
+        mock_update.message.text = "Test Venue"
+
+        # Create a mock event
+        mock_event = MagicMock()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the event_menu function
+        with patch("handlers.calendar.event.event_menu", new=AsyncMock()) as mock_menu:
+            mock_menu.return_value = State.EVENT_MENU
+
+            # Call the function
+            result = await edit_venue(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_MENU
+            assert mock_context.user_data["current_event"].venue == "Test Venue"
+            mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_edit_location(self, mock_update, mock_context):
+        """Test the edit_location function."""
+        # Setup
+        mock_update.message = MagicMock()
+        mock_update.message.text = "Test Location"
+
+        # Create a mock event
+        mock_event = MagicMock()
+
+        mock_context.user_data = {
+            "current_event": mock_event,
+        }
+
+        # Mock the event_menu function
+        with patch("handlers.calendar.event.event_menu", new=AsyncMock()) as mock_menu:
+            mock_menu.return_value = State.EVENT_MENU
+
+            # Call the function
+            result = await edit_location(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_MENU
+            assert mock_context.user_data["current_event"].location == "Test Location"
+            mock_menu.assert_called_once_with(mock_update, mock_context)
