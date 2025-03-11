@@ -1,7 +1,6 @@
-from .error import handler as error
-from . import debug
-from . import info
-from . import upload
+from .debug import debug
+from .debug import error_handler as error
+from .debug import handlers as debug_handlers
 
 from . import calendar
 from . import channel
@@ -11,13 +10,8 @@ from . import war
 from . import welcome
 
 
-__all__ = ["all", "calendar", "error", "war", "welcome"]
+__all__ = ["all", "debug", "calendar", "error", "war", "welcome"]
 
-# Debug handlers
-debug_handlers = []
-modules = [debug, info, upload]
-for module in modules:
-    debug_handlers.extend(module.create_handlers())
 # Business logic handlers
 logic_handlers = []
 modules = [calendar, channel, request, topic, war, welcome]
