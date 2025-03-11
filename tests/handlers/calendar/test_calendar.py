@@ -1,9 +1,8 @@
 """Tests for the calendar module."""
 
 import pytest
-from datetime import date
 from unittest.mock import AsyncMock, MagicMock, patch
-from telegram import InlineKeyboardMarkup, Update
+from telegram import InlineKeyboardMarkup
 from telegram.ext import ConversationHandler
 
 from handlers.calendar.calendar import (

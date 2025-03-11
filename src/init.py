@@ -1,9 +1,21 @@
 import copy
 import logging
 from datetime import datetime, timedelta
+import logging.handlers
 from telegram.ext import Application
 from telegram.warnings import PTBUserWarning
 from warnings import filterwarnings
+
+
+# Suppress specific PTBUserWarning about CallbackQueryHandler and per_message=False
+filterwarnings(
+    action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning
+)
+# Suppress warning about nested conversations with conversation_timeout
+filterwarnings(
+    action="ignore", message=r".*nested conversations.*", category=PTBUserWarning
+)
+
 
 from config import settings
 import handlers
@@ -27,10 +39,6 @@ def setup_logging() -> None:
     logging.getLogger().setLevel(logging_level)
     logging.getLogger("apscheduler").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    # Debugging
-    filterwarnings(
-        action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning
-    )
 
 
 async def post_init(app: Application) -> None:
