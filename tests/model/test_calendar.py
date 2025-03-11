@@ -52,6 +52,7 @@ class TestCalendar:
         assert isinstance(nearest_events, list)
         # The actual implementation might return different results based on dates
         # Just check that the method returns a list
+        # TODO: Add more tests
 
     def test_get_future_events(self, calendar, mock_event):
         """Test getting future events."""
@@ -81,7 +82,7 @@ class TestCalendar:
 
         events = calendar.get_future_events()
         assert isinstance(events, list)
-        # FIXME: Add more tests
+        # TODO: Add more tests
         # The actual implementation might return different results based on dates
         # Just check that the method returns a list
 
@@ -125,6 +126,7 @@ class TestCalendar:
         assert isinstance(agenda, str)
         # The actual implementation might return different results
         # Just check that the method returns a string
+        # TODO: Add more tests
 
     def test_remove_past_events(self, calendar):
         """Test removing past events."""
@@ -144,6 +146,7 @@ class TestCalendar:
 
         # This might fail depending on the implementation
         # Just try to call the method
+        # TODO: Add more tests
         try:
             calendar.remove_past_events()
         except Exception as e:
@@ -237,11 +240,20 @@ class TestCalendar:
         )
         calendar.add_event(volunteer_event)
 
+        future_event = Event(
+            title="Future Event",
+            emoji="🔮",
+            category=Category.GENERAL,
+            date=date.today() + timedelta(days=30),
+        )
+        calendar.add_event(future_event)
+
         # Get the agenda
         agenda = calendar.get_agenda()
 
         # Check that all categories are included
         assert "📢 Ралі" in agenda
         assert "💰 Збори коштів" in agenda
+        assert "📰 Анонси" in agenda
         assert "🤲 Волонтерство" in agenda
         assert "_#agenda_" in agenda
