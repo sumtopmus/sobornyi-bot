@@ -6,7 +6,7 @@ from telegram import Bot, Chat, Message, Update, User
 from telegram.ext import Application, ContextTypes
 import sys
 
-from src.model.calendar import Calendar
+from model.calendar import Calendar
 
 
 # Create a function to set up mock modules when needed
@@ -86,10 +86,7 @@ def mock_settings():
         mock_settings.CLEANUP_PERIOD = 60
         mock_settings.WAR_MODE = False
         mock_settings.AGENDA_MODE = False
-        mock_settings.CHANNEL_ID = -1001234567890
         mock_settings.CHANNEL_USERNAME = "channel"
-        mock_settings.CHANNEL_TITLE = "Channel"
-        mock_settings.CHANNEL_INVITE_LINK = "https://t.me/channel"
         mock_settings.ADMINS = ["admin1", "admin2"]
         mock_settings.MODERATORS = ["moderator1", "moderator2"]
         mock_settings.LOG_PATH = "test_log.log"
@@ -97,7 +94,6 @@ def mock_settings():
         mock_settings.BACKUP_COUNT = 3
         mock_settings.MORNING_TIME = "08:00:00"
         mock_settings.AGENDA_TIME = "09:00:00"
-        mock_settings.TIME_OFFSET = 3600
         mock_settings.DEFAULT_AGENDA_IMAGE = "default_image.jpg"
         mock_settings.current_env = "dev"
         yield mock_settings

@@ -1,4 +1,14 @@
 repos:
+-   repo: local
+    hooks:
+    -   id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        pass_filenames: false
+        types: [python]
+        verbose: true
+        stages: [commit]
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
@@ -17,13 +27,3 @@ repos:
     hooks:
       - id: black
         language_version: python3.12
--   repo: local
-    hooks:
-    -   id: pytest
-        name: pytest
-        entry: pytest
-        language: system
-        pass_filenames: true
-        types: [python]
-        verbose: true
-        stages: [commit]

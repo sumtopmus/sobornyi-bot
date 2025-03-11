@@ -1,10 +1,7 @@
 """Tests for the bot module."""
 
 import pytest
-from unittest.mock import patch, MagicMock, call
-
-import os
-import sys
+from unittest.mock import patch, MagicMock
 
 
 class TestBot:
@@ -44,7 +41,7 @@ class TestBot:
             mock_timezone.return_value = MagicMock()
 
             # Import bot after mocking
-            from src.bot import main
+            from bot import main
 
             # Call the function
             main()
@@ -97,7 +94,7 @@ class TestBot:
             mock_timezone.return_value = MagicMock()
 
             # Import bot after mocking
-            from src.bot import main
+            from bot import main
 
             # Call the function
             main()
@@ -126,7 +123,7 @@ class TestBot:
         mock_exists.return_value = False
 
         # Import bot after mocking
-        from src.bot import main
+        from bot import main
 
         # Call the function and expect an exception
         with pytest.raises(OSError):
@@ -197,7 +194,7 @@ class TestBot:
     def test_main_execution(self):
         """Test that main() is called when the script is run directly."""
         # We need to patch the main function and __name__ == "__main__" check
-        with patch("src.bot.main") as mock_main:
+        with patch("bot.main") as mock_main:
             # Execute the code that would be run when the module is executed directly
             code = """
 if __name__ == "__main__":

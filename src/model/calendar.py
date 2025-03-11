@@ -61,10 +61,12 @@ class Event:
 
     def get_weekdays(self) -> str:
         result = ""
+        if not self.days:
+            return ""
         if len(self.days) == 1:
             return weekday.name[next(iter(self.days)).value]
         value = sum([2**day.value for day in self.days])
-        if value in weekday.name.keys():
+        if value > 30 and value in weekday.name.keys():
             return weekday.name[value]
 
         previous_sequence = False
@@ -86,6 +88,9 @@ class Event:
                     previous_sequence = True
                     current_sequence = False
                     long_sequence = False
+        if current_sequence:
+            if long_sequence:
+                result += f"-{weekday.name[6]}"
         return result
 
     def get_title(self) -> Optional[str]:

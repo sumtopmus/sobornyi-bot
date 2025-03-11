@@ -14,7 +14,7 @@ from handlers.calendar.menu import (
     construct_back_button,
     State,
 )
-from src.model.calendar import Day, Occurrence
+from model.calendar import Day, Occurrence
 
 
 # Mock the PythonCalendar.get_this_week method at the module level
@@ -78,7 +78,7 @@ class TestMenu:
         update.effective_user.send_message.assert_called_once_with(**menu)
 
     @pytest.mark.asyncio
-    async def test_calendar_menu(self, mock_update, mock_context, mock_settings):
+    async def test_calendar_menu(self, mock_update, mock_context):
         """Test the calendar_menu function."""
         # Setup
         update = mock_update

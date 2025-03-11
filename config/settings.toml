@@ -1,4 +1,7 @@
 [default]
+# Switchers
+debug = false
+forum = false
 # Data
 db_path = 'data/db'
 # Logging
@@ -48,4 +51,4 @@ time_offset = 10            # in seconds
 conversation_timeout = 30   # in seconds
 welcome_timeout = 10        # in seconds
 cleanup_period = 20         # in seconds
-max_bytes = 1024            # in bytes
+max_bytes = 8096            # in bytes

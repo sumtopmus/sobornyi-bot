@@ -11,6 +11,5 @@ def patch_settings(mock_settings):
         patch("handlers.calendar.agenda.settings", mock_settings),
         patch("handlers.calendar.calendar.settings", mock_settings),
         patch("handlers.calendar.event.settings", mock_settings),
-        patch("handlers.calendar.menu.settings", mock_settings),
     ):
         yield

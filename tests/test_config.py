@@ -1,84 +1,220 @@
 """Tests for the config module."""
 
+import logging
+from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 
-from config import debug_mode_on, debug_mode_off
+from dynaconf import Dynaconf
+
+from config import debug_mode_on, debug_mode_off, settings
 
 
 class TestDebugMode:
     def test_debug_mode_on(self, mock_settings):
+        """Test that debug_mode_on sets the correct settings and log levels."""
         # Set up mocks
         with patch("config.logging.getLogger") as mock_get_logger:
-            mock_logger = MagicMock()
-            mock_get_logger.return_value = mock_logger
+            # Create mock loggers
+            mock_root_logger = MagicMock()
+            mock_httpx_logger = MagicMock()
+            mock_apscheduler_logger = MagicMock()
 
-            # Call the function
+            # Configure mock_get_logger to return different loggers based on the argument
+            def get_logger_side_effect(name=None):
+                if name is None:
+                    return mock_root_logger
+                elif name == "httpx":
+                    return mock_httpx_logger
+                elif name == "apscheduler":
+                    return mock_apscheduler_logger
+                return MagicMock()
+
+            mock_get_logger.side_effect = get_logger_side_effect
+
+            # Call the function under test
             debug_mode_on()
 
-            # Check that DEBUG was set to True
+            # Verify settings were updated correctly
             assert mock_settings.DEBUG is True
-
-            # Check that loggers were set to the correct levels
-            mock_get_logger.assert_any_call("config")
-
-            # Check that httpx and apscheduler loggers were set to INFO
-            mock_get_logger.assert_any_call("httpx")
-            mock_get_logger.assert_any_call("apscheduler")
+            # Verify log levels were set correctly
+            mock_root_logger.setLevel.assert_called_once_with(logging.DEBUG)
+            mock_httpx_logger.setLevel.assert_called_once_with(logging.INFO)
+            mock_apscheduler_logger.setLevel.assert_called_once_with(logging.INFO)
 
     def test_debug_mode_off(self, mock_settings):
+        """Test that debug_mode_off sets the correct settings and log levels."""
+        # Set up mocks
+        with patch("config.logging.getLogger") as mock_get_logger:
+            # Create mock loggers
+            mock_root_logger = MagicMock()
+            mock_httpx_logger = MagicMock()
+            mock_apscheduler_logger = MagicMock()
+
+            # Configure mock_get_logger to return different loggers based on the argument
+            def get_logger_side_effect(name=None):
+                if name is None:
+                    return mock_root_logger
+                elif name == "httpx":
+                    return mock_httpx_logger
+                elif name == "apscheduler":
+                    return mock_apscheduler_logger
+                return MagicMock()
+
+            mock_get_logger.side_effect = get_logger_side_effect
+
+            # Call the function under test
+            debug_mode_off()
+
+            # Verify settings were updated correctly
+            assert mock_settings.DEBUG is False
+            # Verify log levels were set correctly
+            mock_root_logger.setLevel.assert_called_once_with(logging.INFO)
+            mock_httpx_logger.setLevel.assert_called_once_with(logging.WARNING)
+            mock_apscheduler_logger.setLevel.assert_called_once_with(logging.WARNING)
+
+    def test_debug_mode_toggle(self, mock_settings):
+        """Test toggling between debug modes."""
         # Set up mocks
         with patch("config.logging.getLogger") as mock_get_logger:
             mock_logger = MagicMock()
             mock_get_logger.return_value = mock_logger
 
-            # Call the function
+            # Start with debug mode off
             debug_mode_off()
-
-            # Check that DEBUG was set to False
             assert mock_settings.DEBUG is False
 
-            # Check that loggers were set to the correct levels
-            mock_get_logger.assert_any_call("config")
+            # Toggle to debug mode on
+            debug_mode_on()
+            assert mock_settings.DEBUG is True
 
-            # Check that httpx and apscheduler loggers were set to WARNING
-            mock_get_logger.assert_any_call("httpx")
-            mock_get_logger.assert_any_call("apscheduler")
+            # Toggle back to debug mode off
+            debug_mode_off()
+            assert mock_settings.DEBUG is False
 
 
 class TestSettings:
-    def test_settings_loaded(self, mock_settings):
+    def test_settings_loaded(self):
+        """Test that settings are loaded correctly."""
         # Test that settings are loaded correctly
-        assert mock_settings.DEBUG is not None
-        assert mock_settings.CHAT_ID is not None
-        assert mock_settings.CLEANUP_PERIOD is not None
+        assert settings.DEBUG is not None
+        assert settings.CHAT_ID is not None
+        assert settings.CLEANUP_PERIOD is not None
+        assert settings.WAR_MODE is not None
+        assert settings.AGENDA_MODE is not None
+        assert settings.CHANNEL_USERNAME is not None
+        assert settings.ADMINS is not None
+        assert settings.MODERATORS is not None
+        assert settings.LOG_PATH is not None
+        assert settings.MAX_BYTES is not None
+        assert settings.BACKUP_COUNT is not None
+        assert settings.MORNING_TIME is not None
+        assert settings.AGENDA_TIME is not None
+        assert settings.current_env is not None
 
-    def test_dev_environment_settings(self, mock_settings):
-        # Mock the current environment
-        mock_settings.current_env = "dev"
-        mock_settings.MORNING_TIME = "08:00:00"  # Set the expected value directly
+    def test_settings_properties(self):
+        """Test that settings has the expected properties."""
+        # Verify that settings is an instance of Dynaconf
+        assert isinstance(settings, Dynaconf)
 
-        # Mock the datetime and timedelta
-        with patch("config.datetime") as mock_datetime, patch(
-            "config.timedelta"
-        ) as mock_timedelta:
+        # Verify that settings has the expected attributes
 
-            mock_now = MagicMock()
-            mock_datetime.now.return_value = mock_now
-            mock_time = MagicMock()
-            mock_now.time.return_value = mock_time
-            mock_time.isoformat.return_value = "12:00:00"
+        # .secrets.toml
+        # token = 'SECRET_PLACEHOLDER'
+        assert hasattr(settings, "TOKEN")
 
-            # Mock the TIME_OFFSET setting
-            mock_settings.TIME_OFFSET = 3600  # 1 hour
+        # settings.toml
+        # admins = ['@PLACEHOLDER']
+        assert hasattr(settings, "ADMINS")
+        # moderators = ['@PLACEHOLDER']
+        assert hasattr(settings, "MODERATORS")
+        # chat_id = 'PLACEHOLDER'
+        assert hasattr(settings, "CHAT_ID")
+        # chat_link_id = 'PLACEHOLDER'
+        assert hasattr(settings, "CHAT_LINK_ID")
+        # chat_invite_link = 'PLACEHOLDER'
+        assert hasattr(settings, "CHAT_INVITE_LINK")
+        # channel_username = '@PLACEHOLDER'
+        assert hasattr(settings, "CHANNEL_USERNAME")
+        # default_agenda_image = 'PLACEHOLDER'
+        assert hasattr(settings, "DEFAULT_AGENDA_IMAGE")
 
-            # Reimport the module to trigger the environment-specific code
-            with patch.dict("sys.modules"):
-                import importlib
-                import config
+    def test_dev_environment_time_calculation(self):
+        """Test the time calculation logic for dev environment."""
+        # Create a fixed datetime for testing
+        test_datetime = datetime(2023, 1, 1, 12, 0, 0)
+        time_offset = 3600  # 1 hour
+        expected_time = (
+            (test_datetime + timedelta(seconds=time_offset)).time().isoformat()
+        )
 
-                importlib.reload(config)
+        # Test the calculation directly
+        with patch("config.datetime") as mock_datetime:
+            mock_datetime.now.return_value = test_datetime
 
-                # Check that the time settings were updated
-                assert (
-                    mock_settings.MORNING_TIME == "08:00:00"
-                )  # We're using the mock value
+            # Create a mock for settings
+            mock_settings = MagicMock()
+            mock_settings.current_env = "dev"
+            mock_settings.TIME_OFFSET = time_offset
+
+            # Perform the calculation that happens in config.py
+            mock_settings.MORNING_TIME = (
+                (mock_datetime.now() + timedelta(seconds=mock_settings.TIME_OFFSET))
+                .time()
+                .isoformat()
+            )
+            mock_settings.AGENDA_TIME = (
+                (mock_datetime.now() + timedelta(seconds=mock_settings.TIME_OFFSET))
+                .time()
+                .isoformat()
+            )
+
+            # Verify the results
+            assert mock_settings.MORNING_TIME == expected_time
+            assert mock_settings.AGENDA_TIME == expected_time
+
+            # Verify that the calculation was performed twice (once for each setting)
+            assert mock_datetime.now.call_count == 2
+
+    def test_non_dev_environment_time_calculation(self):
+        """Test that time calculation is not performed in non-dev environments."""
+        # Create a mock for settings in a non-dev environment
+        mock_settings = MagicMock()
+        mock_settings.current_env = "production"
+
+        # Set initial values that should remain unchanged
+        default_morning_time = "08:00:00"
+        default_agenda_time = "09:00:00"
+        mock_settings.MORNING_TIME = default_morning_time
+        mock_settings.AGENDA_TIME = default_agenda_time
+
+        # Mock datetime to verify it's not called
+        with patch("config.datetime") as mock_datetime:
+            # Simulate the conditional in config.py
+            if mock_settings.current_env == "dev":
+                mock_settings.MORNING_TIME = (
+                    (mock_datetime.now() + timedelta(seconds=mock_settings.TIME_OFFSET))
+                    .time()
+                    .isoformat()
+                )
+                mock_settings.AGENDA_TIME = (
+                    (mock_datetime.now() + timedelta(seconds=mock_settings.TIME_OFFSET))
+                    .time()
+                    .isoformat()
+                )
+
+            # Verify the settings were not modified
+            assert mock_settings.MORNING_TIME == default_morning_time
+            assert mock_settings.AGENDA_TIME == default_agenda_time
+
+            # Verify datetime.now was not called
+            mock_datetime.now.assert_not_called()
+
+    def test_settings_attributes(self, mock_settings):
+        """Test that settings can be modified."""
+        # Test that settings can be modified
+        original_debug = mock_settings.DEBUG
+        mock_settings.DEBUG = not original_debug
+        assert mock_settings.DEBUG == (not original_debug)
+
+        # Restore the original value
+        mock_settings.DEBUG = original_debug

@@ -1,11 +1,10 @@
 from calendar import Calendar as PythonCalendar
-from dynaconf import settings
 from enum import Enum
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
 from .agenda import sync_agenda
-from src.model.calendar import Calendar, Day, Occurrence
+from model.calendar import Day, Occurrence
 from utils import log
 
 

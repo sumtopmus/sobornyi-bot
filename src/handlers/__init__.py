@@ -1,4 +1,5 @@
-from .debug import debug, error_handler
+from .debug import debug
+from .debug import error_handler as error
 from .debug import handlers as debug_handlers
 
 from . import calendar

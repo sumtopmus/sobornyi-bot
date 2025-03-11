@@ -2,10 +2,16 @@
 
 import pytest
 import sys
+import logging
+from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 
 # Import the real Calendar class
-from src.model.calendar import Calendar
+from model.calendar import Calendar
+
+# Import the module to test with patched settings
+from init import add_handlers, setup_logging, post_init
+from utils import MESSAGE_CLEANUP_JOB
 
 
 # Set up mock modules before importing init
@@ -75,9 +81,6 @@ mock_settings.AGENDA_TIME = "09:00:00"
 mock_settings.TIME_OFFSET = 3600
 mock_settings.current_env = "dev"
 
-# Import the module to test with patched settings
-from src.utils import MESSAGE_CLEANUP_JOB
-
 
 # Create a patched version of setup_logging
 def patched_setup_logging():
@@ -118,124 +121,240 @@ def teardown_module(module):
         sys.modules.pop("model", None)
 
 
+class TestWarningFilters:
+    """Tests for the warning filters setup in init.py."""
+
+    def test_warning_filters(self):
+        """Test that warning filters are set up correctly."""
+        with patch("warnings.filterwarnings") as mock_filterwarnings:
+            # Reset the mock to clear any previous calls
+            mock_filterwarnings.reset_mock()
+
+            # Re-import init to trigger the warning filters
+            import importlib
+            from src import init
+
+            importlib.reload(init)
+
+            # Check that filterwarnings was called with the expected arguments
+            # The actual number of calls may vary, so we'll just check that the specific calls we're interested in were made
+            mock_filterwarnings.assert_any_call(
+                action="ignore",
+                message=r".*CallbackQueryHandler",
+                category=init.PTBUserWarning,
+            )
+            mock_filterwarnings.assert_any_call(
+                action="ignore",
+                message=r".*nested conversations.*",
+                category=init.PTBUserWarning,
+            )
+
+
 class TestSetupLogging:
+    """Tests for the setup_logging function."""
+
     def test_setup_logging_debug_mode(self):
+        """Test setup_logging with DEBUG=True."""
         # Test setup_logging with DEBUG=True
-        mock_settings.DEBUG = True
-
-        with patch("logging.basicConfig") as mock_basicConfig, patch(
-            "logging.getLogger"
-        ) as mock_getLogger, patch("logging.Formatter") as mock_Formatter, patch(
-            "logging.handlers.RotatingFileHandler"
-        ) as mock_RotatingFileHandler:
-
-            # Mock the logging levels
-            mock_logger = MagicMock()
-            mock_getLogger.return_value = mock_logger
-
+        with (
+            patch("logging.handlers.RotatingFileHandler") as mock_handler_class,
+            patch("logging.Formatter") as mock_formatter_class,
+            patch("logging.getLogger") as mock_get_logger,
+            patch("init.debug_mode_on") as mock_debug_mode_on,
+            patch("init.debug_mode_off") as mock_debug_mode_off,
+            patch("init.settings", mock_settings),
+        ):
+            # Configure mocks
+            mock_settings.DEBUG = True
             mock_handler = MagicMock()
-            mock_RotatingFileHandler.return_value = mock_handler
-
+            mock_handler_class.return_value = mock_handler
             mock_formatter = MagicMock()
-            mock_Formatter.return_value = mock_formatter
+            mock_formatter_class.return_value = mock_formatter
+            mock_root_logger = MagicMock()
+            mock_get_logger.return_value = mock_root_logger
 
-            # Call the patched function
-            patched_setup_logging()
+            setup_logging()
 
-            # Since we're not actually calling the real function, we'll just verify our mocks
-            assert mock_settings.DEBUG is True
+            # Verify the handler was created with the correct parameters
+            mock_handler_class.assert_called_once_with(
+                filename=mock_settings.LOG_PATH,
+                maxBytes=mock_settings.MAX_BYTES,
+                backupCount=mock_settings.BACKUP_COUNT,
+            )
+
+            # Verify the formatter was created and set
+            mock_formatter_class.assert_called_once_with(
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            )
+            mock_handler.setFormatter.assert_called_once_with(mock_formatter)
+
+            # Verify that the root logger had the handler added
+            mock_root_logger.addHandler.assert_called_once_with(mock_handler)
+
+            # Verify that debug_mode_on was called and debug_mode_off was not
+            mock_debug_mode_on.assert_called_once()
+            mock_debug_mode_off.assert_not_called()
 
     def test_setup_logging_production_mode(self):
+        """Test setup_logging with DEBUG=False."""
         # Test setup_logging with DEBUG=False
-        mock_settings.DEBUG = False
-
-        with patch("logging.basicConfig") as mock_basicConfig, patch(
-            "logging.getLogger"
-        ) as mock_getLogger, patch("logging.Formatter") as mock_Formatter, patch(
-            "logging.handlers.RotatingFileHandler"
-        ) as mock_RotatingFileHandler:
-
-            # Mock the logging levels
-            mock_logger = MagicMock()
-            mock_getLogger.return_value = mock_logger
-
+        with (
+            patch("logging.handlers.RotatingFileHandler") as mock_handler_class,
+            patch("logging.Formatter") as mock_formatter_class,
+            patch("init.debug_mode_on") as mock_debug_mode_on,
+            patch("init.debug_mode_off") as mock_debug_mode_off,
+        ):
+            # Configure mocks
+            mock_settings.DEBUG = False
             mock_handler = MagicMock()
-            mock_RotatingFileHandler.return_value = mock_handler
-
+            mock_handler_class.return_value = mock_handler
             mock_formatter = MagicMock()
-            mock_Formatter.return_value = mock_formatter
+            mock_formatter_class.return_value = mock_formatter
 
-            # Call the patched function
-            patched_setup_logging()
+            setup_logging()
 
-            # Since we're not actually calling the real function, we'll just verify our mocks
-            assert mock_settings.DEBUG is False
+            # Verify the handler was created with the correct parameters
+            mock_handler_class.assert_called_once_with(
+                filename=mock_settings.LOG_PATH,
+                maxBytes=mock_settings.MAX_BYTES,
+                backupCount=mock_settings.BACKUP_COUNT,
+            )
+
+            # Verify the formatter was created and set
+            mock_formatter_class.assert_called_once_with(
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            )
+            mock_handler.setFormatter.assert_called_once_with(mock_formatter)
+
+            # Verify that debug_mode_off was called and debug_mode_on was not
+            mock_debug_mode_off.assert_called_once()
+            mock_debug_mode_on.assert_not_called()
 
 
 class TestPostInit:
-    @pytest.mark.asyncio
-    async def test_post_init_with_war_mode(self):
-        # Test post_init with WAR_MODE=True
-        mock_settings.WAR_MODE = True
-        mock_settings.AGENDA_MODE = False
+    """Tests for the post_init function."""
 
+    @pytest.mark.asyncio
+    async def test_bot_data_initialization(self):
+        """Test that bot_data is properly initialized."""
         # Mock the application
         mock_application = MagicMock()
         mock_application.bot_data = {}
 
-        # Call the patched function
-        await patched_post_init(mock_application)
+        # Patch settings and handlers to avoid side effects
+        with (
+            patch("init.settings", mock_settings),
+            patch("init.handlers.war.war_on") as mock_war_on,
+            patch("init.handlers.calendar.agenda_on") as mock_agenda_on,
+        ):
+            mock_settings.WAR_MODE = False
+            mock_settings.AGENDA_MODE = False
 
-        # Check that war_on was called
-        mock_data["war"].war_on.assert_called_once_with(mock_application)
+            await post_init(mock_application)
 
-    @pytest.mark.asyncio
-    async def test_post_init_with_agenda_mode(self):
-        # Test post_init with AGENDA_MODE=True
-        mock_settings.WAR_MODE = False
-        mock_settings.AGENDA_MODE = True
-
-        # Mock the application
-        mock_application = MagicMock()
-        mock_application.bot_data = {}
-
-        # Call the patched function
-        await patched_post_init(mock_application)
-
-        # Check that agenda_on was called
-        mock_data["calendar"].agenda_on.assert_called_once_with(mock_application)
-
-    @pytest.mark.asyncio
-    async def test_post_init_with_existing_jobs(self):
-        # Test post_init with existing jobs
-        mock_settings.WAR_MODE = False
-        mock_settings.AGENDA_MODE = False
-
-        # Mock the application
-        mock_application = MagicMock()
-        mock_application.bot_data = {}
-
-        # Call the patched function
-        await patched_post_init(mock_application)
-
-        # Check that the calendar was initialized
+        # Check that war and agenda modes were not activated
+        mock_war_on.assert_not_called()
+        mock_agenda_on.assert_not_called()
+        # Check that bot_data was initialized correctly
         assert "calendar" in mock_application.bot_data
         assert isinstance(mock_application.bot_data["calendar"], Calendar)
         assert "agenda" in mock_application.bot_data
         assert mock_application.bot_data["agenda"] == {"image": None}
         assert "jobs" in mock_application.bot_data
+        assert mock_application.bot_data["jobs"] == {}
         assert "cross-posts" in mock_application.bot_data
+        assert mock_application.bot_data["cross-posts"] == {}
+
+    @pytest.mark.asyncio
+    async def test_war_mode_activation(self):
+        """Test that war_on is called when WAR_MODE is True."""
+        with patch("init.handlers.war.war_on") as mock_war_on:
+            # Configure settings
+            mock_settings.WAR_MODE = True
+
+            # Mock the application
+            mock_application = MagicMock()
+            mock_application.bot_data = {}
+
+            # Patch settings and other functions that might be called
+            with (
+                patch("init.settings", mock_settings),
+                patch("init.handlers.calendar.agenda_on"),
+            ):
+                await post_init(mock_application)
+
+            # Verify war_on was called with the application
+            mock_war_on.assert_called_once_with(mock_application)
+
+    @pytest.mark.asyncio
+    async def test_agenda_mode_activation(self):
+        """Test that agenda_on is called when AGENDA_MODE is True."""
+        with patch("init.handlers.calendar.agenda_on") as mock_agenda_on:
+            # Configure settings
+            mock_settings.AGENDA_MODE = True
+
+            # Mock the application
+            mock_application = MagicMock()
+            mock_application.bot_data = {}
+
+            # Patch settings and other functions that might be called
+            with (
+                patch("init.settings", mock_settings),
+                patch("init.handlers.war.war_on"),
+            ):
+                await post_init(mock_application)
+
+            # Verify agenda_on was called with the application
+            mock_agenda_on.assert_called_once_with(mock_application)
 
 
 class TestAddHandlers:
+    """Tests for the add_handlers function."""
+
     def test_add_handlers(self):
+        """Test add_handlers function."""
+        # Create a mock handlers module
+        mock_handlers = MagicMock()
+        mock_handlers.error = MagicMock()
+        mock_handlers.all = [MagicMock(), MagicMock()]
+
         # Test add_handlers
-        mock_application = MagicMock()
-        mock_application.add_handler = MagicMock()
-        mock_application.add_error_handler = MagicMock()
+        with patch("init.handlers", mock_handlers):
+            # Mock the application
+            mock_application = MagicMock()
 
-        # Call the patched function
-        patched_add_handlers(mock_application)
+            add_handlers(mock_application)
 
-        # Check that add_error_handler was called
-        mock_application.add_error_handler.assert_called_once_with(mock_data["error"])
+            # Check that add_error_handler was called with the error handler
+            mock_application.add_error_handler.assert_called_once_with(
+                mock_handlers.error
+            )
+
+            # Check that add_handlers was called with all handlers
+            mock_application.add_handlers.assert_called_once_with(mock_handlers.all)
+
+    def test_add_handlers_with_custom_handlers(self):
+        """Test add_handlers with custom handlers."""
+        # Create a mock handlers module with custom handlers
+        mock_handlers = MagicMock()
+        mock_handlers.error = MagicMock()
+        custom_handler1 = MagicMock()
+        custom_handler2 = MagicMock()
+        mock_handlers.all = [custom_handler1, custom_handler2]
+
+        # Test add_handlers
+        with patch("init.handlers", mock_handlers):
+            # Mock the application
+            mock_application = MagicMock()
+
+            add_handlers(mock_application)
+
+            # Check that add_error_handler was called with the error handler
+            mock_application.add_error_handler.assert_called_once_with(
+                mock_handlers.error
+            )
+
+            # Check that add_handlers was called with all handlers
+            mock_application.add_handlers.assert_called_once_with(
+                [custom_handler1, custom_handler2]
+            )
