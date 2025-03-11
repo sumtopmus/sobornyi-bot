@@ -26,4 +26,4 @@ repos:
         pass_filenames: false
         types: [python]
         verbose: false
-        stages: [commit]
+        stages: [pre-commit]
