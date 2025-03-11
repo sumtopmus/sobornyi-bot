@@ -1,7 +1,10 @@
-.PHONY: init run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-unit test-integration test-cov
+.PHONY: install init-dev run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-unit test-integration test-cov
 
-init:
+install:
 	conda env create -f environment.yaml
+
+init-dev: install
+	pip install -r requirements-dev.txt
 	pre-commit install
 
 run: clean-cache
