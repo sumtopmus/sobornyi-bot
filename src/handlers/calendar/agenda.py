@@ -52,13 +52,6 @@ async def publish_agenda(context: CallbackContext):
 async def sync_agenda(context: CallbackContext):
     """Syncs the agenda."""
     log("sync_agenda")
-    # TODO: temporary solution during migration
-    if (
-        "date" not in context.bot_data["agenda"]
-        or "hash" not in context.bot_data["agenda"]
-    ):
-        return
-    # end of temporary solution
     agenda_date = date.fromisoformat(context.bot_data["agenda"]["date"])
     if agenda_date == this_week():
         text = context.bot_data["calendar"].get_agenda()

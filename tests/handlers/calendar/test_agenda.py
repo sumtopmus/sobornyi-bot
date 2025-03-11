@@ -235,14 +235,14 @@ class TestAgenda:
         """Test the sync_agenda function when agenda data is missing."""
         # Override with empty agenda data
         mock_agenda["context"].bot_data["agenda"] = {}  # Missing date and hash
-
         # Reset the mock to clear any pre-configured return values
         mock_agenda["context"].bot_data["calendar"].get_agenda.reset_mock()
 
-        # Call the function
-        await sync_agenda(mock_agenda["context"])
+        # Call the function - should raise KeyError
+        with pytest.raises(KeyError):
+            await sync_agenda(mock_agenda["context"])
 
-        # Assertions - should return early without errors
+        # Assertions - function should raise exception before these calls
         mock_agenda["context"].bot.edit_message_caption.assert_not_called()
         mock_agenda["context"].bot_data["calendar"].get_agenda.assert_not_called()
 
