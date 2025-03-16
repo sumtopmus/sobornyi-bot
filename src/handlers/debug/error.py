@@ -1,8 +1,8 @@
 import logging
+
 import telegram
 from telegram import Update
 from telegram.ext import ContextTypes
-
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except telegram.error.TimedOut as e:
         logger.warning(f"TimedOut: {e}")
     except telegram.error.NetworkError as e:
-        logger.error(f"NetworkError: {e}")
+        logger.warning(f"NetworkError: {e}")
     except telegram.error.Forbidden as e:
         logger.error(f"Forbidden: {e}")
     except telegram.error.ChatMigrated as e:
