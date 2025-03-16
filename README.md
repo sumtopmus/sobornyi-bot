@@ -16,3 +16,14 @@ In order to run it:
 1. Enjoy!
 
 Hint: in order to get `chat_id` run `/info` command for the bot in that chat.
+
+## Data Migration
+
+When updating the model structure, you may need to migrate your persistent data. The bot includes a migration tool for this purpose:
+
+```bash
+# Migrate the data
+make migrate
+```
+
+For more information about the migration tool, see [tools/README.md](tools/README.md).
