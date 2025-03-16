@@ -1,10 +1,11 @@
 import os
-import pytz
+from zoneinfo import ZoneInfo
+
 from telegram.constants import ParseMode
 from telegram.ext import Application, Defaults, PicklePersistence
 
-from config import settings
 import init
+from config import settings
 
 
 def main() -> None:
@@ -19,7 +20,7 @@ def main() -> None:
 
     # Setup the bot.
     defaults = Defaults(
-        parse_mode=ParseMode.MARKDOWN, tzinfo=pytz.timezone(settings.TIMEZONE)
+        parse_mode=ParseMode.MARKDOWN, tzinfo=ZoneInfo(settings.TIMEZONE)
     )
     persistence = PicklePersistence(filepath=settings.DB_PATH, single_file=False)
     app = (
