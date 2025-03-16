@@ -1,14 +1,15 @@
 """Tests for the init module."""
 
-import pytest
 from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+# Import the module to test with patched settings
+from init import add_handlers, post_init, setup_logging
 
 # Import the real Calendar class
 from model.calendar import Calendar
-
-# Import the module to test with patched settings
-from init import add_handlers, setup_logging, post_init
 from utils import MESSAGE_CLEANUP_JOB, message_cleanup
 
 
@@ -23,6 +24,7 @@ class TestWarningFilters:
 
             # Re-import init to trigger the warning filters
             import importlib
+
             from src import init
 
             importlib.reload(init)
@@ -158,7 +160,7 @@ class TestPostInit:
     async def test_war_mode_activation(self, mock_application, mock_settings):
         """Test that war mode is activated when WAR_MODE is True."""
         with (
-            patch("init.handlers.war.war_on") as mock_war_on,
+            patch("init.handlers.war.enable_war_mode") as mock_enable_war_mode,
             patch("init.handlers.calendar.agenda_on") as mock_agenda_on,
         ):
             mock_settings.WAR_MODE = True
@@ -167,7 +169,7 @@ class TestPostInit:
             await post_init(mock_application)
 
             # Check that war_on was called and agenda_on was not
-            mock_war_on.assert_called_once_with(mock_application)
+            mock_enable_war_mode.assert_called_once_with(mock_application)
             mock_agenda_on.assert_not_called()
 
     @pytest.mark.asyncio
