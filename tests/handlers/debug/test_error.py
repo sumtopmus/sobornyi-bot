@@ -1,7 +1,8 @@
 """Tests for the error module."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 import telegram
 
 from handlers.debug.error import handler
@@ -56,8 +57,8 @@ class TestError:
             await handler(mock_update, mock_context)
 
             # Assertions
-            mock_logger.error.assert_called_once_with("NetworkError: Network error")
-            mock_logger.warning.assert_not_called()
+            mock_logger.error.assert_not_called()
+            mock_logger.warning.assert_called_once_with("NetworkError: Network error")
             mock_logger.critical.assert_not_called()
             mock_logger.info.assert_not_called()
 

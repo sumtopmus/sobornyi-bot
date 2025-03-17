@@ -1,28 +1,29 @@
 """Tests for the menu module."""
 
-import pytest
 from datetime import date
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from telegram import Update
 
 from handlers.calendar.menu import (
-    update_menu,
-    calendar_menu,
-    events_menu,
-    event_menu,
-    datetime_menu,
-    construct_back_button,
     State,
+    calendar_menu,
+    construct_back_button,
+    datetime_menu,
+    event_menu,
+    events_menu,
+    update_menu,
 )
 from model import Day, Occurrence
 
 
-# Mock the PythonCalendar.get_this_week method at the module level
-@pytest.fixture(autouse=True)
-def mock_python_calendar():
-    with patch("handlers.calendar.menu.PythonCalendar") as mock_calendar:
-        mock_calendar.get_this_week.return_value = date(2023, 1, 1)
-        yield mock_calendar
+# Mock the this_week function
+@pytest.fixture()
+def mock_this_week():
+    with patch("handlers.calendar.menu.this_week") as mock_this_week:
+        mock_this_week.return_value = date(2023, 1, 1)
+        yield mock_this_week
 
 
 class TestMenu:
@@ -246,7 +247,7 @@ class TestMenu:
             update.callback_query.edit_message_text.assert_not_called()
             update.effective_user.send_message.assert_called_once()
 
-    def test_events_menu_with_events(self, mock_python_calendar):
+    def test_events_menu_with_events(self, mock_this_week):
         """Test the events_menu function with events."""
         # Setup
         from datetime import date
@@ -320,7 +321,7 @@ class TestMenu:
             for button in row
         )
 
-    def test_events_menu_without_events(self, mock_python_calendar):
+    def test_events_menu_without_events(self, mock_this_week):
         """Test the events_menu function without events."""
         # Setup
         events = []
@@ -340,7 +341,7 @@ class TestMenu:
         assert keyboard[0][0].text == "🔙"
         assert keyboard[0][0].callback_data == State.CALENDAR_MENU.name
 
-    def test_events_menu_without_search_button(self, mock_python_calendar):
+    def test_events_menu_without_search_button(self, mock_this_week):
         """Test the events_menu function without the search button."""
         # Setup
         from datetime import date
@@ -819,7 +820,7 @@ class TestMenu:
         assert keyboard[0][0].text == "🔙"
         assert keyboard[0][0].callback_data == State.CALENDAR_MENU.name
 
-    def test_events_menu_with_many_events(self, mock_python_calendar):
+    def test_events_menu_with_many_events(self, mock_this_week):
         """Test the events_menu function with more than 5 events."""
         # Setup
         from datetime import date

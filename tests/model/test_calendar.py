@@ -1,9 +1,11 @@
 """Tests for the Calendar class."""
 
-import pytest
 from datetime import date, time, timedelta
+from unittest.mock import patch
 
-from model import Calendar, Event, Category, Day, Occurrence
+import pytest
+
+from model import Calendar, Category, Day, Event, Occurrence
 
 
 class TestCalendar:
@@ -128,29 +130,58 @@ class TestCalendar:
         # Just check that the method returns a string
         # TODO: Add more tests
 
-    def test_remove_past_events(self, calendar):
+    @patch("model.calendar.this_week")
+    def test_remove_past_events(self, mock_this_week, calendar):
         """Test removing past events."""
-        # Create a past event
-        past_date = date.today() - timedelta(days=7)
+        # Set a fixed date for this_week
+        fixed_date = date(2025, 3, 3)  # March 3, 2025 (a Monday)
+        mock_this_week.return_value = fixed_date
+        # Create a past event (before this_week)
+        past_date = fixed_date - timedelta(days=7)  # One week before fixed date
         past_event = Event(
             title="Past Event", date=past_date, occurrence=Occurrence.WITHIN_DAY
         )
-
-        # Create a current event
+        # Create a current event (within this_week)
+        current_date = fixed_date + timedelta(days=2)  # Two days after fixed date
         current_event = Event(
-            title="Current Event", date=date.today(), occurrence=Occurrence.WITHIN_DAY
+            title="Current Event", date=current_date, occurrence=Occurrence.WITHIN_DAY
+        )
+        # Create a long event that started before this week and extends into this week
+        recurring_past_date = fixed_date - timedelta(days=10)
+        recurring_end_date = fixed_date + timedelta(days=3)
+        recurring_event = Event(
+            title="Recurring Event",
+            date=recurring_past_date,
+            end_date=recurring_end_date,
+            occurrence=Occurrence.WITHIN_DAYS,
+        )
+        # Created a recurring event that has no end date
+        recurring_event_no_end = Event(
+            title="Recurring Event", occurrence=Occurrence.REGULAR, days={Day.Saturday}
         )
 
+        # Add events to calendar
         past_id = calendar.add_event(past_event)
         current_id = calendar.add_event(current_event)
-
-        # This might fail depending on the implementation
-        # Just try to call the method
-        # TODO: Add more tests
-        try:
-            calendar.remove_past_events()
-        except Exception as e:
-            pytest.skip(f"remove_past_events failed: {e}")
+        recurring_id = calendar.add_event(recurring_event)
+        recurring_id_no_end = calendar.add_event(recurring_event_no_end)
+        # Confirm events were added
+        assert past_id in calendar
+        assert current_id in calendar
+        assert recurring_id in calendar
+        assert recurring_id_no_end in calendar
+        # Call remove_past_events
+        result = calendar.remove_past_events()
+        # Verify past events were removed and current events remain
+        assert result is True  # At least one event was removed
+        assert past_id not in calendar  # Past event should be removed
+        assert current_id in calendar  # Current event should remain
+        assert (
+            recurring_id in calendar
+        )  # Recurring event that extends into this week should remain
+        assert (
+            recurring_id_no_end in calendar
+        )  # Recurring event that has no end date should remain
 
     def test_dictionary_interface(self, calendar, mock_event):
         """Test the dictionary interface of the calendar."""

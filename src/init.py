@@ -1,11 +1,11 @@
 import copy
-from datetime import datetime, timedelta
 import logging
 import logging.handlers
-from telegram.ext import Application
-from telegram.warnings import PTBUserWarning
+from datetime import datetime, timedelta
 from warnings import filterwarnings
 
+from telegram.ext import Application
+from telegram.warnings import PTBUserWarning
 
 # Suppress specific PTBUserWarning about CallbackQueryHandler and per_message=False
 filterwarnings(
@@ -17,10 +17,10 @@ filterwarnings(
 )
 
 
-from config import settings, debug_mode_on, debug_mode_off
 import handlers
-from model import Calendar
 import utils
+from config import debug_mode_off, debug_mode_on, settings
+from model import Calendar
 
 
 def setup_logging() -> None:
@@ -44,7 +44,7 @@ def setup_logging() -> None:
 async def post_init(app: Application) -> None:
     """Initializes bot with data and its tasks."""
     if settings.WAR_MODE:
-        handlers.war.war_on(app)
+        handlers.war.enable_war_mode(app)
     if settings.AGENDA_MODE:
         handlers.calendar.agenda_on(app)
     app.bot_data.setdefault("calendar", Calendar())

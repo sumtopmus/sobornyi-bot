@@ -1,7 +1,8 @@
 """Tests for the bot module."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 
 class TestBot:
@@ -37,8 +38,8 @@ class TestBot:
         mock_builder_instance.build.return_value = mock_app
 
         # Mock timezone
-        with patch("pytz.timezone") as mock_timezone:
-            mock_timezone.return_value = MagicMock()
+        with patch("zoneinfo.ZoneInfo") as mock_zoneinfo:
+            mock_zoneinfo.return_value = MagicMock()
 
             # Import bot after mocking
             from bot import main
@@ -90,8 +91,8 @@ class TestBot:
         mock_builder_instance.build.return_value = mock_app
 
         # Mock timezone
-        with patch("pytz.timezone") as mock_timezone:
-            mock_timezone.return_value = MagicMock()
+        with patch("zoneinfo.ZoneInfo") as mock_zoneinfo:
+            mock_zoneinfo.return_value = MagicMock()
 
             # Import bot after mocking
             from bot import main
