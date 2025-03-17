@@ -1,11 +1,12 @@
 """Tests for the Event class."""
 
-import pytest
 from datetime import date, time, timedelta
 from unittest.mock import patch
 
-from model import Event, Day, Occurrence
+import pytest
+
 from format import weekday_name
+from model import Day, Event, Occurrence
 
 
 class TestEvent:
@@ -260,8 +261,8 @@ class TestEvent:
         mock_event.end_date = mock_event.date + timedelta(days=7)
 
         with (
-            patch("model.this_week") as mock_this_week,
-            patch("model.next_week") as mock_next_week,
+            patch("model.event.this_week") as mock_this_week,
+            patch("model.event.next_week") as mock_next_week,
         ):
             # date < this_week < end_date < next_week
             mock_this_week.return_value = date(2025, 3, 10)  # Monday
@@ -278,8 +279,8 @@ class TestEvent:
         mock_event.end_date = mock_event.date + timedelta(days=14)
 
         with (
-            patch("model.this_week") as mock_this_week,
-            patch("model.next_week") as mock_next_week,
+            patch("model.event.this_week") as mock_this_week,
+            patch("model.event.next_week") as mock_next_week,
         ):
             # date < this_week < next_week < end_date
             mock_this_week.return_value = date(2025, 3, 10)  # Monday

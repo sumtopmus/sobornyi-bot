@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 
-from .event import Event, Category
-from .utils import this_week, next_week
+from .event import Category, Event
+from .utils import next_week, this_week
 
 
 class Calendar:
@@ -90,14 +90,12 @@ class Calendar:
         return result
 
     def remove_past_events(self) -> bool:
-        this_week = this_week()
-        events_to_remove = [
-            event_id
-            for event_id, event in self.__events.items()
-            if event.date
-            and event.date < this_week
-            and (not event.end_date or event.end_date < this_week)
-        ]
+        events_to_remove = []
+        for event_id, event in self.__events.items():
+            if event.date and event.date < this_week():
+                if not event.end_date or event.end_date < this_week():
+                    events_to_remove.append(event_id)
+
         for event_id in events_to_remove:
             del self.__events[event_id]
         return len(events_to_remove) > 0
