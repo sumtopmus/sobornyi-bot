@@ -1,5 +1,7 @@
 # Auth secrets
-.secrets.*
+config/.secrets.*
+# Local config
+config/*.local*
 
 # App data
 backup
@@ -8,7 +10,6 @@ logs
 
 # Dev and local environment
 .vscode
-**/*.local*
 /debug
 
 # macOS environment
