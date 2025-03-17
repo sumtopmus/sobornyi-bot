@@ -1,6 +1,6 @@
-.PHONY: install init-dev run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-unit test-integration test-cov migrate migrate-help
+.PHONY: install init-dev run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-unit test-integration test-cov migrate migrate-help config
 
-install:
+install: config
 	conda env create -f environment.yaml
 
 init-dev: install
@@ -61,3 +61,10 @@ clean-data:
 clean-conversations:
 	@rm -rf data/db_conversations
 	@rm -rf data/db_callback_data
+
+config:
+	@echo "Generating configuration files from templates..."
+	@echo "Note: This requires template files in config/templates/ directory."
+	@python tools/generate_config.py
+	@echo "Configuration files have been created in the config/ directory."
+	@echo "Please update them with your own settings before running the application."
