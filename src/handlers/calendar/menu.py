@@ -1,12 +1,12 @@
-from calendar import Calendar as PythonCalendar
 from enum import Enum
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
-from .agenda import sync_agenda
-from model import Day, Occurrence
+from model import Day, Occurrence, this_week
 from utils import log
 
+from .agenda import sync_agenda
 
 State = Enum(
     "State",
@@ -104,13 +104,13 @@ async def calendar_menu(
 
 
 def events_menu(events: dict, add_search_button: bool = True) -> dict:
-    this_week = PythonCalendar.get_this_week()
+    this_monday = this_week()
     upcoming_events = [
         event
         for event in events
         if not event[1].date
-        or event[1].date >= this_week
-        or (event[1].end_date and event[1].end_date >= this_week)
+        or event[1].date >= this_monday
+        or (event[1].end_date and event[1].end_date >= this_monday)
     ]
     sorted_events = sorted(
         upcoming_events, key=lambda item: (item[1].date is not None, item[1].date)
