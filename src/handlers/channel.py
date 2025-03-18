@@ -1,9 +1,10 @@
 import logging
-from telegram import Message, Update
-from telegram.ext import MessageHandler, ContextTypes, filters
 
-from config import settings
+from telegram import Message, Update
+from telegram.ext import ContextTypes, MessageHandler, filters
+
 import utils
+from config import settings
 
 
 def create_handlers() -> list:
@@ -38,6 +39,7 @@ async def post(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def cross_post(message: Message, context: ContextTypes.DEFAULT_TYPE) -> None:
+    utils.log("cross_post")
     if message.text:
         text = message.text
     elif message.caption:
@@ -57,25 +59,29 @@ async def cross_post(message: Message, context: ContextTypes.DEFAULT_TYPE) -> No
 async def edit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """When a post is edited on the channel."""
     utils.log("edit")
-    copied_message_id = context.bot_data["cross-posts"].setdefault(
-        update.edited_channel_post.id, None
-    )
+    await edit_post(update.edited_channel_post, context)
+
+
+async def edit_post(message: Message, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Edits a post on the channel."""
+    utils.log(f"edit_post")
+    copied_message_id = context.bot_data["cross-posts"].setdefault(message.id, None)
     if not copied_message_id:
-        utils.log(f"message is missing from the index")
+        utils.log(f"post is missing from the index")
         return
-    if update.edited_channel_post.text:
+    if message.text:
         await context.bot.edit_message_text(
-            update.edited_channel_post.text,
+            message.text,
             chat_id=settings.CHAT_ID,
             message_id=copied_message_id,
-            entities=update.edited_channel_post.entities,
+            entities=message.entities,
             parse_mode=None,
         )
-    if update.edited_channel_post.caption:
+    if message.caption:
         await context.bot.edit_message_caption(
             chat_id=settings.CHAT_ID,
             message_id=copied_message_id,
-            caption=update.edited_channel_post.caption,
-            caption_entities=update.edited_channel_post.caption_entities,
+            caption=message.caption,
+            caption_entities=message.caption_entities,
             parse_mode=None,
         )
