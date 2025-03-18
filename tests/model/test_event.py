@@ -38,9 +38,33 @@ class TestEvent:
         assert mock_event.has_poster()
 
     def test_has_poster_no_image(self, mock_event):
-        """Test has_poster method with no image."""
+        """Test has_poster method without an image."""
         mock_event.image = None
         assert not mock_event.has_poster()
+
+    def test_get_url_with_tg_url(self, mock_empty_event):
+        """Test get_url method when tg_url is present."""
+        mock_empty_event.tg_url = "https://t.me/test"
+        mock_empty_event.url = None
+        assert mock_empty_event.get_url() == "https://t.me/test"
+
+    def test_get_url_with_url(self, mock_empty_event):
+        """Test get_url method when url is present but tg_url is not."""
+        mock_empty_event.tg_url = None
+        mock_empty_event.url = "https://example.com"
+        assert mock_empty_event.get_url() == "https://example.com"
+
+    def test_get_url_with_both_urls(self, mock_empty_event):
+        """Test get_url method when both tg_url and url are present."""
+        mock_empty_event.tg_url = "https://t.me/test"
+        mock_empty_event.url = "https://example.com"
+        assert mock_empty_event.get_url() == "https://example.com"
+
+    def test_get_url_with_no_urls(self, mock_empty_event):
+        """Test get_url method when neither tg_url nor url are present."""
+        mock_empty_event.tg_url = None
+        mock_empty_event.url = None
+        assert mock_empty_event.get_url() is None
 
     def test_post(self, mock_event):
         """Test post method."""

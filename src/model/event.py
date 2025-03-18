@@ -96,6 +96,14 @@ class Event:
                 result += f"-{weekday.name[6]}"
         return result
 
+    def get_url(self) -> Optional[str]:
+        url = None
+        if self.tg_url:
+            url = self.tg_url
+        if self.url:
+            url = self.url
+        return url
+
     def get_title(self) -> Optional[str]:
         if not self.title:
             return None
