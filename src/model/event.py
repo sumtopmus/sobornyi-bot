@@ -47,6 +47,7 @@ class Event:
     venue: Optional[str] = field(default=None)
     location: Optional[str] = field(default=None)
     url: Optional[str] = field(default=None)
+    message_id: Optional[int] = field(default=None)
     tg_url: Optional[str] = field(default=None)
     image: Optional[str] = field(default=None)
     category: Category = field(default=Category.GENERAL)
@@ -233,6 +234,7 @@ class Event:
             "venue": self.venue,
             "location": self.location,
             "url": self.url,
+            "message_id": self.message_id,
             "tg_url": self.tg_url,
             "image": self.image,
             "category": self.category.name,
