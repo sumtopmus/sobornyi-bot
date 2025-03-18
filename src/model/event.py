@@ -1,13 +1,14 @@
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-import re
 from typing import Dict, Optional, Set
+
 from telegram.helpers import escape_markdown
 
 from format import clock, link, weekday
-from .utils import this_week, next_week
 
+from .utils import next_week, this_week
 
 Category = Enum(
     "Category",
