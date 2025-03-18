@@ -1,14 +1,15 @@
 """Tests for the agenda module."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import date, datetime, time, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from handlers.calendar.agenda import (
     agenda_on,
     publish_agenda,
-    sync_agenda,
     publish_agenda_on_demand,
+    sync_agenda,
 )
 from utils import calculate_hash
 
@@ -32,6 +33,7 @@ class TestAgenda:
                 "hash": hash,
                 "message_id": message_id,
             },
+            "cross-posts": {},  # Add cross-posts dictionary
         }
         mock_context.bot_data["calendar"].get_agenda.return_value = text
 
@@ -154,7 +156,9 @@ class TestAgenda:
     async def test_sync_agenda_no_change(self, mock_agenda):
         """Test the sync_agenda function when there's no change in the agenda."""
         # Mock the current week date
-        with patch("model.this_week", return_value=mock_agenda["this_week"]):
+        with patch(
+            "handlers.calendar.agenda.this_week", return_value=mock_agenda["this_week"]
+        ):
             # Call the function
             await sync_agenda(mock_agenda["context"])
 
@@ -196,6 +200,7 @@ class TestAgenda:
         # Update bot_data for this specific test
         mock_agenda["context"].bot_data["agenda"]["hash"] = old_hash
         mock_agenda["context"].bot_data["calendar"].get_agenda.return_value = new_text
+        mock_agenda["context"].bot_data["cross-posts"] = {}
 
         # Mock the current week date
         with patch(
@@ -223,7 +228,9 @@ class TestAgenda:
         mock_agenda["context"].bot_data["agenda"]["date"] = last_week.isoformat()
 
         # Mock the current week date
-        with patch("model.this_week", return_value=mock_agenda["this_week"]):
+        with patch(
+            "handlers.calendar.agenda.this_week", return_value=mock_agenda["this_week"]
+        ):
             # Call the function
             await sync_agenda(mock_agenda["context"])
 

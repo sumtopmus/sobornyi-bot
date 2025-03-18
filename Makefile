@@ -155,16 +155,12 @@ clean-logs:
 clean-data:
 	@echo "📁 Removing data files..."
 	@rm -rf data
-	@mkdir -p data
-	@touch data/.gitkeep
 	@echo "${GREEN}✅ Data files removed.${RESET}"
 
 clean-conversations:
 	@echo "💬 Removing conversation files..."
-	@rm -rf data/db_conversations
-	@rm -rf data/db_callback_data
-	@mkdir -p data/db_conversations data/db_callback_data
-	@touch data/db_conversations/.gitkeep data/db_callback_data/.gitkeep
+	@rm -f data/db_conversations
+	@rm -f data/db_callback_data
 	@echo "${GREEN}✅ Conversation files removed.${RESET}"
 
 config:

@@ -1,12 +1,12 @@
-from config import settings
 from datetime import date, datetime, time, timedelta
+
 from telegram import Update
 from telegram.ext import Application, CallbackContext
 
-from handlers.channel import cross_post
-from model import this_week, next_week
-from utils import log, calculate_hash
-
+from config import settings
+from handlers.channel import cross_post, edit_post
+from model import next_week, this_week
+from utils import calculate_hash, log
 
 JOB_NAME = "weekly_agenda"
 
@@ -59,9 +59,10 @@ async def sync_agenda(context: CallbackContext):
             return
         context.bot_data["agenda"]["hash"] = calculate_hash(text)
         message_id = context.bot_data["agenda"]["message_id"]
-        await context.bot.edit_message_caption(
+        message = await context.bot.edit_message_caption(
             chat_id=settings.CHANNEL_USERNAME, message_id=message_id, caption=text
         )
+        await edit_post(message, context)
 
 
 async def publish_agenda_on_demand(update: Update, context: CallbackContext):

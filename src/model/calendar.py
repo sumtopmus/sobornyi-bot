@@ -50,23 +50,33 @@ class Calendar:
     def get_simple_agenda(
         self, events: List[Event], category: Category = Category.GENERAL
     ) -> str:
-        return "\n".join(
-            [event.get_title_repr() for event in events if event.category == category]
-        )
+        filtered_events = [event for event in events if event.category == category]
+        if not filtered_events:
+            return "🕰️ TBD"
+        return "\n".join([event.get_title_repr() for event in filtered_events])
 
     def get_nearest_agenda(
         self, events: List[Event], category: Category = Category.GENERAL
     ) -> str:
-        return "\n".join(
-            [event.get_current_repr() for event in events if event.category == category]
-        )
+        filtered_events = [event for event in events if event.category == category]
+        if not filtered_events:
+            return "🕰️ TBD"
+        return "\n".join([event.get_current_repr() for event in filtered_events])
 
     def get_future_agenda(
         self, events: List[Event], category: Category = Category.GENERAL
     ) -> str:
-        return "\n".join(
-            [event.get_future_repr() for event in events if event.category == category]
-        )
+        filtered_events = [event for event in events if event.category == category]
+        if not filtered_events:
+            return "🕰️ TBD"
+        event_reprs = [
+            repr
+            for event in filtered_events
+            if (repr := event.get_future_repr()) is not None
+        ]
+        if not event_reprs:
+            return "🕰️ TBD"
+        return "\n".join(event_reprs)
 
     def get_agenda(self) -> str:
         result = f"*Порядок тижневий*\n\n"

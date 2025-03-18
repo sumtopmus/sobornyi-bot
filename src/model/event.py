@@ -1,13 +1,14 @@
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-import re
 from typing import Dict, Optional, Set
+
 from telegram.helpers import escape_markdown
 
 from format import clock, link, weekday
-from .utils import this_week, next_week
 
+from .utils import next_week, this_week
 
 Category = Enum(
     "Category",
@@ -46,6 +47,7 @@ class Event:
     venue: Optional[str] = field(default=None)
     location: Optional[str] = field(default=None)
     url: Optional[str] = field(default=None)
+    message_id: Optional[int] = field(default=None)
     tg_url: Optional[str] = field(default=None)
     image: Optional[str] = field(default=None)
     category: Category = field(default=Category.GENERAL)
@@ -232,6 +234,7 @@ class Event:
             "venue": self.venue,
             "location": self.location,
             "url": self.url,
+            "message_id": self.message_id,
             "tg_url": self.tg_url,
             "image": self.image,
             "category": self.category.name,
