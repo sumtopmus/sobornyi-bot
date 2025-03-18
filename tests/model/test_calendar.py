@@ -288,3 +288,241 @@ class TestCalendar:
         assert "📰 Анонси" in agenda
         assert "🤲 Волонтерство" in agenda
         assert "_#agenda_" in agenda
+
+    def test_get_urls_by_category_empty_list(self, calendar):
+        """Test get_urls_by_category with an empty list of events."""
+        result = calendar.get_urls_by_category([])
+        assert result == None
+
+    def test_get_urls_by_category_no_matching_events(self, calendar):
+        """Test get_urls_by_category with no matching events for the given category."""
+        event1 = Event(title="Event 1", category=Category.FUNDRAISER)
+        event2 = Event(title="Event 2", category=Category.RALLY)
+        events = [event1, event2]
+
+        # Request VOLUNTEER category when none exists
+        result = calendar.get_urls_by_category(events, Category.VOLUNTEER)
+        assert result == None
+
+    def test_get_urls_by_category_with_matching_events(self, calendar):
+        """Test get_urls_by_category with matching events for the given category."""
+        event1 = Event(
+            title="Event 1",
+            category=Category.FUNDRAISER,
+            url="https://example.com/event1",
+        )
+        event2 = Event(
+            title="Event 2",
+            category=Category.FUNDRAISER,
+            url="https://example.com/event2",
+        )
+        event3 = Event(title="Event 3", category=Category.RALLY)
+        events = [event1, event2, event3]
+
+        result = calendar.get_urls_by_category(events, Category.FUNDRAISER)
+
+        # Should include URLs from event1 and event2, but not event3
+        assert "https://example.com/event1" in result
+        assert "https://example.com/event2" in result
+        assert "\n" in result  # URLs should be separated by newlines
+
+    def test_get_urls_by_category_with_no_urls(self, calendar):
+        """Test get_urls_by_category with events that have no URLs."""
+        event1 = Event(title="Event 1", category=Category.FUNDRAISER)
+        event2 = Event(title="Event 2", category=Category.FUNDRAISER)
+        events = [event1, event2]
+
+        # Should return "🕰️ TBD" when no URLs are available
+        result = calendar.get_urls_by_category(events, Category.FUNDRAISER)
+        assert result == None
+
+    def test_get_urls_by_category_with_tg_url(self, calendar):
+        """Test get_urls_by_category with events that have telegram URLs."""
+        event1 = Event(
+            title="Event 1", category=Category.FUNDRAISER, tg_url="https://t.me/event1"
+        )
+        event2 = Event(
+            title="Event 2",
+            category=Category.FUNDRAISER,
+            url="https://example.com/event2",
+        )
+        events = [event1, event2]
+
+        result = calendar.get_urls_by_category(events, Category.FUNDRAISER)
+
+        # Should include tg_url from event1 and url from event2
+        assert "https://t.me/event1" in result
+        assert "https://example.com/event2" in result
+
+    def test_get_urls_by_category_default_category(self, calendar):
+        """Test get_urls_by_category with default category."""
+        event1 = Event(
+            title="Event 1", category=Category.GENERAL, url="https://example.com/event1"
+        )
+        event2 = Event(
+            title="Event 2",
+            category=Category.FUNDRAISER,
+            url="https://example.com/event2",
+        )
+        events = [event1, event2]
+
+        # Using default category (GENERAL)
+        result = calendar.get_urls_by_category(events)
+
+        # Should include only event1's URL since it's in the GENERAL category
+        assert "https://example.com/event1" in result
+        assert "https://example.com/event2" not in result
+
+    def test_get_agenda_as_urls_empty_calendar(self, calendar):
+        """Test get_agenda_as_urls with an empty calendar."""
+        # An empty calendar should still return an empty string
+        result = calendar.get_agenda_as_urls()
+        assert result == ""
+
+    def test_get_agenda_as_urls_with_events(self, calendar):
+        """Test get_agenda_as_urls with various events."""
+        # Create and add events of different categories
+        general_event = Event(
+            title="General Event",
+            category=Category.GENERAL,
+            date=date.today(),
+            url="https://example.com/general",
+        )
+        calendar.add_event(general_event)
+
+        rally_event = Event(
+            title="Rally Event",
+            category=Category.RALLY,
+            date=date.today(),
+            url="https://example.com/rally",
+        )
+        calendar.add_event(rally_event)
+
+        future_event = Event(
+            title="Future Event",
+            category=Category.GENERAL,
+            date=date.today() + timedelta(days=30),
+            url="https://example.com/future",
+        )
+        calendar.add_event(future_event)
+
+        fundraiser_event = Event(
+            title="Fundraiser Event",
+            category=Category.FUNDRAISER,
+            date=date.today(),
+            url="https://example.com/fundraiser",
+        )
+        calendar.add_event(fundraiser_event)
+
+        volunteer_event = Event(
+            title="Volunteer Event",
+            category=Category.VOLUNTEER,
+            date=date.today(),
+            url="https://example.com/volunteer",
+        )
+        calendar.add_event(volunteer_event)
+
+        # Get the agenda as URLs
+        result = calendar.get_agenda_as_urls()
+
+        # Check that the result contains all expected categories
+        assert "🎟 Заходи:" in result
+        assert "📢 Ралі:" in result
+        assert "📰 Анонси:" in result
+        assert "💰 Збори коштів:" in result
+        assert "🤲 Волонтерство:" in result
+
+        # Check that URLs are included
+        assert "https://example.com/general" in result
+        assert "https://example.com/rally" in result
+        assert "https://example.com/future" in result
+        assert "https://example.com/fundraiser" in result
+        assert "https://example.com/volunteer" in result
+
+    def test_get_agenda_as_urls_with_no_urls(self, calendar):
+        """Test get_agenda_as_urls with events that have no URLs."""
+        # Create and add events without URLs
+        general_event = Event(
+            title="General Event", category=Category.GENERAL, date=date.today()
+        )
+        calendar.add_event(general_event)
+
+        rally_event = Event(
+            title="Rally Event", category=Category.RALLY, date=date.today()
+        )
+        calendar.add_event(rally_event)
+
+        # Get the agenda as URLs
+        result = calendar.get_agenda_as_urls()
+
+        # Check that TBD is used for categories without URLs
+        assert result == ""
+
+    def test_get_agenda_as_urls_mixed_urls(self, calendar):
+        """Test get_agenda_as_urls with a mix of events with and without URLs."""
+        # Create and add some events with URLs
+        general_event_with_url = Event(
+            title="General Event With URL",
+            category=Category.GENERAL,
+            date=date.today(),
+            url="https://example.com/general_with_url",
+        )
+        calendar.add_event(general_event_with_url)
+
+        # Create and add some events without URLs
+        general_event_no_url = Event(
+            title="General Event No URL", category=Category.GENERAL, date=date.today()
+        )
+        calendar.add_event(general_event_no_url)
+
+        rally_event_with_url = Event(
+            title="Rally Event With URL",
+            category=Category.RALLY,
+            date=date.today(),
+            url="https://example.com/rally_with_url",
+        )
+        calendar.add_event(rally_event_with_url)
+
+        rally_event_no_url = Event(
+            title="Rally Event No URL", category=Category.RALLY, date=date.today()
+        )
+        calendar.add_event(rally_event_no_url)
+
+        # Get the agenda as URLs
+        result = calendar.get_agenda_as_urls()
+
+        # Check that URLs are included for events with URLs
+        assert "https://example.com/general_with_url" in result
+        assert "https://example.com/rally_with_url" in result
+
+    def test_get_agenda_as_urls_missing_categories(self, calendar):
+        """Test get_agenda_as_urls with some missing categories."""
+        # Create only general and rally events
+        general_event = Event(
+            title="General Event",
+            category=Category.GENERAL,
+            date=date.today(),
+            url="https://example.com/general",
+        )
+        calendar.add_event(general_event)
+
+        rally_event = Event(
+            title="Rally Event",
+            category=Category.RALLY,
+            date=date.today(),
+            url="https://example.com/rally",
+        )
+        calendar.add_event(rally_event)
+
+        # Get the agenda as URLs
+        result = calendar.get_agenda_as_urls()
+
+        # Check that the result includes all categories
+        assert "🎟 Заходи:" in result
+        assert "📢 Ралі:" in result
+        assert "📰 Анонси:" not in result
+        assert "💰 Збори коштів:" not in result
+        assert "🤲 Волонтерство:" not in result
+        # Check that URLs are included for categories with events
+        assert "https://example.com/general" in result
+        assert "https://example.com/rally" in result

@@ -55,6 +55,17 @@ class Calendar:
             return "🕰️ TBD"
         return "\n".join([event.get_title_repr() for event in filtered_events])
 
+    def get_urls_by_category(
+        self, events: List[Event], category: Category = Category.GENERAL
+    ) -> Optional[str]:
+        filtered_events = [event for event in events if event.category == category]
+        urls = [
+            url for event in filtered_events if (url := event.get_url()) is not None
+        ]
+        if not urls:
+            return None
+        return "\n".join(urls)
+
     def get_nearest_agenda(
         self, events: List[Event], category: Category = Category.GENERAL
     ) -> str:
@@ -97,6 +108,26 @@ class Calendar:
         if events_repr:
             result += f"*🤲 Волонтерство:*\n{events_repr}\n\n"
         result += "_#agenda_"
+        return result
+
+    def get_agenda_as_urls(self) -> str:
+        result = ""
+        nearest_events = self.get_nearest_events()
+        events_repr = self.get_urls_by_category(nearest_events)
+        if events_repr:
+            result += f"🎟 Заходи:\n{events_repr}\n\n"
+        events_repr = self.get_urls_by_category(nearest_events, Category.RALLY)
+        if events_repr:
+            result += f"📢 Ралі:\n{events_repr}\n\n"
+        events_repr = self.get_urls_by_category(self.get_future_events())
+        if events_repr:
+            result += f"📰 Анонси:\n{events_repr}\n\n"
+        events_repr = self.get_urls_by_category(nearest_events, Category.FUNDRAISER)
+        if events_repr:
+            result += f"💰 Збори коштів:\n{events_repr}\n\n"
+        events_repr = self.get_urls_by_category(nearest_events, Category.VOLUNTEER)
+        if events_repr:
+            result += f"🤲 Волонтерство:\n{events_repr}"
         return result
 
     def remove_past_events(self) -> bool:
