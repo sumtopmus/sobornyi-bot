@@ -239,56 +239,8 @@ class TestEvent:
     def test_get_current_repr_regular(self, mock_recurring_event):
         """Test current representation of a regular recurring event."""
         current_repr = mock_recurring_event.get_current_repr()
+
         assert "🗓️" in current_repr
-
-    @patch("model.event.this_week")
-    def test_get_current_repr_past_single_day(
-        self, mock_this_week, mock_this_week_date, mock_past_event
-    ):
-        """Test current representation for a completely past single-day event."""
-        mock_this_week.return_value = mock_this_week_date
-
-        assert mock_past_event.get_current_repr() is None
-
-    @patch("model.event.this_week")
-    def test_get_current_repr_past_multi_day(
-        self, mock_this_week, mock_this_week_date, mock_past_multiday_event
-    ):
-        """Test current representation for a completely past multi-day event."""
-        mock_this_week.return_value = mock_this_week_date
-
-        assert mock_past_multiday_event.get_current_repr() is None
-
-    @patch("model.this_week")
-    @patch("model.next_week")
-    def test_get_current_repr_end_date_before_next_week(
-        self, mock_this_week, mock_next_week, mock_this_week_date, mock_multiday_event
-    ):
-        """Test current representation of an event ending before next week."""
-        mock_this_week.return_value = mock_this_week_date
-        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
-
-        assert mock_multiday_event.get_current_repr() is not None
-        assert (
-            mock_multiday_event.end_date.strftime("%m/%d")
-            not in mock_multiday_event.get_current_repr()
-        )
-
-    @patch("model.this_week")
-    @patch("model.next_week")
-    def test_get_current_repr_end_date_after_next_week(
-        self, mock_this_week, mock_next_week, mock_this_week_date, mock_multiday_event
-    ):
-        """Test current representation of an event ending after next week."""
-        mock_this_week.return_value = mock_this_week_date
-        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
-        mock_multiday_event.end_date = mock_multiday_event.date + timedelta(days=14)
-
-        assert mock_multiday_event.get_current_repr() is not None
-        assert (
-            mock_multiday_event.end_date.strftime("%m/%d")
-            in mock_multiday_event.get_current_repr()
-        )
 
     def test_get_current_repr_time_without_minutes(self, mock_general_event):
         """Test current representation of an event with time having zero minutes."""
@@ -344,8 +296,151 @@ class TestEvent:
         assert "чт" in current_repr
         assert mock_general_event.get_title_repr() in current_repr
 
-    def test_get_full_repr_basic(self, mock_general_event):
+    @patch("model.event.this_week")
+    def test_get_current_repr_past_single_day(
+        self, mock_this_week, mock_this_week_date, mock_past_event
+    ):
+        """Test current representation for a completely past single-day event."""
+        mock_this_week.return_value = mock_this_week_date
+
+        assert mock_past_event.get_current_repr() is None
+
+    @patch("model.event.this_week")
+    def test_get_current_repr_past_multi_day(
+        self, mock_this_week, mock_this_week_date, mock_past_multiday_event
+    ):
+        """Test current representation for a completely past multi-day event."""
+        mock_this_week.return_value = mock_this_week_date
+
+        assert mock_past_multiday_event.get_current_repr() is None
+
+    @patch("model.this_week")
+    @patch("model.next_week")
+    def test_get_current_repr_end_date_before_next_week(
+        self, mock_this_week, mock_next_week, mock_this_week_date, mock_multiday_event
+    ):
+        """Test current representation of an event ending before next week."""
+        mock_this_week.return_value = mock_this_week_date
+        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
+
+        assert mock_multiday_event.get_current_repr() is not None
+        assert (
+            mock_multiday_event.end_date.strftime("%m/%d")
+            not in mock_multiday_event.get_current_repr()
+        )
+
+    @patch("model.this_week")
+    @patch("model.next_week")
+    def test_get_current_repr_end_date_after_next_week(
+        self, mock_this_week, mock_next_week, mock_this_week_date, mock_multiday_event
+    ):
+        """Test current representation of an event ending after next week."""
+        mock_this_week.return_value = mock_this_week_date
+        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
+        mock_multiday_event.end_date = mock_multiday_event.date + timedelta(days=14)
+
+        assert mock_multiday_event.get_current_repr() is not None
+        assert (
+            mock_multiday_event.end_date.strftime("%m/%d")
+            in mock_multiday_event.get_current_repr()
+        )
+
+    @patch("model.event.this_week")
+    @patch("model.event.next_week")
+    def test_get_current_repr_date_before_this_week_end_date_before_next_week(
+        self, mock_next_week, mock_this_week, mock_this_week_date, mock_multiday_event
+    ):
+        """Test current representation of an event starting before this week and ending before next week."""
+        mock_this_week.return_value = mock_this_week_date
+        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
+        mock_multiday_event.date = mock_this_week_date - timedelta(days=3)
+        mock_multiday_event.end_date = mock_this_week_date + timedelta(days=2)
+
+        current_repr = mock_multiday_event.get_current_repr()
+
+        assert current_repr is not None
+        assert "🗓️до" in current_repr
+        assert weekday_name[6] in current_repr
+
+    @patch("model.event.this_week")
+    @patch("model.event.next_week")
+    def test_get_current_repr_date_before_this_week_end_date_after_next_week(
+        self, mock_next_week, mock_this_week, mock_this_week_date, mock_multiday_event
+    ):
+        """Test current representation of an event starting before this week and ending after next week."""
+        mock_this_week.return_value = mock_this_week_date
+        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
+        mock_multiday_event.date = mock_this_week_date - timedelta(days=3)
+        mock_multiday_event.end_date = mock_this_week_date + timedelta(days=10)
+
+        current_repr = mock_multiday_event.get_current_repr()
+
+        assert current_repr is not None
+        assert "🗓️до" in current_repr
+        assert mock_multiday_event.end_date.strftime("%m/%d") in current_repr
+
+    @patch("model.event.this_week")
+    @patch("model.event.next_week")
+    def test_get_current_repr_date_this_week_end_date_before_next_week(
+        self, mock_next_week, mock_this_week, mock_this_week_date, mock_multiday_event
+    ):
+        """Test current representation of an event starting this week and ending before next week."""
+        mock_this_week.return_value = mock_this_week_date
+        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
+        mock_multiday_event.date = mock_this_week_date
+        mock_multiday_event.end_date = mock_this_week_date + timedelta(days=2)
+
+        current_repr = mock_multiday_event.get_current_repr()
+
+        assert current_repr is not None
+        assert weekday_name[mock_multiday_event.date.weekday()] in current_repr
+        assert (
+            f"-{weekday_name[mock_multiday_event.end_date.weekday()]}" in current_repr
+        )
+
+    @patch("model.event.this_week")
+    @patch("model.event.next_week")
+    def test_get_current_repr_date_this_week_end_date_after_next_week(
+        self, mock_next_week, mock_this_week, mock_this_week_date, mock_multiday_event
+    ):
+        """Test current representation of an event starting this week and ending after next week."""
+        mock_this_week.return_value = mock_this_week_date
+        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
+        mock_multiday_event.date = mock_this_week_date
+        mock_multiday_event.end_date = mock_this_week_date + timedelta(days=10)
+
+        current_repr = mock_multiday_event.get_current_repr()
+
+        assert current_repr is not None
+        assert weekday_name[mock_multiday_event.date.weekday()] in current_repr
+        assert f"до `{mock_multiday_event.end_date.strftime('%m/%d')}`" in current_repr
+
+    @patch("model.event.clock")
+    def test_get_current_repr_emoji_time(self, mock_clock, mock_general_event):
+        """Test that clock emoji is included in the time representation."""
+        mock_clock.emoji.return_value = "🕒"
+
+        current_repr = mock_general_event.get_current_repr()
+
+        assert current_repr is not None
+        assert "🕒" in current_repr
+        assert mock_clock.emoji.called
+
+    def test_get_current_repr_regular_no_weekdays(self, mock_recurring_event):
+        """Test current representation of a regular event with no weekdays set."""
+        mock_recurring_event.days = set()
+
+        current_repr = mock_recurring_event.get_current_repr()
+
+        assert current_repr is not None
+        assert "🗓️" in current_repr
+        assert mock_recurring_event.get_title_repr() in current_repr
+
+    @patch("model.event.clock")
+    def test_get_full_repr_basic(self, mock_clock, mock_general_event):
         """Test that full representation contains required elements."""
+        mock_clock.emoji.return_value = "🕒"
+
         full_repr = mock_general_event.get_full_repr()
 
         assert mock_general_event.title in full_repr
@@ -355,7 +450,7 @@ class TestEvent:
         assert mock_general_event.description in full_repr
         assert "🗓️" in full_repr
         assert mock_general_event.date.strftime("%m/%d") in full_repr
-        assert "🕝" in full_repr
+        assert "🕒" in full_repr
         assert mock_general_event.time.strftime("%H:%M") in full_repr
         assert "📍" in full_repr
         assert "🔗" in full_repr
