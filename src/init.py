@@ -47,8 +47,10 @@ async def post_init(app: Application) -> None:
         handlers.war.enable_war_mode(app)
     if settings.AGENDA_MODE:
         handlers.calendar.agenda_on(app)
+    handlers.calendar.reminder_on(app)
     app.bot_data.setdefault("calendar", Calendar())
     app.bot_data.setdefault("agenda", {"image": None})
+    app.bot_data.setdefault("subscribers", set(settings.MODERATORS))
     app.bot_data.setdefault("jobs", {})
     app.bot_data.setdefault("cross-posts", {})
     app.bot_data.setdefault("version", "1.0.0")

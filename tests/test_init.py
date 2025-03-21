@@ -134,59 +134,67 @@ class TestPostInit:
         return app
 
     @pytest.mark.asyncio
-    async def test_bot_data_initialization(self, mock_application, mock_settings):
+    @patch("init.handlers.war.enable_war_mode")
+    @patch("init.handlers.calendar.agenda_on")
+    @patch("init.handlers.calendar.reminder_on")
+    async def test_bot_data_initialization(
+        self,
+        mock_reminder_on,
+        mock_agenda_on,
+        mock_enable_war_mode,
+        mock_application,
+        mock_settings,
+    ):
         """Test that bot_data is properly initialized."""
-        with (
-            patch("init.handlers.war.war_on") as mock_war_on,
-            patch("init.handlers.calendar.agenda_on") as mock_agenda_on,
-        ):
-            mock_settings.WAR_MODE = False
-            mock_settings.AGENDA_MODE = False
+        mock_settings.WAR_MODE = False
+        mock_settings.AGENDA_MODE = False
 
-            await post_init(mock_application)
+        await post_init(mock_application)
 
-            # Check that bot_data was initialized with the expected values
-            assert "calendar" in mock_application.bot_data
-            assert isinstance(mock_application.bot_data["calendar"], Calendar)
-            assert mock_application.bot_data["agenda"] == {"image": None}
-            assert mock_application.bot_data["jobs"] == {}
-            assert mock_application.bot_data["cross-posts"] == {}
+        # Check that bot_data was initialized with the expected values
+        assert "calendar" in mock_application.bot_data
+        assert isinstance(mock_application.bot_data["calendar"], Calendar)
+        assert mock_application.bot_data["agenda"] == {"image": None}
+        assert mock_application.bot_data["subscribers"] == set(mock_settings.MODERATORS)
+        assert mock_application.bot_data["jobs"] == {}
+        assert mock_application.bot_data["cross-posts"] == {}
 
-            # Check that war_on and agenda_on were not called
-            mock_war_on.assert_not_called()
-            mock_agenda_on.assert_not_called()
+        # Check that enable_war_mode and agenda_on were not called
+        mock_enable_war_mode.assert_not_called()
+        mock_agenda_on.assert_not_called()
+        mock_reminder_on.assert_called_once_with(mock_application)
 
     @pytest.mark.asyncio
-    async def test_war_mode_activation(self, mock_application, mock_settings):
+    @patch("init.handlers.war.enable_war_mode")
+    @patch("init.handlers.calendar.agenda_on")
+    async def test_war_mode_activation(
+        self, mock_agenda_on, mock_enable_war_mode, mock_application, mock_settings
+    ):
         """Test that war mode is activated when WAR_MODE is True."""
-        with (
-            patch("init.handlers.war.enable_war_mode") as mock_enable_war_mode,
-            patch("init.handlers.calendar.agenda_on") as mock_agenda_on,
-        ):
-            mock_settings.WAR_MODE = True
-            mock_settings.AGENDA_MODE = False
+        mock_settings.WAR_MODE = True
+        mock_settings.AGENDA_MODE = False
 
-            await post_init(mock_application)
+        await post_init(mock_application)
 
-            # Check that war_on was called and agenda_on was not
-            mock_enable_war_mode.assert_called_once_with(mock_application)
-            mock_agenda_on.assert_not_called()
+        # Check that war_on was called and agenda_on was not
+        mock_enable_war_mode.assert_called_once_with(mock_application)
+        mock_agenda_on.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_agenda_mode_activation(self, mock_application, mock_settings):
+    @patch("init.handlers.war.enable_war_mode")
+    @patch("init.handlers.calendar.agenda_on")
+    async def test_agenda_mode_activation(
+        self, mock_agenda_on, mock_enable_war_mode, mock_application, mock_settings
+    ):
         """Test that agenda mode is activated when AGENDA_MODE is True."""
-        with (
-            patch("init.handlers.war.war_on") as mock_war_on,
-            patch("init.handlers.calendar.agenda_on") as mock_agenda_on,
-        ):
-            mock_settings.WAR_MODE = False
-            mock_settings.AGENDA_MODE = True
+        mock_settings.WAR_MODE = False
+        mock_settings.AGENDA_MODE = True
 
-            await post_init(mock_application)
+        await post_init(mock_application)
 
-            # Check that agenda_on was called and war_on was not
-            mock_agenda_on.assert_called_once_with(mock_application)
-            mock_war_on.assert_not_called()
+        # Check that agenda_on was called and war_on was not
+        mock_agenda_on.assert_called_once_with(mock_application)
+        mock_enable_war_mode.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_process_existing_message_cleanup_jobs(self, mock_application):
