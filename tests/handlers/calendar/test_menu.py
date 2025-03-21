@@ -91,6 +91,7 @@ class TestMenu:
         context.bot_data = {
             "agenda": {"image": None},
             "calendar": MagicMock(),
+            "subscribers": set(),
         }
         context.user_data = {}
 
@@ -133,10 +134,10 @@ class TestMenu:
             for button in row
         )
 
-        # Check for Update button
+        # Check for Reminder button
         assert any(
-            button.text == "🔄 Update"
-            and button.callback_data == State.CALENDAR_CLEANUP.name
+            button.text == "🔕 Remind"
+            and button.callback_data == State.REMINDER_SWITCHING.name
             for row in keyboard
             for button in row
         )
@@ -152,6 +153,14 @@ class TestMenu:
         # Check for URLs button
         assert any(
             button.text == "🔗 URLs" and button.callback_data == State.AGENDA_URLS.name
+            for row in keyboard
+            for button in row
+        )
+
+        # Check for Update button
+        assert any(
+            button.text == "🔄 Update"
+            and button.callback_data == State.CALENDAR_CLEANUP.name
             for row in keyboard
             for button in row
         )
@@ -182,6 +191,7 @@ class TestMenu:
         context.bot_data = {
             "agenda": {"image": "image_data"},
             "calendar": MagicMock(),
+            "subscribers": set(),
         }
         context.user_data = {}
 
@@ -215,6 +225,7 @@ class TestMenu:
         context.bot_data = {
             "agenda": {"image": None},
             "calendar": MagicMock(),
+            "subscribers": set(),
         }
         context.user_data = {}
 
@@ -243,6 +254,7 @@ class TestMenu:
         context.bot_data = {
             "agenda": {"image": None},
             "calendar": MagicMock(),
+            "subscribers": set(),
         }
         context.user_data = {}
 

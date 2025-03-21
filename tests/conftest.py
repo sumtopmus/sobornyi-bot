@@ -1,10 +1,11 @@
-import pytest
 import logging
-from unittest.mock import AsyncMock, MagicMock, patch
+import sys
 from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from telegram import Bot, Chat, Message, Update, User
 from telegram.ext import Application, ContextTypes
-import sys
 
 from model.calendar import Calendar
 
@@ -25,6 +26,7 @@ def setup_mock_modules():
     # Mock calendar module
     class CalendarModule:
         agenda_on = MagicMock()
+        reminder_on = MagicMock()
 
     calendar = CalendarModule()
 
