@@ -20,6 +20,7 @@ from handlers.calendar.calendar import (
     on_edit_event,
     on_edit_image,
     on_find_event,
+    on_reminder_switching,
     timeout,
 )
 from handlers.calendar.menu import State
@@ -569,3 +570,64 @@ class TestCalendar:
                     in mock_update_menu.call_args[0][1]["text"]
                 )
                 assert context.user_data["state"] is None
+
+    @pytest.mark.asyncio
+    async def test_on_reminder_switching_subscribe(self, mock_update, mock_context):
+        """Test on_reminder_switching function when adding a user to subscribers."""
+        # Setup
+        update = mock_update
+        context = mock_context
+        update.callback_query = AsyncMock()
+        update.effective_user = MagicMock()
+        update.effective_user.id = 12345  # Test user ID
+
+        # Create bot_data with subscribers set that doesn't include the test user
+        context.bot_data = {
+            "subscribers": set([67890]),  # Different user ID
+        }
+
+        # Mock the calendar_menu function
+        with patch(
+            "handlers.calendar.calendar.calendar_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.CALENDAR_MENU
+
+            # Call the function
+            result = await on_reminder_switching(update, context)
+
+            # Assertions
+            assert result == State.CALENDAR_MENU
+            update.callback_query.answer.assert_called_once()
+            assert 12345 in context.bot_data["subscribers"]  # User was added
+            mock_menu.assert_called_once_with(update, context)
+
+    @pytest.mark.asyncio
+    async def test_on_reminder_switching_unsubscribe(self, mock_update, mock_context):
+        """Test on_reminder_switching function when removing a user from subscribers."""
+        # Setup
+        update = mock_update
+        context = mock_context
+        update.callback_query = AsyncMock()
+        update.effective_user = MagicMock()
+        update.effective_user.id = 12345  # Test user ID
+
+        # Create bot_data with subscribers set that includes the test user
+        context.bot_data = {
+            "subscribers": set([12345, 67890]),  # Test user is already subscribed
+        }
+
+        # Mock the calendar_menu function
+        with patch(
+            "handlers.calendar.calendar.calendar_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.CALENDAR_MENU
+
+            # Call the function
+            result = await on_reminder_switching(update, context)
+
+            # Assertions
+            assert result == State.CALENDAR_MENU
+            update.callback_query.answer.assert_called_once()
+            assert 12345 not in context.bot_data["subscribers"]  # User was removed
+            assert 67890 in context.bot_data["subscribers"]  # Other user remained
+            mock_menu.assert_called_once_with(update, context)
