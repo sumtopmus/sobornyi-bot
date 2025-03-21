@@ -133,6 +133,14 @@ class TestMenu:
             for button in row
         )
 
+        # Check for Update button
+        assert any(
+            button.text == "🔄 Update"
+            and button.callback_data == State.CALENDAR_CLEANUP.name
+            for row in keyboard
+            for button in row
+        )
+
         # Check for Preview button
         assert any(
             button.text == "👓 Preview"
@@ -141,10 +149,9 @@ class TestMenu:
             for button in row
         )
 
-        # Check for Update button
+        # Check for URLs button
         assert any(
-            button.text == "🔄 Update"
-            and button.callback_data == State.CALENDAR_CLEANUP.name
+            button.text == "🔗 URLs" and button.callback_data == State.AGENDA_URLS.name
             for row in keyboard
             for button in row
         )

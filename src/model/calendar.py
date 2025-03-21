@@ -1,5 +1,7 @@
 from typing import Dict, List, Optional
 
+from telegram.helpers import escape_markdown
+
 from .event import Category, Event
 from .utils import next_week, this_week
 
@@ -68,7 +70,7 @@ class Calendar:
         ]
         if not urls:
             return None
-        return "\n".join(urls)
+        return "\n\n".join(urls)
 
     def get_nearest_agenda(
         self, events: List[Event], category: Category = None
@@ -127,7 +129,7 @@ class Calendar:
         events_repr = self.get_urls_by_category(nearest_events, Category.VOLUNTEER)
         if events_repr:
             result += f"🤲 Волонтерство:\n{events_repr}"
-        return result
+        return escape_markdown(result)
 
     def remove_past_events(self) -> bool:
         events_to_remove = []

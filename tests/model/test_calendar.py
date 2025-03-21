@@ -1,11 +1,11 @@
 """Tests for the Calendar class."""
 
-from datetime import date, timedelta
 from unittest.mock import patch
 
 import pytest
+from telegram.helpers import escape_markdown
 
-from model import Calendar, Category, Event
+from model import Calendar, Category
 
 
 class TestCalendar:
@@ -321,17 +321,17 @@ class TestCalendar:
 
         assert (
             agenda.count("\n")
-            == len(events_grouped["nearest"]) + len(events_grouped["future"]) + 7
+            == 2 * (len(events_grouped["nearest"]) + len(events_grouped["future"])) + 1
         )
         for event_name in events_grouped["nearest"]:
             url = mock_events[event_name].get_url()
             if url:
-                assert url in agenda
+                assert escape_markdown(url) in agenda
         for event_name in events_grouped["future"]:
             url = mock_events[event_name].get_url()
             if url:
-                assert url in agenda
+                assert escape_markdown(url) in agenda
         for event_name in events_grouped["past"]:
             url = mock_events[event_name].get_url()
             if url:
-                assert url not in agenda
+                assert escape_markdown(url) not in agenda

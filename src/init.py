@@ -51,6 +51,7 @@ async def post_init(app: Application) -> None:
     app.bot_data.setdefault("agenda", {"image": None})
     app.bot_data.setdefault("jobs", {})
     app.bot_data.setdefault("cross-posts", {})
+    app.bot_data.setdefault("version", "1.0.0")
 
     # Process existing jobs
     jobs = copy.deepcopy(app.bot_data["jobs"])
