@@ -57,6 +57,14 @@ class VersionedUnpickler(pickle.Unpickler):
             # Add more mappings as needed for other relocated classes
         }
 
+        # Initialize the attribute mapping dictionary
+        self.attr_mapping = {
+            "model.Calendar": {
+                "_Calendar__events": "_events",
+                "_Calendar__next_id": "_next_id",
+            }
+        }
+
     def add_class_mapping(self, old_path: str, new_module: str, new_name: str) -> None:
         """Add a class mapping to the unpickler.
 
@@ -67,6 +75,40 @@ class VersionedUnpickler(pickle.Unpickler):
         """
         self.class_mapping[old_path] = (new_module, new_name)
         self.logger.info(f"Added class mapping: {old_path} -> {new_module}.{new_name}")
+
+    def add_attr_mapping(self, class_path: str, old_attr: str, new_attr: str) -> None:
+        """Add an attribute mapping for a class.
+
+        Args:
+            class_path: Class path in the format 'module.class'
+            old_attr: Old attribute name
+            new_attr: New attribute name
+        """
+        if class_path not in self.attr_mapping:
+            self.attr_mapping[class_path] = {}
+        self.attr_mapping[class_path][old_attr] = new_attr
+        self.logger.info(
+            f"Added attribute mapping for {class_path}: {old_attr} -> {new_attr}"
+        )
+
+    def remap_attributes(self, obj) -> None:
+        """Remap attributes in an object based on attribute mappings.
+
+        Args:
+            obj: Object to remap attributes in
+        """
+        if not hasattr(obj, "__class__"):
+            return
+
+        class_path = f"{obj.__class__.__module__}.{obj.__class__.__name__}"
+        if class_path in self.attr_mapping:
+            attrs_to_remap = self.attr_mapping[class_path]
+            for old_attr, new_attr in attrs_to_remap.items():
+                if hasattr(obj, old_attr) and not hasattr(obj, new_attr):
+                    setattr(obj, new_attr, getattr(obj, old_attr))
+                    self.logger.info(
+                        f"Remapped attribute {old_attr} to {new_attr} in {class_path}"
+                    )
 
     def find_class(self, module, name):
         # Check if this class has been relocated
@@ -132,6 +174,23 @@ class MigrationTool:
         self.target_path = target_path or source_path
         self.backup = backup
         self.logger = self._setup_logger(log_level, console_logging)
+
+        # Define class and attribute mappings to be used consistently across all methods
+        self.class_mappings = {
+            "model.Calendar.Occurrence": ("model", "Occurrence"),
+            "model.calendar.Category": ("model", "Category"),
+            "model.calendar.Day": ("model", "Day"),
+            "model.calendar.Occurrence": ("model", "Occurrence"),
+            "model.calendar.Event": ("model", "Event"),
+            "model.calendar.Calendar": ("model", "Calendar"),
+        }
+
+        self.attr_mappings = {
+            "model.Calendar": {
+                "_Calendar__events": "_events",
+                "_Calendar__next_id": "_next_id",
+            }
+        }
 
     def _setup_logger(self, log_level: int, console_logging: bool) -> logging.Logger:
         """Set up logging for the migration tool.
@@ -213,10 +272,19 @@ class MigrationTool:
         """
         unpickler = VersionedUnpickler(file_obj, self.logger)
 
+        # Add class mappings defined in __init__
+        for old_path, (new_module, new_name) in self.class_mappings.items():
+            unpickler.add_class_mapping(old_path, new_module, new_name)
+
         # Add any additional mappings
         if additional_mappings:
             for old_path, (new_module, new_name) in additional_mappings.items():
                 unpickler.add_class_mapping(old_path, new_module, new_name)
+
+        # Add attribute mappings defined in __init__
+        for class_path, attr_map in self.attr_mappings.items():
+            for old_attr, new_attr in attr_map.items():
+                unpickler.add_attr_mapping(class_path, old_attr, new_attr)
 
         return unpickler
 
@@ -235,34 +303,140 @@ class MigrationTool:
             self.logger.warning(f"File {file_path} does not exist")
             return None
 
-        # Try different approaches to load the data
-        approaches = [
-            # Approach 1: Standard pickle load
-            lambda f: pickle.load(f),
-            # Approach 2: Custom unpickler
-            lambda f: self._create_unpickler(f, additional_mappings).load(),
-        ]
+        # Use only the custom unpickler approach
+        try:
+            with open(file_path, "rb") as f:
+                self.logger.info(
+                    f"Loading data from {file_path} using custom unpickler"
+                )
+                unpickler = self._create_unpickler(f, additional_mappings)
+                data = unpickler.load()
 
-        last_error = None
-        for i, approach in enumerate(approaches):
+                # Apply attribute remapping recursively
+                try:
+                    self._remap_attributes_recursively(data)
+                except Exception as remap_error:
+                    self.logger.warning(
+                        f"Error during attribute remapping: {remap_error}"
+                    )
+                    self.logger.warning("Continuing with partially remapped data")
+
+                self.logger.info(f"Successfully loaded data from {file_path}")
+                return data
+        except Exception as e:
+            self.logger.error(f"Failed to load data from {file_path}: {e}")
+            # Fall back to standard pickle load as a last resort
             try:
+                self.logger.warning("Attempting fallback to standard pickle load...")
                 with open(file_path, "rb") as f:
-                    self.logger.info(
-                        f"Trying approach {i+1} to load data from {file_path}"
-                    )
-                    data = approach(f)
-                    self.logger.info(
-                        f"Approach {i+1} succeeded in loading data from {file_path}"
-                    )
-                    return data
-            except Exception as e:
-                last_error = e
-                self.logger.warning(f"Approach {i+1} failed: {e}")
+                    data = pickle.load(f)
+                self.logger.info("Successfully loaded data using standard pickle")
+                return data
+            except Exception as fallback_error:
+                self.logger.error(f"Fallback loading also failed: {fallback_error}")
+                raise e
 
-        self.logger.error(
-            f"All approaches to load data from {file_path} failed. Last error: {last_error}"
-        )
-        return None
+    def _remap_attributes_recursively(self, obj, visited=None):
+        """Recursively remap attributes in an object and its children.
+
+        Args:
+            obj: Object to remap attributes in
+            visited: Set of already visited objects to prevent infinite recursion
+        """
+        if obj is None:
+            return
+
+        # Initialize visited set if not provided
+        if visited is None:
+            visited = set()
+
+        # Check if object has already been visited to prevent infinite recursion
+        obj_id = id(obj)
+        if obj_id in visited:
+            return
+
+        # Add this object to visited set
+        visited.add(obj_id)
+
+        # Apply attribute remapping to the object
+        self._apply_attribute_remapping(obj)
+
+        # Recursively process dictionaries
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                if id(value) not in visited:
+                    self._remap_attributes_recursively(value, visited)
+
+        # Recursively process lists and tuples
+        elif isinstance(obj, (list, tuple)):
+            for item in obj:
+                if id(item) not in visited:
+                    self._remap_attributes_recursively(item, visited)
+
+        # Recursively process object attributes
+        elif hasattr(obj, "__dict__"):
+            # Get the list of attributes safely
+            try:
+                attributes = list(obj.__dict__.keys())
+            except (AttributeError, TypeError):
+                # If we can't get attributes through __dict__, try dir()
+                attributes = [
+                    attr
+                    for attr in dir(obj)
+                    if not attr.startswith("__")
+                    and not callable(getattr(obj, attr, None))
+                ]
+
+            for attr_name in attributes:
+                # Skip special Python attributes
+                if attr_name.startswith("__"):
+                    continue
+
+                try:
+                    attr_value = getattr(obj, attr_name)
+                    # Only process non-callable attributes
+                    if not callable(attr_value) and id(attr_value) not in visited:
+                        self._remap_attributes_recursively(attr_value, visited)
+                except (AttributeError, TypeError) as e:
+                    # Log and continue if we encounter attribute access errors
+                    self.logger.debug(f"Skipping attribute {attr_name}: {e}")
+                    continue
+
+    def _apply_attribute_remapping(self, obj):
+        """Apply attribute remapping to a single object.
+
+        Args:
+            obj: Object to remap attributes in
+        """
+        if obj is None:
+            return
+
+        if not hasattr(obj, "__class__"):
+            return
+
+        try:
+            class_path = f"{obj.__class__.__module__}.{obj.__class__.__name__}"
+
+            # Use the attribute mappings defined in __init__
+            if class_path in self.attr_mappings:
+                attrs_to_remap = self.attr_mappings[class_path]
+                for old_attr, new_attr in attrs_to_remap.items():
+                    try:
+                        if hasattr(obj, old_attr) and not hasattr(obj, new_attr):
+                            # Get the value from the old attribute
+                            value = getattr(obj, old_attr)
+                            # Set the new attribute
+                            setattr(obj, new_attr, value)
+                            self.logger.info(
+                                f"Remapped attribute {old_attr} to {new_attr} in {class_path}"
+                            )
+                    except (AttributeError, TypeError) as e:
+                        self.logger.warning(
+                            f"Error remapping attribute {old_attr} to {new_attr} in {class_path}: {e}"
+                        )
+        except Exception as e:
+            self.logger.warning(f"Error determining class path for object: {e}")
+            return
 
     def _save_data(self, data: Any, file_path: str) -> bool:
         """Save data to a pickle file.
@@ -434,7 +608,7 @@ class MigrationTool:
             # Try to create a minimal Event object with just the required fields
             return Event(title=event_data_copy.get("title", "Unknown Event"))
 
-    def _migrate_calendar(self, calendar_data: Dict[str, Any]) -> Calendar:
+    def _migrate_calendar(self, calendar_data: Any) -> Calendar:
         """Migrate a calendar from old format to new format.
 
         Args:
@@ -443,65 +617,107 @@ class MigrationTool:
         Returns:
             Calendar in new format
         """
-        # If calendar_data is already a Calendar object, return it
-        if isinstance(calendar_data, Calendar):
-            self.logger.info(
-                "Calendar is already a Calendar object, no migration needed"
-            )
-            return calendar_data
+        self.logger.info(f"Calendar data type: {type(calendar_data)}")
 
         # Create a new Calendar object
         calendar = Calendar()
 
-        # If calendar_data is a dictionary, extract events and next_id
-        if isinstance(calendar_data, dict):
-            # Check if it's a direct dictionary of events or has the private attribute structure
-            if "_Calendar__events" in calendar_data:
-                events = calendar_data.get("_Calendar__events", {})
-                next_id = calendar_data.get("_Calendar__next_id", 0)
-            else:
-                # Assume it's a direct dictionary of events
-                events = calendar_data
-                next_id = max(events.keys()) + 1 if events else 0
+        # Handle Calendar class instance case
+        if hasattr(calendar_data, "__class__"):
+            self.logger.info(
+                f"Handling Calendar class instance: {calendar_data.__class__.__name__}"
+            )
+
+            # Check for events attribute in various forms
+            events = {}
+            next_id = 0
+
+            class_path = f"{calendar_data.__class__.__module__}.{calendar_data.__class__.__name__}"
+            model_calendar_attrs = self.attr_mappings.get("model.Calendar", {})
+
+            # Get events attribute using mappings
+            events_attr = "_events"  # New attribute name
+            old_events_attr = next(
+                (old for old, new in model_calendar_attrs.items() if new == "_events"),
+                None,
+            )
+
+            if hasattr(calendar_data, events_attr):
+                self.logger.info(f"Found {events_attr} attribute on object")
+                events = getattr(calendar_data, events_attr, {})
+            elif old_events_attr and hasattr(calendar_data, old_events_attr):
+                self.logger.info(f"Found {old_events_attr} attribute on object")
+                events = getattr(calendar_data, old_events_attr, {})
+
+            # Get next_id attribute using mappings
+            next_id_attr = "_next_id"  # New attribute name
+            old_next_id_attr = next(
+                (old for old, new in model_calendar_attrs.items() if new == "_next_id"),
+                None,
+            )
+
+            if hasattr(calendar_data, next_id_attr):
+                next_id = getattr(calendar_data, next_id_attr, 0)
+            elif old_next_id_attr and hasattr(calendar_data, old_next_id_attr):
+                next_id = getattr(calendar_data, old_next_id_attr, 0)
 
             # Migrate events
+            calendar._events = {}
             for event_id, event_data in events.items():
                 try:
                     # If event_data is already an Event object, add it directly
                     if isinstance(event_data, Event):
-                        calendar._Calendar__events[event_id] = event_data
+                        calendar._events[event_id] = event_data
                     else:
                         # Otherwise, migrate the event data
                         migrated_event = self._migrate_event(event_data)
-                        calendar._Calendar__events[event_id] = migrated_event
+                        calendar._events[event_id] = migrated_event
                 except Exception as e:
                     self.logger.error(f"Error migrating event {event_id}: {e}")
 
-            # Set the next_id
-            calendar._Calendar__next_id = next_id
+            calendar._next_id = next_id
         else:
             self.logger.warning(f"Unexpected calendar data type: {type(calendar_data)}")
 
+        self.logger.info(
+            f"Migrated calendar with {len(calendar._events)} events and next_id={calendar._next_id}"
+        )
         return calendar
 
-    def _convert_enums_in_dict(self, data: Any) -> Any:
+    def _convert_enums_in_dict(self, data: Any, visited=None) -> Any:
         """Recursively convert old enum values in dictionaries and lists.
 
         Args:
             data: Data structure that might contain old enum values
+            visited: Set of already visited objects to prevent infinite recursion
 
         Returns:
             Data structure with converted enum values
         """
+        if data is None:
+            return None
+
+        # Initialize visited set if not provided
+        if visited is None:
+            visited = set()
+
+        # Check if object has already been visited to prevent infinite recursion
+        obj_id = id(data)
+        if obj_id in visited:
+            return data
+
+        # Add this object to visited set
+        visited.add(obj_id)
+
         if isinstance(data, dict):
             result = {}
             for key, value in data.items():
-                result[key] = self._convert_enums_in_dict(value)
+                result[key] = self._convert_enums_in_dict(value, visited)
             return result
         elif isinstance(data, list):
-            return [self._convert_enums_in_dict(item) for item in data]
+            return [self._convert_enums_in_dict(item, visited) for item in data]
         elif isinstance(data, tuple):
-            return tuple(self._convert_enums_in_dict(item) for item in data)
+            return tuple(self._convert_enums_in_dict(item, visited) for item in data)
         # Check if it's an old Occurrence enum
         elif (
             hasattr(data, "__module__")
@@ -546,98 +762,120 @@ class MigrationTool:
         if self.backup:
             self._create_backup(source_file)
 
-        # Define additional mappings specific to bot data
-        bot_data_mappings = {
-            "model.calendar.Category": ("model", "Category"),
-            "model.calendar.Day": ("model", "Day"),
-            "model.calendar.Occurrence": ("model", "Occurrence"),
-            "model.calendar.Event": ("model", "Event"),
-            "model.calendar.Calendar": ("model", "Calendar"),
-            # Add more mappings as needed
-        }
-
-        bot_data = self._load_data(source_file, additional_mappings=bot_data_mappings)
-        if bot_data is None:
-            self.logger.error("Bot data migration failed: Could not load data")
-            return False
-
-        # Make a deep copy to avoid modifying the original data
-        migrated_bot_data = copy.deepcopy(bot_data)
-
-        # Convert any old enum values in the entire data structure
-        migrated_bot_data = self._convert_enums_in_dict(migrated_bot_data)
-
-        # Migrate calendar
-        if "calendar" in migrated_bot_data:
-            try:
-                migrated_bot_data["calendar"] = self._migrate_calendar(
-                    migrated_bot_data["calendar"]
-                )
-                self.logger.info("Successfully migrated calendar")
-            except Exception as e:
-                self.logger.error(f"Error migrating calendar: {e}")
+        # Use the class mappings already defined in __init__
+        try:
+            bot_data = self._load_data(source_file)
+            if bot_data is None:
+                self.logger.error("Bot data migration failed: Could not load data")
                 return False
 
-        # Migrate agenda data
-        if "agenda" in migrated_bot_data:
+            # Make a deep copy to avoid modifying the original data
             try:
-                # Convert date strings to datetime objects if needed
-                if isinstance(migrated_bot_data["agenda"].get("date"), str):
-                    try:
-                        migrated_bot_data["agenda"]["date"] = (
-                            datetime.fromisoformat(migrated_bot_data["agenda"]["date"])
-                            .date()
-                            .isoformat()
-                        )
-                    except (ValueError, TypeError):
-                        pass  # Keep as string if conversion fails
+                migrated_bot_data = copy.deepcopy(bot_data)
+            except Exception as copy_error:
+                self.logger.warning(f"Error during deep copy: {copy_error}")
+                self.logger.warning("Using original data instead of copy")
+                migrated_bot_data = bot_data
 
-                self.logger.info("Successfully migrated agenda data")
-            except Exception as e:
-                self.logger.error(f"Error migrating agenda data: {e}")
-                # Don't return False here, continue with other migrations
-
-        # Migrate cross-posts data
-        # This appears to be a mapping of message IDs, so no special migration needed
-        if "cross-posts" in migrated_bot_data:
-            self.logger.info("Successfully processed cross-posts data")
-
-        # Migrate jobs data
-        if "jobs" in migrated_bot_data:
+            # Convert any old enum values in the entire data structure
             try:
-                # If there are any datetime objects in the jobs data, ensure they're serializable
-                for job_name, job_data in migrated_bot_data.get("jobs", {}).items():
-                    if "time" in job_data and isinstance(job_data["time"], datetime):
-                        # Ensure datetime objects are serializable
-                        pass  # Already handled by pickle
+                migrated_bot_data = self._convert_enums_in_dict(migrated_bot_data)
+            except Exception as enum_error:
+                self.logger.warning(f"Error converting enums: {enum_error}")
+                self.logger.warning("Continuing with partially converted data")
 
-                self.logger.info("Successfully migrated jobs data")
-            except Exception as e:
-                self.logger.error(f"Error migrating jobs data: {e}")
-                # Don't return False here, continue with other migrations
+            # Migrate calendar
+            if "calendar" in migrated_bot_data:
+                try:
+                    migrated_bot_data["calendar"] = self._migrate_calendar(
+                        migrated_bot_data["calendar"]
+                    )
+                    self.logger.info("Successfully migrated calendar")
+                except Exception as e:
+                    self.logger.error(f"Error migrating calendar: {e}")
+                    self.logger.warning("Continuing without migrated calendar")
+                    # Don't return False, try to continue with other data
 
-        # Migrate current_event data
-        if "current_event" in migrated_bot_data:
-            try:
-                if migrated_bot_data["current_event"] is not None:
-                    # If it's an Event object, no need to migrate
-                    if not isinstance(migrated_bot_data["current_event"], Event):
-                        # Otherwise, migrate the event data
-                        migrated_bot_data["current_event"] = self._migrate_event(
-                            migrated_bot_data["current_event"]
-                        )
+            # Migrate agenda data
+            if "agenda" in migrated_bot_data:
+                try:
+                    # Convert date strings to datetime objects if needed
+                    if isinstance(migrated_bot_data["agenda"].get("date"), str):
+                        try:
+                            migrated_bot_data["agenda"]["date"] = (
+                                datetime.fromisoformat(
+                                    migrated_bot_data["agenda"]["date"]
+                                )
+                                .date()
+                                .isoformat()
+                            )
+                        except (ValueError, TypeError):
+                            pass  # Keep as string if conversion fails
 
-                self.logger.info("Successfully migrated current_event data")
-            except Exception as e:
-                self.logger.error(f"Error migrating current_event data: {e}")
-                # Don't return False here, continue with other migrations
+                    self.logger.info("Successfully migrated agenda data")
+                except Exception as e:
+                    self.logger.error(f"Error migrating agenda data: {e}")
+                    # Don't return False, continue with other migrations
 
-        success = self._save_data(migrated_bot_data, target_file)
-        if success:
-            self.logger.info("Bot data migration completed successfully")
-        else:
-            self.logger.error("Bot data migration failed when saving data")
-        return success
+            # Migrate cross-posts data
+            # This appears to be a mapping of message IDs, so no special migration needed
+            if "cross-posts" in migrated_bot_data:
+                try:
+                    self.logger.info("Successfully processed cross-posts data")
+                except Exception as e:
+                    self.logger.error(f"Error processing cross-posts data: {e}")
+                    # Continue with other migrations
+
+            # Migrate jobs data
+            if "jobs" in migrated_bot_data:
+                try:
+                    # If there are any datetime objects in the jobs data, ensure they're serializable
+                    for job_name, job_data in migrated_bot_data.get("jobs", {}).items():
+                        if "time" in job_data and isinstance(
+                            job_data["time"], datetime
+                        ):
+                            # Ensure datetime objects are serializable
+                            pass  # Already handled by pickle
+
+                    self.logger.info("Successfully migrated jobs data")
+                except Exception as e:
+                    self.logger.error(f"Error migrating jobs data: {e}")
+                    # Don't return False here, continue with other migrations
+
+            # Migrate current_event data
+            if "current_event" in migrated_bot_data:
+                try:
+                    if migrated_bot_data["current_event"] is not None:
+                        # If it's an Event object, no need to migrate
+                        if not isinstance(migrated_bot_data["current_event"], Event):
+                            # Otherwise, migrate the event data
+                            migrated_bot_data["current_event"] = self._migrate_event(
+                                migrated_bot_data["current_event"]
+                            )
+
+                    self.logger.info("Successfully migrated current_event data")
+                except Exception as e:
+                    self.logger.error(f"Error migrating current_event data: {e}")
+                    # Don't return False here, continue with other migrations
+
+            # Add version info
+            if "version" not in migrated_bot_data:
+                migrated_bot_data["version"] = "1.0.0"
+                self.logger.info("Added missing version field with default value 1.0.0")
+            else:
+                self.logger.info(
+                    f"Version field already exists: {migrated_bot_data['version']}"
+                )
+
+            success = self._save_data(migrated_bot_data, target_file)
+            if success:
+                self.logger.info("Bot data migration completed successfully")
+            else:
+                self.logger.error("Bot data migration failed when saving data")
+            return success
+        except Exception as e:
+            self.logger.error(f"Unexpected error during bot data migration: {e}")
+            return False
 
     def _migrate_chat_data(self) -> bool:
         """Migrate chat data.
@@ -656,12 +894,8 @@ class MigrationTool:
         if self.backup:
             self._create_backup(source_file)
 
-        # Define additional mappings specific to chat data
-        chat_data_mappings = {
-            # Add mappings as needed for chat data
-        }
-
-        chat_data = self._load_data(source_file, additional_mappings=chat_data_mappings)
+        # Use the class mappings already defined in __init__
+        chat_data = self._load_data(source_file)
         if chat_data is None:
             self.logger.error("Chat data migration failed: Could not load data")
             return False
@@ -696,12 +930,8 @@ class MigrationTool:
         if self.backup:
             self._create_backup(source_file)
 
-        # Define additional mappings specific to user data
-        user_data_mappings = {
-            # Add mappings as needed for user data
-        }
-
-        user_data = self._load_data(source_file, additional_mappings=user_data_mappings)
+        # Use the class mappings already defined in __init__
+        user_data = self._load_data(source_file)
         if user_data is None:
             self.logger.error("User data migration failed: Could not load data")
             return False

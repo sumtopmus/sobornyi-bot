@@ -1,9 +1,10 @@
 """Tests for the debug module."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 
-from handlers.debug.debug import create_handlers, debug_on, debug_off
+import pytest
+
+from handlers.debug.debug import create_handlers, debug_off, debug_on
 
 
 class TestDebug:
@@ -30,85 +31,79 @@ class TestDebug:
         # assert handlers[1].filters.usernames == {"admin1", "admin2"}
 
     @pytest.mark.asyncio
-    async def test_debug_on(self, mock_update, mock_context):
+    @patch("handlers.debug.debug.debug_mode_on")
+    async def test_debug_on(self, mock_debug_mode_on, mock_update, mock_context):
         """Test the debug_on function."""
         # Setup
         mock_update.effective_chat.id = 12345
         mock_update.effective_user.id = 67890
 
-        # Mock the debug_mode_on function
-        with patch("handlers.debug.debug.debug_mode_on") as mock_debug_mode_on:
-            # Call the function
-            await debug_on(mock_update, mock_context)
+        # Call the function
+        await debug_on(mock_update, mock_context)
 
-            # Assertions
-            mock_debug_mode_on.assert_called_once()
+        # Assertions
+        mock_debug_mode_on.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_debug_off(self, mock_update, mock_context):
+    @patch("handlers.debug.debug.debug_mode_off")
+    async def test_debug_off(self, mock_debug_mode_off, mock_update, mock_context):
         """Test the debug_off function."""
         # Setup
         mock_update.effective_chat.id = 12345
         mock_update.effective_user.id = 67890
 
-        # Mock the debug_mode_off function
-        with patch("handlers.debug.debug.debug_mode_off") as mock_debug_mode_off:
-            # Call the function
-            await debug_off(mock_update, mock_context)
+        # Call the function
+        await debug_off(mock_update, mock_context)
 
-            # Assertions
-            mock_debug_mode_off.assert_called_once()
+        # Assertions
+        mock_debug_mode_off.assert_called_once()
 
     @pytest.mark.asyncio
     @pytest.mark.integration
-    async def test_debug_on_integration(self, mock_update, mock_context):
+    @patch("handlers.debug.debug.log")
+    @patch("config.settings")
+    @patch("config.logging.getLogger")
+    async def test_debug_on_integration(
+        self, mock_get_logger, mock_settings, mock_log, mock_update, mock_context
+    ):
         """Test the debug_on function with integration."""
         # Setup
         mock_update.effective_chat.id = 12345
         mock_update.effective_user.id = 67890
 
-        # Mock the log function and config
-        with (
-            patch("handlers.debug.debug.log") as mock_log,
-            patch("config.settings") as mock_settings,
-            patch("config.logging.getLogger") as mock_get_logger,
-        ):
+        # Setup mock loggers
+        mock_logger = MagicMock()
+        mock_get_logger.return_value = mock_logger
 
-            # Setup mock loggers
-            mock_logger = MagicMock()
-            mock_get_logger.return_value = mock_logger
+        # Call the function
+        await debug_on(mock_update, mock_context)
 
-            # Call the function
-            await debug_on(mock_update, mock_context)
-
-            # Assertions
-            mock_log.assert_called_with("debug_on")
-            # Check that DEBUG flag is set
-            assert mock_settings.DEBUG is True
+        # Assertions
+        mock_log.assert_called_with("debug_on")
+        # Check that DEBUG flag is set
+        assert mock_settings.DEBUG is True
 
     @pytest.mark.asyncio
     @pytest.mark.integration
-    async def test_debug_off_integration(self, mock_update, mock_context):
+    @patch("handlers.debug.debug.log")
+    @patch("config.settings")
+    @patch("config.logging.getLogger")
+    async def test_debug_off_integration(
+        self, mock_get_logger, mock_settings, mock_log, mock_update, mock_context
+    ):
         """Test the debug_off function with integration."""
         # Setup
         mock_update.effective_chat.id = 12345
         mock_update.effective_user.id = 67890
 
-        # Mock the log function and config
-        with (
-            patch("handlers.debug.debug.log") as mock_log,
-            patch("config.settings") as mock_settings,
-            patch("config.logging.getLogger") as mock_get_logger,
-        ):
+        # Setup mock loggers
+        mock_logger = MagicMock()
+        mock_get_logger.return_value = mock_logger
 
-            # Setup mock loggers
-            mock_logger = MagicMock()
-            mock_get_logger.return_value = mock_logger
+        # Call the function
+        await debug_off(mock_update, mock_context)
 
-            # Call the function
-            await debug_off(mock_update, mock_context)
-
-            # Assertions
-            mock_log.assert_called_with("debug_off")
-            # Check that DEBUG flag is set
-            assert mock_settings.DEBUG is False
+        # Assertions
+        mock_log.assert_called_with("debug_off")
+        # Check that DEBUG flag is set
+        assert mock_settings.DEBUG is False

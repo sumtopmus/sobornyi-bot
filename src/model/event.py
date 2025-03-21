@@ -96,6 +96,14 @@ class Event:
                 result += f"-{weekday.name[6]}"
         return result
 
+    def get_url(self) -> Optional[str]:
+        url = None
+        if self.tg_url:
+            url = self.tg_url
+        if self.url:
+            url = self.url
+        return url
+
     def get_title(self) -> Optional[str]:
         if not self.title:
             return None
@@ -240,3 +248,25 @@ class Event:
             "category": self.category.name,
             "cancelled": self.cancelled,
         }
+
+    def copy(self) -> "Event":
+        """Returns a new Event instance with the same attribute values."""
+        return Event(
+            title=self.title,
+            emoji=self.emoji,
+            description=self.description,
+            occurrence=self.occurrence,
+            date=self.date,
+            time=self.time,
+            end_date=self.end_date,
+            end_time=self.end_time,
+            days=self.days.copy(),
+            venue=self.venue,
+            location=self.location,
+            url=self.url,
+            message_id=self.message_id,
+            tg_url=self.tg_url,
+            image=self.image,
+            category=self.category,
+            cancelled=self.cancelled,
+        )

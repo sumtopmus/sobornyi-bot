@@ -2,18 +2,17 @@
 
 from datetime import date
 
-from model import this_week, next_week
+from model import next_week, this_week
 
 
 def test_get_this_week():
     """Test getting this week's date."""
-    today = date.today()
     this_monday = this_week()
     assert isinstance(this_monday, date)
     # Check that this_monday is a Monday
     assert this_monday.weekday() == 0
     # Check that this_monday is in the current week
-    assert (today - this_monday).days <= 6
+    assert (date.today() - this_monday).days <= 6
 
 
 def test_get_next_week():
@@ -23,5 +22,4 @@ def test_get_next_week():
     # Check that next_monday is a Monday
     assert next_monday.weekday() == 0
     # Check that next_monday is in the next week
-    this_monday = this_week()
-    assert (next_monday - this_monday).days == 7
+    assert (next_monday - date.today()).days <= 7

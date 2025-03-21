@@ -25,6 +25,7 @@ State = Enum(
         # Process states:
         "CALENDAR_CLEANUP",
         "AGENDA_PREVIEW",
+        "AGENDA_URLS",
         "AGENDA_EDITING_IMAGE",
         "AGENDA_PUBLISHING",
         "EVENT_ADDING",
@@ -86,12 +87,15 @@ async def calendar_menu(
                 "🖼️ Poster " + ("✅" if image else "🚫"),
                 callback_data=State.AGENDA_EDITING_IMAGE.name,
             ),
-            InlineKeyboardButton("👓 Preview", callback_data=State.AGENDA_PREVIEW.name),
-        ],
-        [
             InlineKeyboardButton(
                 "🔄 Update", callback_data=State.CALENDAR_CLEANUP.name
             ),
+        ],
+        [
+            InlineKeyboardButton("👓 Preview", callback_data=State.AGENDA_PREVIEW.name),
+            InlineKeyboardButton("🔗 URLs", callback_data=State.AGENDA_URLS.name),
+        ],
+        [
             InlineKeyboardButton("« Exit", callback_data=State.EXIT.name),
         ],
     ]

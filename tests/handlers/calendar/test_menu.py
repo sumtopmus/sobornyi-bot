@@ -79,7 +79,8 @@ class TestMenu:
         update.effective_user.send_message.assert_called_once_with(**menu)
 
     @pytest.mark.asyncio
-    async def test_calendar_menu(self, mock_update, mock_context):
+    @patch("handlers.calendar.menu.sync_agenda")
+    async def test_calendar_menu(self, mock_sync_agenda, mock_update, mock_context):
         """Test the calendar_menu function."""
         # Setup
         update = mock_update
@@ -93,77 +94,84 @@ class TestMenu:
         }
         context.user_data = {}
 
-        # Mock the sync_agenda function
-        with patch("handlers.calendar.menu.sync_agenda", new=AsyncMock()) as mock_sync:
-            # Call the function
-            result = await calendar_menu(update, context)
+        # Call the function
+        result = await calendar_menu(update, context)
 
-            # Assertions
-            assert result == State.CALENDAR_MENU
-            mock_sync.assert_called_once_with(context)
-            update.callback_query.answer.assert_called_once()
-            update.callback_query.edit_message_text.assert_called_once()
+        # Assertions
+        assert result == State.CALENDAR_MENU
+        mock_sync_agenda.assert_called_once_with(context)
+        update.callback_query.answer.assert_called_once()
+        update.callback_query.edit_message_text.assert_called_once()
 
-            # Check that the keyboard has the expected buttons
-            call_args = update.callback_query.edit_message_text.call_args
-            assert call_args is not None
-            kwargs = call_args[1]
-            assert "reply_markup" in kwargs
-            keyboard = kwargs["reply_markup"].inline_keyboard
+        # Check that the keyboard has the expected buttons
+        call_args = update.callback_query.edit_message_text.call_args
+        assert call_args is not None
+        kwargs = call_args[1]
+        assert "reply_markup" in kwargs
+        keyboard = kwargs["reply_markup"].inline_keyboard
 
-            # Check for Add button
-            assert any(
-                button.text == "➕ Add"
-                and button.callback_data == State.EVENT_ADDING.name
-                for row in keyboard
-                for button in row
-            )
+        # Check for Add button
+        assert any(
+            button.text == "➕ Add" and button.callback_data == State.EVENT_ADDING.name
+            for row in keyboard
+            for button in row
+        )
 
-            # Check for Edit button
-            assert any(
-                button.text == "📝 Edit"
-                and button.callback_data == State.EVENT_EDITING.name
-                for row in keyboard
-                for button in row
-            )
+        # Check for Edit button
+        assert any(
+            button.text == "📝 Edit"
+            and button.callback_data == State.EVENT_EDITING.name
+            for row in keyboard
+            for button in row
+        )
 
-            # Check for Poster button (with 🚫 since image is None)
-            assert any(
-                button.text == "🖼️ Poster 🚫"
-                and button.callback_data == State.AGENDA_EDITING_IMAGE.name
-                for row in keyboard
-                for button in row
-            )
+        # Check for Poster button (with 🚫 since image is None)
+        assert any(
+            button.text == "🖼️ Poster 🚫"
+            and button.callback_data == State.AGENDA_EDITING_IMAGE.name
+            for row in keyboard
+            for button in row
+        )
 
-            # Check for Preview button
-            assert any(
-                button.text == "👓 Preview"
-                and button.callback_data == State.AGENDA_PREVIEW.name
-                for row in keyboard
-                for button in row
-            )
+        # Check for Update button
+        assert any(
+            button.text == "🔄 Update"
+            and button.callback_data == State.CALENDAR_CLEANUP.name
+            for row in keyboard
+            for button in row
+        )
 
-            # Check for Update button
-            assert any(
-                button.text == "🔄 Update"
-                and button.callback_data == State.CALENDAR_CLEANUP.name
-                for row in keyboard
-                for button in row
-            )
+        # Check for Preview button
+        assert any(
+            button.text == "👓 Preview"
+            and button.callback_data == State.AGENDA_PREVIEW.name
+            for row in keyboard
+            for button in row
+        )
 
-            # Check for Exit button
-            assert any(
-                button.text == "« Exit" and button.callback_data == State.EXIT.name
-                for row in keyboard
-                for button in row
-            )
+        # Check for URLs button
+        assert any(
+            button.text == "🔗 URLs" and button.callback_data == State.AGENDA_URLS.name
+            for row in keyboard
+            for button in row
+        )
 
-            # Check that current_event is set to None
-            assert context.user_data.get("current_event") is None
-            assert context.user_data.get("state") == State.CALENDAR_MENU
+        # Check for Exit button
+        assert any(
+            button.text == "« Exit" and button.callback_data == State.EXIT.name
+            for row in keyboard
+            for button in row
+        )
+
+        # Check that current_event is set to None
+        assert context.user_data.get("current_event") is None
+        assert context.user_data.get("state") == State.CALENDAR_MENU
 
     @pytest.mark.asyncio
-    async def test_calendar_menu_with_image(self, mock_update, mock_context):
+    @patch("handlers.calendar.menu.sync_agenda")
+    async def test_calendar_menu_with_image(
+        self, mock_sync_agenda, mock_update, mock_context
+    ):
         """Test the calendar_menu function with an image."""
         # Setup
         update = mock_update
@@ -177,26 +185,26 @@ class TestMenu:
         }
         context.user_data = {}
 
-        # Mock the sync_agenda function
-        with patch("handlers.calendar.menu.sync_agenda", new=AsyncMock()):
-            # Call the function
-            await calendar_menu(update, context)
+        await calendar_menu(update, context)
 
-            # Check for Poster button (with ✅ since image exists)
-            call_args = update.callback_query.edit_message_text.call_args
-            assert call_args is not None
-            kwargs = call_args[1]
-            keyboard = kwargs["reply_markup"].inline_keyboard
+        # Check for Poster button (with ✅ since image exists)
+        call_args = update.callback_query.edit_message_text.call_args
+        assert call_args is not None
+        kwargs = call_args[1]
+        keyboard = kwargs["reply_markup"].inline_keyboard
 
-            assert any(
-                button.text == "🖼️ Poster ✅"
-                and button.callback_data == State.AGENDA_EDITING_IMAGE.name
-                for row in keyboard
-                for button in row
-            )
+        assert any(
+            button.text == "🖼️ Poster ✅"
+            and button.callback_data == State.AGENDA_EDITING_IMAGE.name
+            for row in keyboard
+            for button in row
+        )
 
     @pytest.mark.asyncio
-    async def test_calendar_menu_with_prefix_text(self, mock_update, mock_context):
+    @patch("handlers.calendar.menu.sync_agenda")
+    async def test_calendar_menu_with_prefix_text(
+        self, mock_sync_agenda, mock_update, mock_context
+    ):
         """Test the calendar_menu function with prefix text."""
         # Setup
         update = mock_update
@@ -212,19 +220,19 @@ class TestMenu:
 
         prefix_text = "This is a prefix text"
 
-        # Mock the sync_agenda function
-        with patch("handlers.calendar.menu.sync_agenda", new=AsyncMock()):
-            # Call the function
-            await calendar_menu(update, context, prefix_text=prefix_text)
+        await calendar_menu(update, context, prefix_text=prefix_text)
 
-            # Check that the text includes the prefix
-            call_args = update.callback_query.edit_message_text.call_args
-            assert call_args is not None
-            kwargs = call_args[1]
-            assert prefix_text in kwargs["text"]
+        # Check that the text includes the prefix
+        call_args = update.callback_query.edit_message_text.call_args
+        assert call_args is not None
+        kwargs = call_args[1]
+        assert prefix_text in kwargs["text"]
 
     @pytest.mark.asyncio
-    async def test_calendar_menu_with_new_message(self, mock_update, mock_context):
+    @patch("handlers.calendar.menu.sync_agenda")
+    async def test_calendar_menu_with_new_message(
+        self, mock_sync_agenda, mock_update, mock_context
+    ):
         """Test the calendar_menu function with new_message=True."""
         # Setup
         update = mock_update
@@ -238,14 +246,11 @@ class TestMenu:
         }
         context.user_data = {}
 
-        # Mock the sync_agenda function
-        with patch("handlers.calendar.menu.sync_agenda", new=AsyncMock()):
-            # Call the function
-            await calendar_menu(update, context, new_message=True)
+        await calendar_menu(update, context, new_message=True)
 
-            # Check that send_message was called instead of edit_message_text
-            update.callback_query.edit_message_text.assert_not_called()
-            update.effective_user.send_message.assert_called_once()
+        # Check that send_message was called instead of edit_message_text
+        update.callback_query.edit_message_text.assert_not_called()
+        update.effective_user.send_message.assert_called_once()
 
     def test_events_menu_with_events(self, mock_this_week):
         """Test the events_menu function with events."""

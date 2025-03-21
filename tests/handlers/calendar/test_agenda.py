@@ -45,32 +45,32 @@ class TestAgenda:
             "context": mock_context,
         }
 
-    def test_agenda_on(self, mock_settings):
+    @patch("handlers.calendar.agenda.next_week")
+    def test_agenda_on(self, mock_next_week, mock_settings):
         """Test the agenda_on function."""
+        # Mock Calendar.get_next_week to return a known date
+        next_week = date(2023, 1, 8)
+        mock_next_week.return_value = next_week
         # Setup
         app = MagicMock()
         app.job_queue.get_jobs_by_name.return_value = []
 
-        # Mock Calendar.get_next_week to return a known date
-        next_week = date(2023, 1, 8)
-        with patch("handlers.calendar.agenda.next_week", return_value=next_week):
-            # Call the function
-            agenda_on(app)
+        agenda_on(app)
 
-            # Assertions
-            app.job_queue.get_jobs_by_name.assert_called_once_with("weekly_agenda")
-            app.job_queue.run_repeating.assert_called_once()
+        # Assertions
+        app.job_queue.get_jobs_by_name.assert_called_once_with("weekly_agenda")
+        app.job_queue.run_repeating.assert_called_once()
 
-            # Check the arguments to run_repeating
-            args, kwargs = app.job_queue.run_repeating.call_args
-            assert args[0] == publish_agenda
-            assert kwargs["interval"] == timedelta(weeks=1)
-            assert kwargs["name"] == "weekly_agenda"
-            # Check the first time is correctly calculated
-            expected_first_time = datetime.combine(
-                next_week, time.fromisoformat(mock_settings.AGENDA_TIME)
-            )
-            assert kwargs["first"] == expected_first_time
+        # Check the arguments to run_repeating
+        args, kwargs = app.job_queue.run_repeating.call_args
+        assert args[0] == publish_agenda
+        assert kwargs["interval"] == timedelta(weeks=1)
+        assert kwargs["name"] == "weekly_agenda"
+        # Check the first time is correctly calculated
+        expected_first_time = datetime.combine(
+            next_week, time.fromisoformat(mock_settings.AGENDA_TIME)
+        )
+        assert kwargs["first"] == expected_first_time
 
     def test_agenda_on_job_exists(self):
         """Test the agenda_on function when the job already exists."""
@@ -121,49 +121,46 @@ class TestAgenda:
             assert context.bot_data["agenda"]["image"] is None
 
     @pytest.mark.asyncio
-    async def test_publish_agenda_with_default_image(self, mock_context, mock_settings):
+    @patch("handlers.calendar.agenda.this_week")
+    @patch("handlers.calendar.agenda.cross_post")
+    async def test_publish_agenda_with_default_image(
+        self, mock_cross_post, mock_this_week, mock_context, mock_settings
+    ):
         """Test the publish_agenda function with the default image."""
+        # Mock the current week date
+        this_week = date(2023, 1, 1)
+        mock_this_week.return_value = this_week
         # Setup
         context = mock_context
         context.bot_data = {"calendar": MagicMock(), "agenda": {"image": None}}
         context.bot_data["calendar"].get_agenda.return_value = "Agenda text"
 
-        # Mock the current week date
-        this_week = date(2023, 1, 1)
-        with (
-            patch("handlers.calendar.agenda.this_week", return_value=this_week),
-            patch("handlers.calendar.agenda.cross_post", new=AsyncMock()),
-        ):
-            # Call the function
-            await publish_agenda(context)
+        await publish_agenda(context)
 
-            # Assertions
-            context.bot.send_photo.assert_called_once_with(
-                chat_id=mock_settings.CHANNEL_USERNAME,
-                photo=mock_settings.DEFAULT_AGENDA_IMAGE,
-                caption="Agenda text",
-            )
-            # Check that the bot data was updated correctly
-            assert (
-                context.bot_data["agenda"]["message_id"]
-                == context.bot.send_photo.return_value.message_id
-            )
-            assert context.bot_data["agenda"]["date"] == this_week.isoformat()
-            assert context.bot_data["agenda"]["hash"] == calculate_hash("Agenda text")
-            assert context.bot_data["agenda"]["image"] is None
+        # Assertions
+        context.bot.send_photo.assert_called_once_with(
+            chat_id=mock_settings.CHANNEL_USERNAME,
+            photo=mock_settings.DEFAULT_AGENDA_IMAGE,
+            caption="Agenda text",
+        )
+        # Check that the bot data was updated correctly
+        assert (
+            context.bot_data["agenda"]["message_id"]
+            == context.bot.send_photo.return_value.message_id
+        )
+        assert context.bot_data["agenda"]["date"] == this_week.isoformat()
+        assert context.bot_data["agenda"]["hash"] == calculate_hash("Agenda text")
+        assert context.bot_data["agenda"]["image"] is None
 
     @pytest.mark.asyncio
-    async def test_sync_agenda_no_change(self, mock_agenda):
+    @patch("handlers.calendar.agenda.this_week")
+    async def test_sync_agenda_no_change(self, mock_this_week, mock_agenda):
         """Test the sync_agenda function when there's no change in the agenda."""
-        # Mock the current week date
-        with patch(
-            "handlers.calendar.agenda.this_week", return_value=mock_agenda["this_week"]
-        ):
-            # Call the function
-            await sync_agenda(mock_agenda["context"])
+        mock_this_week.return_value = mock_agenda["this_week"]
 
-            # Assertions - should not edit the message
-            mock_agenda["context"].bot.edit_message_caption.assert_not_called()
+        await sync_agenda(mock_agenda["context"])
+
+        mock_agenda["context"].bot.edit_message_caption.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_sync_agenda_early_return_on_hash_match(self, mock_agenda):
@@ -190,8 +187,12 @@ class TestAgenda:
             )
 
     @pytest.mark.asyncio
-    async def test_sync_agenda_with_change(self, mock_settings, mock_agenda):
+    @patch("handlers.calendar.agenda.this_week")
+    async def test_sync_agenda_with_change(
+        self, mock_this_week, mock_settings, mock_agenda
+    ):
         """Test the sync_agenda function when there's a change in the agenda."""
+        mock_this_week.return_value = mock_agenda["this_week"]
         # Override with different agenda text
         old_text = "Old agenda text"
         old_hash = calculate_hash(old_text)
@@ -202,40 +203,31 @@ class TestAgenda:
         mock_agenda["context"].bot_data["calendar"].get_agenda.return_value = new_text
         mock_agenda["context"].bot_data["cross-posts"] = {}
 
-        # Mock the current week date
-        with patch(
-            "handlers.calendar.agenda.this_week", return_value=mock_agenda["this_week"]
-        ):
-            # Call the function
-            await sync_agenda(mock_agenda["context"])
+        await sync_agenda(mock_agenda["context"])
 
-            # Assertions - should edit the message
-            mock_agenda["context"].bot.edit_message_caption.assert_called_once_with(
-                chat_id=mock_settings.CHANNEL_USERNAME,
-                message_id=mock_agenda["message_id"],
-                caption=new_text,
-            )
-            # Check that the hash was updated
-            assert mock_agenda["context"].bot_data["agenda"]["hash"] == calculate_hash(
-                new_text
-            )
+        # Assertions - should edit the message
+        mock_agenda["context"].bot.edit_message_caption.assert_called_once_with(
+            chat_id=mock_settings.CHANNEL_USERNAME,
+            message_id=mock_agenda["message_id"],
+            caption=new_text,
+        )
+        # Check that the hash was updated
+        assert mock_agenda["context"].bot_data["agenda"]["hash"] == calculate_hash(
+            new_text
+        )
 
     @pytest.mark.asyncio
-    async def test_sync_agenda_different_week(self, mock_agenda):
+    @patch("handlers.calendar.agenda.this_week")
+    async def test_sync_agenda_different_week(self, mock_this_week, mock_agenda):
         """Test the sync_agenda function when it's a different week."""
+        mock_this_week.return_value = mock_agenda["this_week"]
         # Override with last week's date
         last_week = date(2022, 12, 25)
         mock_agenda["context"].bot_data["agenda"]["date"] = last_week.isoformat()
 
-        # Mock the current week date
-        with patch(
-            "handlers.calendar.agenda.this_week", return_value=mock_agenda["this_week"]
-        ):
-            # Call the function
-            await sync_agenda(mock_agenda["context"])
+        await sync_agenda(mock_agenda["context"])
 
-            # Assertions - should not edit the message since it's a different week
-            mock_agenda["context"].bot.edit_message_caption.assert_not_called()
+        mock_agenda["context"].bot.edit_message_caption.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_sync_agenda_missing_data(self, mock_agenda):
@@ -254,18 +246,11 @@ class TestAgenda:
         mock_agenda["context"].bot_data["calendar"].get_agenda.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_publish_agenda_on_demand(self, mock_update, mock_context):
+    @patch("handlers.calendar.agenda.publish_agenda")
+    async def test_publish_agenda_on_demand(
+        self, mock_publish_agenda, mock_update, mock_context
+    ):
         """Test the publish_agenda_on_demand function."""
-        # Setup
-        update = mock_update
-        context = mock_context
+        await publish_agenda_on_demand(mock_update, mock_context)
 
-        # Mock the publish_agenda function
-        with patch(
-            "handlers.calendar.agenda.publish_agenda", new=AsyncMock()
-        ) as mock_publish:
-            # Call the function
-            await publish_agenda_on_demand(update, context)
-
-            # Assertions
-            mock_publish.assert_called_once_with(context)
+        mock_publish_agenda.assert_called_once_with(mock_context)
