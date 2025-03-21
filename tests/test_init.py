@@ -155,7 +155,7 @@ class TestPostInit:
         assert "calendar" in mock_application.bot_data
         assert isinstance(mock_application.bot_data["calendar"], Calendar)
         assert mock_application.bot_data["agenda"] == {"image": None}
-        assert mock_application.bot_data["subscribers"] == set(mock_settings.MODERATORS)
+        assert mock_application.bot_data["subscribers"] == set()
         assert mock_application.bot_data["jobs"] == {}
         assert mock_application.bot_data["cross-posts"] == {}
 

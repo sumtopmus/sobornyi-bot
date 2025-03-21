@@ -44,6 +44,10 @@ def create_handlers() -> list:
                         on_agenda_urls, pattern="^" + State.AGENDA_URLS.name + "$"
                     ),
                     CallbackQueryHandler(
+                        on_reminder_switching,
+                        pattern="^" + State.REMINDER_SWITCHING.name + "$",
+                    ),
+                    CallbackQueryHandler(
                         on_cleanup, pattern="^" + State.CALENDAR_CLEANUP.name + "$"
                     ),
                 ]
@@ -159,6 +163,20 @@ async def on_agenda_urls(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.effective_user.send_message(text)
         text = "Готово ⬆️"
     return await calendar_menu(update, context, prefix_text=text, new_message=True)
+
+
+async def on_reminder_switching(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> State:
+    """When a user requests to switch the reminder."""
+    log("on_reminder_switching")
+    await update.callback_query.answer()
+    user_id = update.effective_user.id
+    if user_id in context.bot_data["subscribers"]:
+        context.bot_data["subscribers"].remove(user_id)
+    else:
+        context.bot_data["subscribers"].add(user_id)
+    return await calendar_menu(update, context)
 
 
 async def on_cleanup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
