@@ -1,6 +1,5 @@
 [default]
 admins = ['@your_username']
-default_agenda_image = 'assets/images/agenda-default.jpg'
 
 [prod]
 chat_id = -1001000000000
@@ -22,8 +21,6 @@ guides = 0
 agenda = 1
 
 [dev]
-war_mode = false
-agenda_mode = false
 chat_id = -1001000000000
 chat_link_id = 1000000000
 chat_invite_link = 'https://t.me/+XXXXXXXXXXX'

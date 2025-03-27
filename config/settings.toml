@@ -2,6 +2,8 @@
 # Switchers
 debug = false
 forum = false
+# Assets
+agenda_image = 'assets/images/agenda-default.jpg'
 # Data
 db_path = 'data/db'
 # Logging
