@@ -4,13 +4,14 @@ from telegram.ext import (
     CommandHandler,
     ContextTypes,
     ConversationHandler,
-    filters,
     MessageHandler,
     TypeHandler,
+    filters,
 )
 
 from config import settings
 from utils import log
+
 from .agenda import publish_agenda_on_demand, sync_agenda
 from .event import create_handlers as event_handlers
 from .menu import State, calendar_menu, construct_back_button, events_menu, update_menu
@@ -38,6 +39,13 @@ def create_handlers() -> list:
                     ),
                     CallbackQueryHandler(
                         on_agenda_preview, pattern="^" + State.AGENDA_PREVIEW.name + "$"
+                    ),
+                    CallbackQueryHandler(
+                        on_agenda_urls, pattern="^" + State.AGENDA_URLS.name + "$"
+                    ),
+                    CallbackQueryHandler(
+                        on_reminder_switching,
+                        pattern="^" + State.REMINDER_SWITCHING.name + "$",
                     ),
                     CallbackQueryHandler(
                         on_cleanup, pattern="^" + State.CALENDAR_CLEANUP.name + "$"
@@ -144,6 +152,31 @@ async def on_agenda_publish(
     await publish_agenda_on_demand(update, context)
     text = "Порядок тижневий було опубліковано."
     return await calendar_menu(update, context, prefix_text=text)
+
+
+async def on_agenda_urls(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user requests to see the agenda URLs."""
+    log("on_agenda_urls")
+    await update.callback_query.answer()
+    text = context.bot_data["calendar"].get_agenda_as_urls()
+    if text:
+        await update.effective_user.send_message(text)
+        text = "Готово ⬆️"
+    return await calendar_menu(update, context, prefix_text=text, new_message=True)
+
+
+async def on_reminder_switching(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> State:
+    """When a user requests to switch the reminder."""
+    log("on_reminder_switching")
+    await update.callback_query.answer()
+    user_id = update.effective_user.id
+    if user_id in context.bot_data["subscribers"]:
+        context.bot_data["subscribers"].remove(user_id)
+    else:
+        context.bot_data["subscribers"].add(user_id)
+    return await calendar_menu(update, context)
 
 
 async def on_cleanup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:

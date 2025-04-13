@@ -1,0 +1,28 @@
+[default]
+admins = ['@your_username']
+
+[prod]
+chat_id = -1001000000000
+chat_link_id = 1000000000
+chat_invite_link = 'https://t.me/+XXXXXXXXXXX'
+channel_username = '@your_channel'
+moderators = ['@moderator_username']
+[prod.TOPICS]
+# Open topics
+_ = 0      # default
+qa = 10000 # q&a
+# Add more topics as needed
+[prod.TAGS]
+agenda = 'agenda'
+guides = 'guides'
+events = 'agenda'
+[prod.PRIORITIES]
+guides = 0
+agenda = 1
+
+[dev]
+chat_id = -1001000000000
+chat_link_id = 1000000000
+chat_invite_link = 'https://t.me/+XXXXXXXXXXX'
+channel_username = '@test_channel'
+moderators = []

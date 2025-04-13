@@ -1,4 +1,6 @@
+import logging
 from datetime import datetime
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     CallbackContext,
@@ -6,16 +8,17 @@ from telegram.ext import (
     CommandHandler,
     ContextTypes,
     ConversationHandler,
-    filters,
     MessageHandler,
+    filters,
 )
 
 from config import settings
-from handlers.channel import cross_post
+from handlers.channel import cross_post, edit_post
 from model import Category, Day, Event, Occurrence
 from utils import log
+
 from .agenda import sync_agenda
-from .menu import State, calendar_menu, datetime_menu, event_menu, construct_back_button
+from .menu import State, calendar_menu, construct_back_button, datetime_menu, event_menu
 
 
 def create_handlers() -> list:
@@ -539,12 +542,43 @@ async def on_publish(update: Update, context: CallbackContext) -> State:
             chat_id=settings.CHANNEL_USERNAME, **event.post()
         )
     await cross_post(message, context)
+    event.message_id = message.message_id
     event.tg_url = message.link
     text = "Захід було опубліковано."
     await update.callback_query.edit_message_text(
         text, **construct_back_button(State.CALENDAR_MENU)
     )
     return State.EVENT_PUBLISHING
+
+
+async def sync_event_post(context: CallbackContext):
+    """Syncs the event post if it exists."""
+    log("sync_event_post")
+    event = context.user_data.get("current_event")
+    if not event or not event.message_id:
+        return
+
+    # Check if there's a cross-post for this message
+    if event.message_id not in context.bot_data["cross-posts"]:
+        return
+    # Update the original post in the channel
+    try:
+        if event.image:
+            message = await context.bot.edit_message_caption(
+                chat_id=settings.CHANNEL_USERNAME,
+                message_id=event.message_id,
+                caption=event.get_full_repr(),
+            )
+        else:
+            message = await context.bot.edit_message_text(
+                text=event.get_full_repr(),
+                chat_id=settings.CHANNEL_USERNAME,
+                message_id=event.message_id,
+            )
+        # Update the cross-post
+        await edit_post(message, context)
+    except Exception as e:
+        log(f"Failed to update event post: {e}", logging.WARNING)
 
 
 async def on_delete_event(update: Update, context: CallbackContext) -> State:
@@ -569,6 +603,29 @@ async def delete_event(update: Update, context: CallbackContext) -> State:
     """When a user confirms deleting the event."""
     log("delete_event")
     await update.callback_query.answer()
+
+    event = context.user_data["current_event"]
+    if event.message_id:
+        # If the message was cross-posted, delete the cross-post as well
+        if event.message_id in context.bot_data["cross-posts"]:
+            cross_post_id = context.bot_data["cross-posts"][event.message_id]
+            if cross_post_id:
+                try:
+                    await context.bot.delete_message(
+                        chat_id=settings.CHAT_ID, message_id=cross_post_id
+                    )
+                except Exception as e:
+                    log(f"Failed to delete cross-post: {e}", logging.WARNING)
+            # Remove the mapping from cross-posts
+            del context.bot_data["cross-posts"][event.message_id]
+            # Try to delete the original channel post
+            try:
+                await context.bot.delete_message(
+                    chat_id=settings.CHANNEL_USERNAME, message_id=event.message_id
+                )
+            except Exception as e:
+                log(f"Failed to delete original post: {e}", logging.WARNING)
+
     context.bot_data["calendar"].delete_event(context.user_data["current_event"])
     text = "Захід було видалено з календаря."
     return await calendar_menu(update, context, text)
@@ -578,6 +635,7 @@ async def back(update: Update, context: CallbackContext) -> State:
     """When a user presses the back button."""
     log("back")
     await update.callback_query.answer()
+    await sync_event_post(context)
     context.user_data["current_event"] = None
     return await calendar_menu(update, context)
 
@@ -598,6 +656,7 @@ async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     else:
         await update.effective_user.send_message(text)
     await sync_agenda(context)
+    await sync_event_post(context)
     context.user_data["state"] = None
     return ConversationHandler.END
 

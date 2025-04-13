@@ -25,6 +25,7 @@ State = Enum(
         # Process states:
         "CALENDAR_CLEANUP",
         "AGENDA_PREVIEW",
+        "AGENDA_URLS",
         "AGENDA_EDITING_IMAGE",
         "AGENDA_PUBLISHING",
         "EVENT_ADDING",
@@ -52,6 +53,7 @@ State = Enum(
         "EVENT_EDITING_LOCATION",
         "EVENT_EDITING_URL",
         "EVENT_EDITING_IMAGE",
+        "REMINDER_SWITCHING",
     ],
 )
 
@@ -76,6 +78,9 @@ async def calendar_menu(
     if prefix_text:
         text = prefix_text + "\n\n" + text
     image = context.bot_data["agenda"]["image"]
+    reminder_prefix = (
+        "🔔" if update.effective_user.id in context.bot_data["subscribers"] else "🔕"
+    )
     keyboard = [
         [
             InlineKeyboardButton("➕ Add", callback_data=State.EVENT_ADDING.name),
@@ -86,7 +91,13 @@ async def calendar_menu(
                 "🖼️ Poster " + ("✅" if image else "🚫"),
                 callback_data=State.AGENDA_EDITING_IMAGE.name,
             ),
+            InlineKeyboardButton(
+                reminder_prefix + " Remind", callback_data=State.REMINDER_SWITCHING.name
+            ),
+        ],
+        [
             InlineKeyboardButton("👓 Preview", callback_data=State.AGENDA_PREVIEW.name),
+            InlineKeyboardButton("🔗 URLs", callback_data=State.AGENDA_URLS.name),
         ],
         [
             InlineKeyboardButton(

@@ -1,16 +1,17 @@
 """Tests for the upload module."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from telegram.ext import ConversationHandler
 
 from handlers.debug.upload import (
+    State,
+    cancel,
     create_handlers,
     on_upload,
-    upload,
-    cancel,
     timeout,
-    State,
+    upload,
 )
 
 
@@ -47,70 +48,70 @@ class TestUpload:
         assert conv_handler.per_chat is False
 
     @pytest.mark.asyncio
-    async def test_on_upload(self, mock_update, mock_context):
+    @patch("handlers.debug.upload.log")
+    async def test_on_upload(self, mock_log, mock_update, mock_context):
         """Test the on_upload function."""
         # Setup
         mock_update.effective_user.send_message = AsyncMock()
 
         # Call the function
-        with patch("handlers.debug.upload.log") as mock_log:
-            result = await on_upload(mock_update, mock_context)
+        result = await on_upload(mock_update, mock_context)
 
-            # Assertions
-            mock_log.assert_called_once_with("on_upload")
-            mock_update.effective_user.send_message.assert_called_once_with(
-                "Будь ласка, завантажте фото."
-            )
-            assert result == State.AWAITING
+        # Assertions
+        mock_log.assert_called_once_with("on_upload")
+        mock_update.effective_user.send_message.assert_called_once_with(
+            "Будь ласка, завантажте фото."
+        )
+        assert result == State.AWAITING
 
     @pytest.mark.asyncio
-    async def test_upload(self, mock_update, mock_context):
+    @patch("handlers.debug.upload.log")
+    async def test_upload(self, mock_log, mock_update, mock_context):
         """Test the upload function."""
         # Setup
         mock_update.effective_user.send_message = AsyncMock()
         mock_update.message.photo = [MagicMock(), MagicMock()]
 
         # Call the function
-        with patch("handlers.debug.upload.log") as mock_log:
-            result = await upload(mock_update, mock_context)
+        result = await upload(mock_update, mock_context)
 
-            # Assertions
-            assert mock_log.call_count == 3  # One for "upload" and two for each photo
-            mock_update.effective_user.send_message.assert_called_once_with(
-                "Фото було додано в базу даних."
-            )
-            assert result == ConversationHandler.END
+        # Assertions
+        assert mock_log.call_count == 3  # One for "upload" and two for each photo
+        mock_update.effective_user.send_message.assert_called_once_with(
+            "Фото було додано в базу даних."
+        )
+        assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
-    async def test_cancel(self, mock_update, mock_context):
+    @patch("handlers.debug.upload.log")
+    async def test_cancel(self, mock_log, mock_update, mock_context):
         """Test the cancel function."""
         # Setup
         mock_update.effective_user.send_message = AsyncMock()
 
         # Call the function
-        with patch("handlers.debug.upload.log") as mock_log:
-            result = await cancel(mock_update, mock_context)
+        result = await cancel(mock_update, mock_context)
 
-            # Assertions
-            mock_log.assert_called_once_with("cancel")
-            mock_update.effective_user.send_message.assert_called_once_with(
-                "Операцію скасовано."
-            )
-            assert result == ConversationHandler.END
+        # Assertions
+        mock_log.assert_called_once_with("cancel")
+        mock_update.effective_user.send_message.assert_called_once_with(
+            "Операцію скасовано."
+        )
+        assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
-    async def test_timeout(self, mock_update, mock_context):
+    @patch("handlers.debug.upload.log")
+    async def test_timeout(self, mock_log, mock_update, mock_context):
         """Test the timeout function."""
         # Setup
         mock_update.effective_user.send_message = AsyncMock()
 
         # Call the function
-        with patch("handlers.debug.upload.log") as mock_log:
-            result = await timeout(mock_update, mock_context)
+        result = await timeout(mock_update, mock_context)
 
-            # Assertions
-            mock_log.assert_called_once_with("timeout")
-            mock_update.effective_user.send_message.assert_called_once_with(
-                "Запит скасовано автоматично через таймаут."
-            )
-            assert result == ConversationHandler.END
+        # Assertions
+        mock_log.assert_called_once_with("timeout")
+        mock_update.effective_user.send_message.assert_called_once_with(
+            "Запит скасовано автоматично через таймаут."
+        )
+        assert result == ConversationHandler.END

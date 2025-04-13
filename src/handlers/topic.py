@@ -1,10 +1,12 @@
 import logging
-from telegram import Update
+
 import telegram.error
+from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes, filters
 
-from config import settings
 import utils
+from config import settings
+from format import mention
 
 
 def create_handlers() -> list:
@@ -64,7 +66,7 @@ async def move(
     else:
         message_to_move = update.message
     user = message_to_move.from_user
-    message = f"{utils.mention(user)}, вас було переміщено у відповідну гілку."
+    message = f"{mention(user)}, вас було переміщено у відповідну гілку."
     if destination_thread_id != settings.TOPICS["welcome"]:
         message += "\n\n⬇️ продовжуйте дискусію тут ⬇️"
     else:
@@ -81,7 +83,7 @@ async def move(
             settings.CHAT_ID, message_thread_id=destination_thread_id
         )
     except:
-        message = f"{utils.mention(user)} написав(-ла):"
+        message = f"{mention(user)} написав(-ла):"
         await context.bot.sendMessage(
             chat_id=settings.CHAT_ID,
             message_thread_id=destination_thread_id,

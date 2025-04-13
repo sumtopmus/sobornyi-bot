@@ -1,31 +1,31 @@
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
-    -   id: check-merge-conflict
-    -   id: check-toml
-    -   id: check-yaml
-    -   id: debug-statements
-    -   id: end-of-file-fixer
-    -   id: name-tests-test
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: name-tests-test
         args: ["--pytest-test-first"]
-    -   id: no-commit-to-branch
-    -   id: requirements-txt-fixer
-    -   id: trailing-whitespace
--   repo: https://github.com/psf/black
-    rev: 24.8.0
+      - id: no-commit-to-branch
+      - id: requirements-txt-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
     hooks:
       - id: black
-        language_version: python3.12
--   repo: https://github.com/pycqa/isort
+        language_version: python3.13
+  - repo: https://github.com/pycqa/isort
     rev: 6.0.1
     hooks:
       - id: isort
         name: isort (python)
         args: ["--profile", "black"]
--   repo: local
+  - repo: local
     hooks:
-    -   id: pytest
+      - id: pytest
         name: pytest
         entry: pytest -q
         language: system

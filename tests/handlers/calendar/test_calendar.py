@@ -1,24 +1,27 @@
 """Tests for the calendar module."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from telegram import InlineKeyboardMarkup
 from telegram.ext import ConversationHandler
 
 from handlers.calendar.calendar import (
-    create_handlers,
-    on_edit_event,
-    on_edit_image,
-    edit_image,
-    on_agenda_preview,
-    on_agenda_publish,
-    on_cleanup,
-    on_find_event,
-    find_event,
     back,
     cancel,
-    timeout,
+    create_handlers,
+    edit_image,
     exit,
+    find_event,
+    on_agenda_preview,
+    on_agenda_publish,
+    on_agenda_urls,
+    on_cleanup,
+    on_edit_event,
+    on_edit_image,
+    on_find_event,
+    on_reminder_switching,
+    timeout,
 )
 from handlers.calendar.menu import State
 
@@ -230,6 +233,66 @@ class TestCalendar:
                 mock_menu.assert_called_once_with(
                     update, context, prefix_text="Порядок тижневий було опубліковано."
                 )
+
+    @pytest.mark.asyncio
+    @patch("handlers.calendar.calendar.calendar_menu")
+    async def test_on_agenda_urls(self, mock_calendar_menu, mock_update, mock_context):
+        """Test the on_agenda_urls function."""
+        # Setup
+        update = mock_update
+        context = mock_context
+        update.callback_query = AsyncMock()
+        update.effective_user = AsyncMock()
+
+        # Create a mock for calendar and set return value for get_agenda_as_urls
+        context.bot_data = {
+            "calendar": MagicMock(),
+        }
+        context.bot_data["calendar"].get_agenda_as_urls.return_value = "URLs list"
+
+        mock_calendar_menu.return_value = State.CALENDAR_MENU
+
+        # Call the function
+        result = await on_agenda_urls(update, context)
+
+        # Assertions
+        assert result == State.CALENDAR_MENU
+        update.callback_query.answer.assert_called_once()
+        update.effective_user.send_message.assert_called_once_with("URLs list")
+        mock_calendar_menu.assert_called_once_with(
+            update, context, prefix_text="Готово ⬆️", new_message=True
+        )
+
+    @pytest.mark.asyncio
+    @patch("handlers.calendar.calendar.calendar_menu")
+    async def test_on_agenda_urls_empty(
+        self, mock_calendar_menu, mock_update, mock_context
+    ):
+        """Test the on_agenda_urls function when get_agenda_as_urls returns an empty string."""
+        # Setup
+        update = mock_update
+        context = mock_context
+        update.callback_query = AsyncMock()
+        update.effective_user = AsyncMock()
+
+        # Create a mock for calendar and set return value for get_agenda_as_urls to empty string
+        context.bot_data = {
+            "calendar": MagicMock(),
+        }
+        context.bot_data["calendar"].get_agenda_as_urls.return_value = ""
+
+        mock_calendar_menu.return_value = State.CALENDAR_MENU
+
+        # Call the function
+        result = await on_agenda_urls(update, context)
+
+        # Assertions
+        assert result == State.CALENDAR_MENU
+        update.callback_query.answer.assert_called_once()
+        update.effective_user.send_message.assert_not_called()
+        mock_calendar_menu.assert_called_once_with(
+            update, context, prefix_text="", new_message=True
+        )
 
     @pytest.mark.asyncio
     async def test_on_cleanup(self, mock_update, mock_context):
@@ -507,3 +570,64 @@ class TestCalendar:
                     in mock_update_menu.call_args[0][1]["text"]
                 )
                 assert context.user_data["state"] is None
+
+    @pytest.mark.asyncio
+    async def test_on_reminder_switching_subscribe(self, mock_update, mock_context):
+        """Test on_reminder_switching function when adding a user to subscribers."""
+        # Setup
+        update = mock_update
+        context = mock_context
+        update.callback_query = AsyncMock()
+        update.effective_user = MagicMock()
+        update.effective_user.id = 12345  # Test user ID
+
+        # Create bot_data with subscribers set that doesn't include the test user
+        context.bot_data = {
+            "subscribers": set([67890]),  # Different user ID
+        }
+
+        # Mock the calendar_menu function
+        with patch(
+            "handlers.calendar.calendar.calendar_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.CALENDAR_MENU
+
+            # Call the function
+            result = await on_reminder_switching(update, context)
+
+            # Assertions
+            assert result == State.CALENDAR_MENU
+            update.callback_query.answer.assert_called_once()
+            assert 12345 in context.bot_data["subscribers"]  # User was added
+            mock_menu.assert_called_once_with(update, context)
+
+    @pytest.mark.asyncio
+    async def test_on_reminder_switching_unsubscribe(self, mock_update, mock_context):
+        """Test on_reminder_switching function when removing a user from subscribers."""
+        # Setup
+        update = mock_update
+        context = mock_context
+        update.callback_query = AsyncMock()
+        update.effective_user = MagicMock()
+        update.effective_user.id = 12345  # Test user ID
+
+        # Create bot_data with subscribers set that includes the test user
+        context.bot_data = {
+            "subscribers": set([12345, 67890]),  # Test user is already subscribed
+        }
+
+        # Mock the calendar_menu function
+        with patch(
+            "handlers.calendar.calendar.calendar_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.CALENDAR_MENU
+
+            # Call the function
+            result = await on_reminder_switching(update, context)
+
+            # Assertions
+            assert result == State.CALENDAR_MENU
+            update.callback_query.answer.assert_called_once()
+            assert 12345 not in context.bot_data["subscribers"]  # User was removed
+            assert 67890 in context.bot_data["subscribers"]  # Other user remained
+            mock_menu.assert_called_once_with(update, context)

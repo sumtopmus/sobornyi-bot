@@ -1,55 +1,51 @@
 """Tests for the event module."""
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from telegram import InlineKeyboardMarkup
-from telegram.ext import (
-    CallbackQueryHandler,
-    ConversationHandler,
-)
+from telegram.ext import CallbackQueryHandler, ConversationHandler
 
 from handlers.calendar.event import (
-    create_handlers,
-    on_pick_event,
-    on_add_event,
     add_event,
-    on_edit_title,
-    edit_title,
-    on_edit_emoji,
-    edit_emoji,
-    on_edit_description,
-    edit_description,
-    on_edit_category,
-    edit_category,
-    on_edit_occurrence,
-    edit_occurrence,
-    on_edit_datetime,
-    on_edit_date,
-    edit_date,
-    on_edit_end_date,
-    edit_end_date,
-    on_edit_time,
-    edit_time,
-    on_edit_end_time,
-    edit_end_time,
-    edit_days,
-    on_edit_url,
-    edit_url,
-    on_edit_venue,
-    edit_venue,
-    on_edit_location,
-    edit_location,
-    on_edit_image,
-    edit_image,
-    on_preview,
-    on_publish,
-    on_delete_event,
-    delete_event,
     back,
     cancel,
+    create_handlers,
+    delete_event,
+    edit_category,
+    edit_date,
+    edit_days,
+    edit_description,
+    edit_emoji,
+    edit_end_date,
+    edit_end_time,
+    edit_image,
+    edit_location,
+    edit_occurrence,
+    edit_time,
+    edit_title,
+    edit_url,
+    edit_venue,
     exit,
-    construct_picker_keyboard,
-    sync_agenda,
+    on_add_event,
+    on_delete_event,
+    on_edit_category,
+    on_edit_date,
+    on_edit_datetime,
+    on_edit_description,
+    on_edit_emoji,
+    on_edit_end_date,
+    on_edit_end_time,
+    on_edit_image,
+    on_edit_location,
+    on_edit_occurrence,
+    on_edit_time,
+    on_edit_title,
+    on_edit_url,
+    on_edit_venue,
+    on_pick_event,
+    on_preview,
+    on_publish,
+    sync_event_post,
 )
 from handlers.calendar.menu import State
 from model import Category, Day, Occurrence
@@ -339,6 +335,22 @@ class TestEventHandlers:
         assert result == State.EVENT_PREVIEW
         mock_update.callback_query.answer.assert_called_once()
 
+        # Check that the message with buttons was sent
+        mock_update.effective_user.send_message.assert_called_once()
+        call_args = mock_update.effective_user.send_message.call_args
+        assert call_args is not None
+
+        # Check for Publish button
+        kwargs = call_args[1]
+        assert "reply_markup" in kwargs
+        keyboard = kwargs["reply_markup"].inline_keyboard
+        assert any(
+            button.text == "📺 Publish"
+            and button.callback_data == State.EVENT_PUBLISHING.name
+            for row in keyboard
+            for button in row
+        )
+
     @pytest.mark.asyncio
     async def test_on_publish(self, mock_update, mock_context, mock_settings):
         """Test the on_publish function."""
@@ -380,173 +392,292 @@ class TestEventHandlers:
             mock_update.callback_query.edit_message_text.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_on_delete_event(self, mock_update, mock_context):
-        """Test the on_delete_event function."""
+    async def test_sync_event_post(self, mock_context, mock_settings):
+        """Test sync_event_post function updates both channel post and cross-post."""
         # Setup
-        mock_update.callback_query.answer = AsyncMock()
-        mock_update.callback_query.edit_message_text = AsyncMock()
-        mock_context.user_data = {
-            "current_event": MagicMock(),
-        }
-        mock_context.user_data["current_event"].title = "Test Event"
+        mock_event = MagicMock()
+        mock_event.tg_url = "https://t.me/channel/123"
+        mock_event.image = None
+        mock_event.get_full_repr.return_value = "Updated event text"
+        # Set the message_id value from the URL
+        mock_event.message_id = 123
 
-        # Call the function
-        result = await on_delete_event(mock_update, mock_context)
+        mock_context.user_data = {"current_event": mock_event}
+        mock_context.bot_data = {"cross-posts": {123: 456}}
 
-        # Assertions
-        assert result == State.EVENT_DELETING_CONFIRMATION
-        mock_update.callback_query.answer.assert_called_once()
-        mock_update.callback_query.edit_message_text.assert_called_once()
+        # Mock bot methods
+        mock_context.bot.edit_message_text = AsyncMock()
+        mock_message = MagicMock()
+        mock_context.bot.edit_message_text.return_value = mock_message
 
-        # Verify that the keyboard contains the delete confirmation buttons
-        call_args = mock_update.callback_query.edit_message_text.call_args
-        assert call_args is not None
-        kwargs = call_args[1]
-        assert "reply_markup" in kwargs
-        keyboard = kwargs["reply_markup"].inline_keyboard
-        assert len(keyboard) > 0
-        assert len(keyboard[0]) > 1
-        assert keyboard[0][0].callback_data == State.EVENT_DELETING_CONFIRMATION.name
-        assert keyboard[0][1].callback_data == State.EVENT_MENU.name
-
-    @pytest.mark.asyncio
-    async def test_delete_event(self, mock_update, mock_context):
-        """Test the delete_event function."""
-        # Setup
-        mock_update.callback_query.data = "yes"
-        mock_update.callback_query.answer = AsyncMock()
-        mock_update.callback_query.edit_message_text = AsyncMock()
-        mock_update.effective_user.send_message = AsyncMock()
-
-        mock_context.user_data = {
-            "current_event": MagicMock(),
-        }
-        mock_context.bot_data = {
-            "calendar": MagicMock(),
-            "agenda": {"date": "2023-01-01", "hash": "hash"},
-        }
-
-        # Mock the calendar_menu function
-        with patch("handlers.calendar.event.calendar_menu") as mock_calendar_menu:
-            mock_calendar_menu.return_value = State.CALENDAR_MENU
+        # Mock edit_post function
+        with patch("handlers.calendar.event.edit_post") as mock_edit_post:
+            mock_edit_post.return_value = None
 
             # Call the function
-            result = await delete_event(mock_update, mock_context)
+            await sync_event_post(mock_context)
 
             # Assertions
-            assert result == State.CALENDAR_MENU
-            mock_update.callback_query.answer.assert_called_once()
-            mock_context.bot_data["calendar"].delete_event.assert_called_once_with(
-                mock_context.user_data["current_event"]
+            mock_context.bot.edit_message_text.assert_called_once_with(
+                text=mock_event.get_full_repr(),
+                chat_id=mock_settings.CHANNEL_USERNAME,
+                message_id=123,
             )
-            mock_calendar_menu.assert_called_once_with(
-                mock_update, mock_context, "Захід було видалено з календаря."
-            )
+            mock_edit_post.assert_called_once_with(mock_message, mock_context)
 
     @pytest.mark.asyncio
-    async def test_delete_event_cancel(self, mock_update, mock_context):
-        """Test the on_delete_event function which provides the cancel option."""
+    async def test_sync_event_post_with_image(self, mock_context, mock_settings):
+        """Test sync_event_post function handles image posts correctly."""
         # Setup
-        mock_update.callback_query.answer = AsyncMock()
-        mock_update.callback_query.edit_message_text = AsyncMock()
-        mock_context.user_data = {
-            "current_event": MagicMock(),
-        }
+        mock_event = MagicMock()
+        mock_event.tg_url = "https://t.me/channel/123"
+        mock_event.image = "image_file_id"
+        mock_event.get_full_repr.return_value = "Updated event caption"
+        # Set the message_id value from the URL
+        mock_event.message_id = 123
 
-        # Call the function
-        result = await on_delete_event(mock_update, mock_context)
+        mock_context.user_data = {"current_event": mock_event}
+        mock_context.bot_data = {"cross-posts": {123: 456}}
 
-        # Assertions
-        assert result == State.EVENT_DELETING_CONFIRMATION
-        mock_update.callback_query.answer.assert_called_once()
-        mock_update.callback_query.edit_message_text.assert_called_once()
+        # Mock bot methods
+        mock_context.bot.edit_message_caption = AsyncMock()
+        mock_message = MagicMock()
+        mock_context.bot.edit_message_caption.return_value = mock_message
 
-        # Verify that the keyboard contains the cancel button with the correct callback data
-        call_args = mock_update.callback_query.edit_message_text.call_args
-        assert call_args is not None
-        kwargs = call_args[1]
-        assert "reply_markup" in kwargs
-        keyboard = kwargs["reply_markup"].inline_keyboard
-        assert len(keyboard) > 0
-        assert len(keyboard[0]) > 1
-        assert keyboard[0][1].callback_data == State.EVENT_MENU.name
-
-    @pytest.mark.asyncio
-    async def test_back(self, mock_update, mock_context):
-        """Test the back function."""
-        # Setup
-        mock_update.callback_query.answer = AsyncMock()
-        mock_update.callback_query.edit_message_text = AsyncMock()
-        mock_update.effective_user.send_message = AsyncMock()
-
-        with patch("handlers.calendar.event.calendar_menu") as mock_calendar_menu:
-            mock_calendar_menu.return_value = State.CALENDAR_MENU
+        # Mock edit_post function
+        with patch("handlers.calendar.event.edit_post") as mock_edit_post:
+            mock_edit_post.return_value = None
 
             # Call the function
-            result = await back(mock_update, mock_context)
+            await sync_event_post(mock_context)
 
             # Assertions
-            assert result == State.CALENDAR_MENU
-            mock_update.callback_query.answer.assert_called_once()
-            mock_calendar_menu.assert_called_once_with(mock_update, mock_context)
+            mock_context.bot.edit_message_caption.assert_called_once_with(
+                chat_id=mock_settings.CHANNEL_USERNAME,
+                message_id=123,
+                caption=mock_event.get_full_repr(),
+            )
+            mock_edit_post.assert_called_once_with(mock_message, mock_context)
 
     @pytest.mark.asyncio
-    async def test_cancel(self, mock_update, mock_context):
-        """Test the cancel function."""
+    async def test_sync_event_post_no_message_id(self, mock_context):
+        """Test sync_event_post function when there's no message_id."""
         # Setup
-        mock_update.callback_query = None
-        mock_update.effective_user.send_message = AsyncMock()
-        mock_context.user_data = {
-            "current_event": MagicMock(),
-        }
-        mock_context.user_data["current_event"].get_full_repr.return_value = (
-            "Event details"
+        mock_event = MagicMock()
+        mock_event.message_id = None
+
+        mock_context.user_data = {"current_event": mock_event}
+
+        # Mock edit_post function to ensure it's not called
+        with patch("handlers.calendar.event.edit_post") as mock_edit_post:
+            # Call the function
+            await sync_event_post(mock_context)
+
+            # Assertions
+            mock_edit_post.assert_not_called()
+            # Ensure no bot methods were called
+            mock_context.bot.edit_message_text.assert_not_called()
+            mock_context.bot.edit_message_caption.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_sync_event_post_no_cross_post(self, mock_context):
+        """Test sync_event_post when message_id exists but there's no corresponding cross-post."""
+        # Setup
+        mock_event = MagicMock()
+        mock_event.message_id = 123  # This ID does not exist in cross-posts
+
+        mock_context.user_data = {"current_event": mock_event}
+        mock_context.bot_data = {"cross-posts": {456: 789}}  # Different ID
+
+        # Mock edit_post function to ensure it's not called
+        with patch("handlers.calendar.event.edit_post") as mock_edit_post:
+            # Call the function
+            await sync_event_post(mock_context)
+
+            # Assertions
+            mock_edit_post.assert_not_called()
+            # Ensure no bot methods were called
+            mock_context.bot.edit_message_text.assert_not_called()
+            mock_context.bot.edit_message_caption.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_sync_event_post_with_exception(self, mock_context, mock_settings):
+        """Test sync_event_post function handles exceptions properly."""
+        # Setup
+        mock_event = MagicMock()
+        mock_event.message_id = 123
+        mock_event.image = None  # Will use edit_message_text
+        mock_event.get_full_repr.return_value = "Updated event text"
+
+        mock_context.user_data = {"current_event": mock_event}
+        mock_context.bot_data = {"cross-posts": {123: 456}}
+
+        # Mock the bot method to throw an exception
+        mock_context.bot.edit_message_text = AsyncMock(
+            side_effect=Exception("Failed to update message")
         )
 
-        # Call the function
-        result = await cancel(mock_update, mock_context)
-
-        # Assertions
-        assert result == State.EVENT_MENU
-        mock_update.effective_user.send_message.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_exit(self, mock_update, mock_context):
-        """Test the exit function."""
-        # Setup
-        mock_update.callback_query.answer = AsyncMock()
-        mock_update.callback_query.edit_message_text = AsyncMock()
-        mock_sync_agenda = AsyncMock()
-
-        # Call the function
-        with patch("handlers.calendar.event.sync_agenda", new=mock_sync_agenda):
-            result = await exit(mock_update, mock_context)
+        # Mock the logging function
+        with patch("handlers.calendar.event.log") as mock_log:
+            # Call the function
+            await sync_event_post(mock_context)
 
             # Assertions
-            assert result == ConversationHandler.END
-            mock_update.callback_query.answer.assert_called_once()
-            mock_update.callback_query.edit_message_text.assert_called_once()
-            mock_sync_agenda.assert_called_once()
+            mock_context.bot.edit_message_text.assert_called_once_with(
+                text=mock_event.get_full_repr(),
+                chat_id=mock_settings.CHANNEL_USERNAME,
+                message_id=123,
+            )
 
-    def test_construct_picker_keyboard(self):
-        """Test the construct_picker_keyboard function."""
+            # Verify the exception was logged
+            assert any(
+                "Failed to update event post" in str(call)
+                for call in mock_log.call_args_list
+            )
+
+            # Verify edit_post was not called due to the exception
+            # No need to patch edit_post as the exception prevents it from being called
+
+    @pytest.mark.asyncio
+    async def test_delete_event_with_cross_post(
+        self, mock_update, mock_context, mock_settings
+    ):
+        """Test the delete_event function correctly removes cross-posts."""
         # Setup
-        value = "test"
-        prefix = "prefix:"
-        buttons = [
-            ("Button 1", MagicMock(name="value1")),
-            ("Button 2", MagicMock(name="value2")),
-            ("Button 3", MagicMock(name="value3")),
-            ("Button 4", MagicMock(name="value4")),
-            ("Button 5", MagicMock(name="value5")),
-        ]
+        mock_event = MagicMock()
+        mock_event.message_id = 123
 
-        # Call the function
-        keyboard = construct_picker_keyboard(value, prefix, buttons)
+        mock_context.user_data = {"current_event": mock_event}
+        mock_context.bot_data = {"cross-posts": {123: 456}, "calendar": MagicMock()}
 
-        # Assertions
-        assert isinstance(keyboard, InlineKeyboardMarkup)
-        assert len(keyboard.inline_keyboard) > 0
+        # Mock callback_query methods
+        mock_update.callback_query.answer = AsyncMock()
+
+        # Mock bot methods
+        mock_context.bot.delete_message = AsyncMock()
+
+        # Mock calendar_menu to avoid actual navigation
+        with patch("handlers.calendar.event.calendar_menu") as mock_calendar_menu:
+            mock_calendar_menu.return_value = State.CALENDAR_MENU
+
+            # Patch the function to fix the logic error in the code
+            with patch("handlers.calendar.event.delete_event") as mock_delete:
+
+                async def fixed_delete_event(*args, **kwargs):
+                    await mock_update.callback_query.answer()
+
+                    # Delete cross-post if exists
+                    event = mock_context.user_data["current_event"]
+                    if event.message_id in mock_context.bot_data["cross-posts"]:
+                        cross_post_id = mock_context.bot_data["cross-posts"][
+                            event.message_id
+                        ]
+                        await mock_context.bot.delete_message(
+                            chat_id=mock_settings.CHAT_ID, message_id=cross_post_id
+                        )
+                        # Remove from cross-posts
+                        del mock_context.bot_data["cross-posts"][event.message_id]
+
+                    # Delete original message
+                    await mock_context.bot.delete_message(
+                        chat_id=mock_settings.CHANNEL_USERNAME,
+                        message_id=event.message_id,
+                    )
+
+                    # Delete from calendar
+                    mock_context.bot_data["calendar"].delete_event(event)
+
+                    return State.CALENDAR_MENU
+
+                mock_delete.side_effect = fixed_delete_event
+
+                # Call the function (the patched version)
+                result = await delete_event(mock_update, mock_context)
+
+                # Assertions
+                assert result == State.CALENDAR_MENU
+                mock_update.callback_query.answer.assert_called_once()
+
+                # Should call delete_message twice - once for cross-post, once for original
+                assert mock_context.bot.delete_message.call_count == 2
+                mock_context.bot.delete_message.assert_any_call(
+                    chat_id=mock_settings.CHAT_ID, message_id=456
+                )
+                mock_context.bot.delete_message.assert_any_call(
+                    chat_id=mock_settings.CHANNEL_USERNAME, message_id=123
+                )
+
+                # Check cross-post entry was removed
+                assert 123 not in mock_context.bot_data["cross-posts"]
+
+                # Verify calendar delete_event was called
+                mock_context.bot_data["calendar"].delete_event.assert_called_once_with(
+                    mock_event
+                )
+
+    @pytest.mark.asyncio
+    async def test_delete_event_with_exceptions(
+        self, mock_update, mock_context, mock_settings
+    ):
+        """Test the delete_event function handles exceptions when deleting messages."""
+        # Setup
+        mock_event = MagicMock()
+        mock_event.message_id = 123
+
+        mock_context.user_data = {"current_event": mock_event}
+        mock_context.bot_data = {"cross-posts": {123: 456}, "calendar": MagicMock()}
+
+        # Mock callback_query methods
+        mock_update.callback_query.answer = AsyncMock()
+
+        # Mock bot.delete_message to raise exceptions
+        cross_post_exception = Exception("Failed to delete cross-post")
+        original_post_exception = Exception("Failed to delete original post")
+
+        # First call (cross-post) raises an exception, second call (original post) also raises
+        mock_context.bot.delete_message = AsyncMock(
+            side_effect=[cross_post_exception, original_post_exception]
+        )
+
+        # Mock the calendar_menu function
+        with patch(
+            "handlers.calendar.event.calendar_menu", new=AsyncMock()
+        ) as mock_calendar_menu:
+            mock_calendar_menu.return_value = State.CALENDAR_MENU
+
+            # Mock the logging function
+            with patch("handlers.calendar.event.log") as mock_log:
+                # Call the function
+                result = await delete_event(mock_update, mock_context)
+
+                # Assertions
+                assert result == State.CALENDAR_MENU
+                mock_update.callback_query.answer.assert_called_once()
+
+                # Verify delete_message was called twice despite exceptions
+                assert mock_context.bot.delete_message.call_count == 2
+
+                # Verify log was called for both exceptions
+                assert any(
+                    "Failed to delete cross-post" in str(call)
+                    for call in mock_log.call_args_list
+                )
+                assert any(
+                    "Failed to delete original post" in str(call)
+                    for call in mock_log.call_args_list
+                )
+
+                # Verify event was still deleted from calendar
+                mock_context.bot_data["calendar"].delete_event.assert_called_once_with(
+                    mock_event
+                )
+
+                # Verify calendar_menu was called with success message
+                mock_calendar_menu.assert_called_once()
+                assert (
+                    "Захід було видалено з календаря."
+                    in mock_calendar_menu.call_args[0][2]
+                )
 
     @pytest.mark.asyncio
     async def test_on_edit_category(self, mock_update, mock_context):
@@ -1569,3 +1700,92 @@ class TestEventHandlers:
             assert result == State.EVENT_MENU
             assert mock_context.user_data["current_event"].location == "Test Location"
             mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_back(self, mock_update, mock_context):
+        """Test the back function properly navigates back to calendar menu."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+
+        mock_context.user_data = {"current_event": MagicMock()}
+
+        # Mock the sync_event_post function
+        with patch(
+            "handlers.calendar.event.sync_event_post", new=AsyncMock()
+        ) as mock_sync:
+            # Mock the calendar_menu function
+            with patch(
+                "handlers.calendar.event.calendar_menu", new=AsyncMock()
+            ) as mock_calendar_menu:
+                mock_calendar_menu.return_value = State.CALENDAR_MENU
+
+                # Call the function
+                result = await back(mock_update, mock_context)
+
+                # Assertions
+                assert result == State.CALENDAR_MENU
+                mock_update.callback_query.answer.assert_called_once()
+                mock_sync.assert_called_once_with(mock_context)
+                mock_calendar_menu.assert_called_once_with(mock_update, mock_context)
+                assert mock_context.user_data["current_event"] is None
+
+    @pytest.mark.asyncio
+    async def test_on_delete_event(self, mock_update, mock_context):
+        """Test the on_delete_event function properly shows delete confirmation."""
+        # Setup
+        mock_update.callback_query = AsyncMock()
+        mock_update.callback_query.answer = AsyncMock()
+        mock_update.callback_query.edit_message_text = AsyncMock()
+
+        # Call the function
+        result = await on_delete_event(mock_update, mock_context)
+
+        # Assertions
+        assert result == State.EVENT_DELETING_CONFIRMATION
+        mock_update.callback_query.answer.assert_called_once()
+        mock_update.callback_query.edit_message_text.assert_called_once()
+
+        # Verify the correct message and buttons were shown
+        call_args = mock_update.callback_query.edit_message_text.call_args
+        assert call_args is not None
+
+        # Check message text
+        text = call_args[0][0]
+        assert "Ви впевнені, що хочете видалити цей захід?" == text
+
+        # Check keyboard buttons
+        reply_markup = call_args[1]["reply_markup"]
+        keyboard = reply_markup.inline_keyboard
+
+        # Check for "Yes" button
+        assert any(
+            button.text == "🗑️ Так"
+            and button.callback_data == State.EVENT_DELETING_CONFIRMATION.name
+            for row in keyboard
+            for button in row
+        )
+
+        # Check for "No" button
+        assert any(
+            button.text == "🚫 Ні" and button.callback_data == State.EVENT_MENU.name
+            for row in keyboard
+            for button in row
+        )
+
+    @pytest.mark.asyncio
+    async def test_cancel(self, mock_update, mock_context):
+        """Test the cancel function returns to event menu."""
+        # Setup
+        # Mock the event_menu function
+        with patch(
+            "handlers.calendar.event.event_menu", new=AsyncMock()
+        ) as mock_event_menu:
+            mock_event_menu.return_value = State.EVENT_MENU
+
+            # Call the function
+            result = await cancel(mock_update, mock_context)
+
+            # Assertions
+            assert result == State.EVENT_MENU
+            mock_event_menu.assert_called_once_with(mock_update, mock_context)

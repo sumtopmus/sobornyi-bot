@@ -1,21 +1,21 @@
 """Tests for the utils module."""
 
-import pytest
-from unittest.mock import patch, MagicMock
 import hashlib
-from datetime import datetime, timedelta
-import telegram.error
 import logging
+from datetime import datetime, timedelta
+from unittest.mock import MagicMock, patch
+
+import pytest
+import telegram.error
 
 from utils import (
-    log,
-    calculate_hash,
-    mention,
-    message_cleanup,
+    MESSAGE_CLEANUP_JOB,
     add_job,
     add_message_cleanup_job,
+    calculate_hash,
     clear_jobs,
-    MESSAGE_CLEANUP_JOB,
+    log,
+    message_cleanup,
 )
 
 
@@ -57,32 +57,6 @@ class TestCalculateHash:
 
         assert result == expected_hash
         assert len(result) == 64  # SHA-256 produces a 64-character hex string
-
-
-class TestMention:
-    def test_mention_with_username(self, mock_user):
-        # Set up the mock to match the actual implementation
-        name_mention = f"[{mock_user.name}](tg://user?id={mock_user.id})"
-        username_mention = f"[@{mock_user.username}](https://t.me/{mock_user.username})"
-
-        # First call with name, second call without args
-        mock_user.mention_markdown.side_effect = [name_mention, username_mention]
-
-        result = mention(mock_user)
-
-        # The user has a username, so both mentions should be included
-        assert name_mention in result
-        assert f"({username_mention})" in result
-
-    def test_mention_without_username(self, mock_user):
-        mock_user.username = None
-        name_mention = f"[{mock_user.name}](tg://user?id={mock_user.id})"
-        mock_user.mention_markdown.return_value = name_mention
-
-        result = mention(mock_user)
-
-        # Only the name mention should be included
-        assert result == name_mention
 
 
 class TestMessageCleanup:
