@@ -164,15 +164,7 @@ class TestCalendar:
         for event_name in events_grouped["past"]:
             assert mock_events[event_name].title not in agenda
 
-    @patch("model.calendar.this_week")
-    def test_remove_past_events(
-        self,
-        mock_this_week,
-        mock_this_week_date,
-        mock_calendar,
-        mock_events,
-        events_grouped,
-    ):
+    def test_remove_past_events(self, mock_calendar, mock_events, events_grouped):
         """Test removing past events."""
         for event_name in events_grouped["past"]:
             assert mock_events[event_name] in mock_calendar.values()
@@ -181,7 +173,6 @@ class TestCalendar:
         for event_name in events_grouped["future"]:
             assert mock_events[event_name] in mock_calendar.values()
 
-        mock_this_week.return_value = mock_this_week_date
         result = mock_calendar.remove_past_events()
 
         assert result is True

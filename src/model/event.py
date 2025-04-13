@@ -7,6 +7,7 @@ from typing import Dict, Optional, Set
 from telegram.helpers import escape_markdown
 
 from format import clock, link, weekday
+from format.telegram import replace_brackets
 
 from .utils import next_week, this_week
 
@@ -114,15 +115,18 @@ class Event:
     def get_title_repr(self) -> Optional[str]:
         if not self.title:
             return None
+        formatted_title = escape_markdown(replace_brackets(self.title))
         if self.tg_url:
-            title = f"[{self.title}]({self.tg_url})"
+            formatted_title = f"[{formatted_title}]({self.tg_url})"
         elif self.url:
-            title = f"[{self.title}]({self.url})"
+            formatted_title = f"[{formatted_title}]({self.url})"
         else:
-            title = self.title
+            formatted_title = formatted_title
+        print(f"self.title: {self.title}")
+        print(f"formatted_title: {formatted_title}")
         if not self.emoji:
-            return title
-        return f"{self.emoji} {title}"
+            return formatted_title
+        return f"{self.emoji} {formatted_title}"
 
     def get_current_repr(self) -> Optional[str]:
         if not self.title:

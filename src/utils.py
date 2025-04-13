@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta
-from config import settings
 import hashlib
 import logging
-from telegram import User
+from datetime import datetime, timedelta
+
 import telegram.error
 from telegram.ext import Application, ContextTypes
 
+from config import settings
 
 MESSAGE_CLEANUP_JOB = "message_cleanup"
 
@@ -25,14 +25,6 @@ def calculate_hash(text: str) -> str:
     # Get the hexadecimal representation of the hash
     hash_hex = hash_object.hexdigest()
     return hash_hex
-
-
-def mention(user: User) -> str:
-    """Create a user's mention."""
-    result = user.mention_markdown(user.name)
-    if user.username:
-        result += f" ({user.mention_markdown()})"
-    return result
 
 
 async def message_cleanup(context: ContextTypes.DEFAULT_TYPE) -> None:

@@ -1,11 +1,12 @@
 """Tests for the welcome module."""
 
+from unittest.mock import ANY, AsyncMock, MagicMock, call, patch
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, call, ANY
 from telegram import User
 from telegram.ext import ConversationHandler
 
-from handlers.welcome import create_handlers, welcome, not_about, about, timeout, State
+from handlers.welcome import State, about, create_handlers, not_about, timeout, welcome
 
 
 class TestWelcome:
@@ -65,7 +66,7 @@ class TestWelcome:
 
         # Call the function
         with patch("handlers.welcome.utils.log") as mock_log, patch(
-            "handlers.welcome.utils.mention", return_value="@testuser"
+            "handlers.welcome.mention", return_value="@testuser"
         ) as mock_mention, patch(
             "handlers.welcome.utils.add_message_cleanup_job"
         ) as mock_add_cleanup:
@@ -114,7 +115,7 @@ class TestWelcome:
 
         # Call the function
         with patch("handlers.welcome.utils.log") as mock_log, patch(
-            "handlers.welcome.utils.mention", return_value="@testuser"
+            "handlers.welcome.mention", return_value="@testuser"
         ) as mock_mention, patch(
             "handlers.welcome.utils.add_message_cleanup_job"
         ) as mock_add_cleanup:
@@ -186,7 +187,7 @@ class TestWelcome:
 
         # Call the function
         with patch("handlers.welcome.utils.log") as mock_log, patch(
-            "handlers.welcome.utils.mention", return_value="@testuser"
+            "handlers.welcome.mention", return_value="@testuser"
         ) as mock_mention, patch(
             "handlers.welcome.utils.add_message_cleanup_job"
         ) as mock_add_cleanup:
@@ -233,7 +234,7 @@ class TestWelcome:
 
         # Call the function
         with patch("handlers.welcome.utils.log") as mock_log, patch(
-            "handlers.welcome.utils.mention", return_value="@testuser"
+            "handlers.welcome.mention", return_value="@testuser"
         ) as mock_mention, patch(
             "handlers.welcome.utils.add_message_cleanup_job"
         ) as mock_add_cleanup, patch(
@@ -293,7 +294,7 @@ class TestWelcome:
 
         # Call the function
         with patch("handlers.welcome.utils.log") as mock_log, patch(
-            "handlers.welcome.utils.mention", return_value="@testuser"
+            "handlers.welcome.mention", return_value="@testuser"
         ) as mock_mention, patch(
             "handlers.welcome.utils.add_message_cleanup_job"
         ) as mock_add_cleanup, patch(
@@ -351,7 +352,7 @@ class TestWelcome:
 
         # Call the function
         with patch("handlers.welcome.utils.log") as mock_log, patch(
-            "handlers.welcome.utils.mention", return_value="@testuser"
+            "handlers.welcome.mention", return_value="@testuser"
         ) as mock_mention, patch(
             "handlers.welcome.utils.add_message_cleanup_job"
         ) as mock_add_cleanup, patch(
@@ -411,7 +412,7 @@ class TestWelcome:
 
         # Call the function
         with patch("handlers.welcome.utils.log") as mock_log, patch(
-            "handlers.welcome.utils.mention", return_value="@testuser"
+            "handlers.welcome.mention", return_value="@testuser"
         ) as mock_mention, patch(
             "handlers.welcome.utils.add_message_cleanup_job"
         ) as mock_add_cleanup, patch(
@@ -472,7 +473,7 @@ class TestWelcome:
 
         # Call the function
         with patch("handlers.welcome.utils.log") as mock_log, patch(
-            "handlers.welcome.utils.mention", return_value="@testuser"
+            "handlers.welcome.mention", return_value="@testuser"
         ) as mock_mention, patch(
             "handlers.welcome.utils.add_message_cleanup_job"
         ) as mock_add_cleanup, patch(
@@ -513,7 +514,7 @@ class TestWelcome:
 
         # Call the function
         with patch("handlers.welcome.utils.log") as mock_log, patch(
-            "handlers.welcome.utils.mention", return_value="@testuser"
+            "handlers.welcome.mention", return_value="@testuser"
         ) as mock_mention, patch(
             "handlers.welcome.utils.add_message_cleanup_job"
         ) as mock_add_cleanup:
