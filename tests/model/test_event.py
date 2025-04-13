@@ -1,5 +1,6 @@
 """Tests for the Event class."""
 
+from calendar import month
 from datetime import date, time, timedelta
 from unittest.mock import patch
 
@@ -296,48 +297,25 @@ class TestEvent:
         assert "чт" in current_repr
         assert mock_general_event.get_title_repr() in current_repr
 
-    @patch("model.event.this_week")
-    def test_get_current_repr_past_single_day(
-        self, mock_this_week, mock_this_week_date, mock_past_event
-    ):
+    def test_get_current_repr_past_single_day(self, mock_past_event):
         """Test current representation for a completely past single-day event."""
-        mock_this_week.return_value = mock_this_week_date
-
         assert mock_past_event.get_current_repr() is None
 
-    @patch("model.event.this_week")
-    def test_get_current_repr_past_multi_day(
-        self, mock_this_week, mock_this_week_date, mock_past_multiday_event
-    ):
+    def test_get_current_repr_past_multi_day(self, mock_past_multiday_event):
         """Test current representation for a completely past multi-day event."""
-        mock_this_week.return_value = mock_this_week_date
-
         assert mock_past_multiday_event.get_current_repr() is None
 
-    @patch("model.this_week")
-    @patch("model.next_week")
-    def test_get_current_repr_end_date_before_next_week(
-        self, mock_this_week, mock_next_week, mock_this_week_date, mock_multiday_event
-    ):
+    def test_get_current_repr_end_date_before_next_week(self, mock_multiday_event):
         """Test current representation of an event ending before next week."""
-        mock_this_week.return_value = mock_this_week_date
-        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
-
         assert mock_multiday_event.get_current_repr() is not None
         assert (
             mock_multiday_event.end_date.strftime("%m/%d")
             not in mock_multiday_event.get_current_repr()
         )
 
-    @patch("model.this_week")
-    @patch("model.next_week")
-    def test_get_current_repr_end_date_after_next_week(
-        self, mock_this_week, mock_next_week, mock_this_week_date, mock_multiday_event
-    ):
+    def test_get_current_repr_end_date_after_next_week(self, mock_multiday_event):
         """Test current representation of an event ending after next week."""
-        mock_this_week.return_value = mock_this_week_date
-        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
-        mock_multiday_event.end_date = mock_multiday_event.date + timedelta(days=14)
+        mock_multiday_event.end_date = mock_multiday_event.date + timedelta(weeks=1)
 
         assert mock_multiday_event.get_current_repr() is not None
         assert (
@@ -345,16 +323,12 @@ class TestEvent:
             in mock_multiday_event.get_current_repr()
         )
 
-    @patch("model.event.this_week")
-    @patch("model.event.next_week")
     def test_get_current_repr_date_before_this_week_end_date_before_next_week(
-        self, mock_next_week, mock_this_week, mock_this_week_date, mock_multiday_event
+        self, mock_multiday_event, dummy_date
     ):
         """Test current representation of an event starting before this week and ending before next week."""
-        mock_this_week.return_value = mock_this_week_date
-        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
-        mock_multiday_event.date = mock_this_week_date - timedelta(days=3)
-        mock_multiday_event.end_date = mock_this_week_date + timedelta(days=2)
+        mock_multiday_event.date = dummy_date - timedelta(weeks=1)
+        mock_multiday_event.end_date = dummy_date
 
         current_repr = mock_multiday_event.get_current_repr()
 
@@ -362,16 +336,12 @@ class TestEvent:
         assert "🗓️до" in current_repr
         assert weekday_name[6] in current_repr
 
-    @patch("model.event.this_week")
-    @patch("model.event.next_week")
     def test_get_current_repr_date_before_this_week_end_date_after_next_week(
-        self, mock_next_week, mock_this_week, mock_this_week_date, mock_multiday_event
+        self, mock_multiday_event, dummy_date
     ):
         """Test current representation of an event starting before this week and ending after next week."""
-        mock_this_week.return_value = mock_this_week_date
-        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
-        mock_multiday_event.date = mock_this_week_date - timedelta(days=3)
-        mock_multiday_event.end_date = mock_this_week_date + timedelta(days=10)
+        mock_multiday_event.date = dummy_date - timedelta(weeks=1)
+        mock_multiday_event.end_date = dummy_date + timedelta(weeks=1)
 
         current_repr = mock_multiday_event.get_current_repr()
 
@@ -379,16 +349,12 @@ class TestEvent:
         assert "🗓️до" in current_repr
         assert mock_multiday_event.end_date.strftime("%m/%d") in current_repr
 
-    @patch("model.event.this_week")
-    @patch("model.event.next_week")
     def test_get_current_repr_date_this_week_end_date_before_next_week(
-        self, mock_next_week, mock_this_week, mock_this_week_date, mock_multiday_event
+        self, mock_multiday_event, dummy_date
     ):
         """Test current representation of an event starting this week and ending before next week."""
-        mock_this_week.return_value = mock_this_week_date
-        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
-        mock_multiday_event.date = mock_this_week_date
-        mock_multiday_event.end_date = mock_this_week_date + timedelta(days=2)
+        mock_multiday_event.date = dummy_date
+        mock_multiday_event.end_date = dummy_date + timedelta(days=2)
 
         current_repr = mock_multiday_event.get_current_repr()
 
@@ -398,16 +364,12 @@ class TestEvent:
             f"-{weekday_name[mock_multiday_event.end_date.weekday()]}" in current_repr
         )
 
-    @patch("model.event.this_week")
-    @patch("model.event.next_week")
     def test_get_current_repr_date_this_week_end_date_after_next_week(
-        self, mock_next_week, mock_this_week, mock_this_week_date, mock_multiday_event
+        self, mock_multiday_event, dummy_date
     ):
         """Test current representation of an event starting this week and ending after next week."""
-        mock_this_week.return_value = mock_this_week_date
-        mock_next_week.return_value = mock_this_week_date + timedelta(days=7)
-        mock_multiday_event.date = mock_this_week_date
-        mock_multiday_event.end_date = mock_this_week_date + timedelta(days=10)
+        mock_multiday_event.date = dummy_date
+        mock_multiday_event.end_date = dummy_date + timedelta(weeks=1)
 
         current_repr = mock_multiday_event.get_current_repr()
 
@@ -525,11 +487,9 @@ class TestEvent:
         assert "🗓️" not in full_repr
 
     def test_get_full_repr_with_end_date_same_month(
-        self, mock_multiday_event, mock_fixed_date
+        self, mock_multiday_event, dummy_date
     ):
         """Test full representation with end date in the same month."""
-        mock_multiday_event.end_date = mock_fixed_date + timedelta(days=5)
-
         full_repr = mock_multiday_event.get_full_repr()
 
         assert mock_multiday_event.date.strftime("%m/%d") in full_repr
@@ -537,19 +497,19 @@ class TestEvent:
         assert mock_multiday_event.end_date.strftime("%m/%d") not in full_repr
 
     def test_get_full_repr_with_end_date_different_month(
-        self, mock_multiday_event, mock_fixed_date
+        self, mock_multiday_event, dummy_date
     ):
         """Test full representation with end date in a different month."""
-        mock_multiday_event.end_date = mock_fixed_date + timedelta(days=31)
+        mock_multiday_event.end_date = dummy_date + timedelta(days=31)
 
         full_repr = mock_multiday_event.get_full_repr()
 
         assert mock_multiday_event.date.strftime("%m/%d") in full_repr
         assert mock_multiday_event.end_date.strftime("%m/%d") in full_repr
 
-    def test_get_full_repr_end_date_format(self, mock_multiday_event, mock_fixed_date):
+    def test_get_full_repr_end_date_format(self, mock_multiday_event, dummy_date):
         """Test the formatting of end_date in get_full_repr."""
-        mock_multiday_event.end_date = mock_fixed_date + timedelta(days=31)
+        mock_multiday_event.end_date = dummy_date + timedelta(days=31)
 
         full_repr = mock_multiday_event.get_full_repr()
 

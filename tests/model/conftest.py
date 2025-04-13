@@ -1,6 +1,7 @@
 """Fixtures for model tests."""
 
 from datetime import date, time, timedelta
+from multiprocessing import dummy
 
 import pytest
 
@@ -8,15 +9,32 @@ from model import Calendar, Category, Day, Event, Occurrence
 
 
 @pytest.fixture
-def mock_fixed_date():
+def dummy_date():
     """Create a mock fixed date for testing."""
-    return date(2025, 3, 20)  # Wednesday
+    return date(2025, 3, 20)  # Thursday
 
 
-@pytest.fixture
-def mock_this_week_date():
-    """Create a mock this week date for testing."""
-    return date(2025, 3, 18)  # Monday
+@pytest.fixture(autouse=True)
+def patch_this_and_next_week(monkeypatch, dummy_date):
+    """Automatically patch all this_week and next_week calls to return the dummy date."""
+    # dummy_monday = date(2025, 3, 17)  # Monday
+    dummy_monday = dummy_date - timedelta(days=dummy_date.weekday())
+
+    def mock_this_week_func():
+        return dummy_monday
+
+    def mock_next_week_func():
+        return dummy_monday + timedelta(days=7)
+
+    monkeypatch.setattr("model.this_week", mock_this_week_func)
+    monkeypatch.setattr("model.event.this_week", mock_this_week_func)
+    monkeypatch.setattr("model.calendar.this_week", mock_this_week_func)
+    monkeypatch.setattr("model.utils.this_week", mock_this_week_func)
+    monkeypatch.setattr("model.next_week", mock_next_week_func)
+    monkeypatch.setattr("model.event.next_week", mock_next_week_func)
+    monkeypatch.setattr("model.utils.next_week", mock_next_week_func)
+
+    yield
 
 
 @pytest.fixture
@@ -26,7 +44,7 @@ def mock_empty_event():
 
 
 @pytest.fixture
-def mock_general_event(mock_fixed_date):
+def mock_general_event(dummy_date):
     """Create a mock event for testing."""
     return Event(
         title="General Event",
@@ -34,7 +52,7 @@ def mock_general_event(mock_fixed_date):
         description="This is a general event",
         category=Category.GENERAL,
         occurrence=Occurrence.WITHIN_DAY,
-        date=mock_fixed_date,
+        date=dummy_date,
         time=time(14, 30),
         venue="Test Venue",
         location="https://maps.google.com/?q=Test+Location",
@@ -59,7 +77,7 @@ def mock_recurring_event():
 
 
 @pytest.fixture
-def mock_rally_event(mock_fixed_date):
+def mock_rally_event(dummy_date):
     """Create a mock rally event for testing."""
     return Event(
         title="Rally Event",
@@ -67,7 +85,7 @@ def mock_rally_event(mock_fixed_date):
         description="This is a rally event",
         category=Category.RALLY,
         occurrence=Occurrence.WITHIN_DAY,
-        date=mock_fixed_date,
+        date=dummy_date,
         time=time(15, 0),
         venue="Rally Venue",
         url="https://example.com/rally",
@@ -75,7 +93,7 @@ def mock_rally_event(mock_fixed_date):
 
 
 @pytest.fixture
-def mock_fundraiser_event(mock_fixed_date):
+def mock_fundraiser_event(dummy_date):
     """Create a mock fundraiser event for testing."""
     return Event(
         title="Fundraiser Event",
@@ -83,7 +101,7 @@ def mock_fundraiser_event(mock_fixed_date):
         description="This is a fundraiser event",
         category=Category.FUNDRAISER,
         occurrence=Occurrence.WITHIN_DAY,
-        date=mock_fixed_date,
+        date=dummy_date,
         time=time(16, 15),
         venue="Fundraiser Venue",
         url="https://example.com/fundraiser",
@@ -91,7 +109,7 @@ def mock_fundraiser_event(mock_fixed_date):
 
 
 @pytest.fixture
-def mock_volunteer_event(mock_fixed_date):
+def mock_volunteer_event(dummy_date):
     """Create a mock volunteer event for testing."""
     return Event(
         title="Volunteer Event",
@@ -99,7 +117,7 @@ def mock_volunteer_event(mock_fixed_date):
         description="This is a volunteer event",
         category=Category.VOLUNTEER,
         occurrence=Occurrence.WITHIN_DAY,
-        date=mock_fixed_date,
+        date=dummy_date,
         time=time(17, 0),
         venue="Volunteer Venue",
         url="https://example.com/volunteer",
@@ -107,7 +125,7 @@ def mock_volunteer_event(mock_fixed_date):
 
 
 @pytest.fixture
-def mock_future_event(mock_fixed_date):
+def mock_future_event(dummy_date):
     """Create a mock future event for testing."""
     return Event(
         title="Future Event",
@@ -115,7 +133,7 @@ def mock_future_event(mock_fixed_date):
         description="This is a future event",
         category=Category.GENERAL,
         occurrence=Occurrence.WITHIN_DAY,
-        date=mock_fixed_date + timedelta(days=100),
+        date=dummy_date + timedelta(days=100),
         time=time(12, 0),
         venue="Future Venue",
         url="https://example.com/future",
@@ -123,7 +141,7 @@ def mock_future_event(mock_fixed_date):
 
 
 @pytest.fixture
-def mock_future_rally_event(mock_fixed_date):
+def mock_future_rally_event(dummy_date):
     """Create a mock future rally event for testing."""
     return Event(
         title="Future Rally Event",
@@ -131,7 +149,7 @@ def mock_future_rally_event(mock_fixed_date):
         description="This is a future rally event",
         category=Category.RALLY,
         occurrence=Occurrence.WITHIN_DAY,
-        date=mock_fixed_date + timedelta(days=100),
+        date=dummy_date + timedelta(days=100),
         time=time(12, 0),
         venue="Future Rally Venue",
         url="https://example.com/future-rally",
@@ -139,7 +157,7 @@ def mock_future_rally_event(mock_fixed_date):
 
 
 @pytest.fixture
-def mock_past_event(mock_fixed_date):
+def mock_past_event(dummy_date):
     """Create a mock past event for testing."""
     return Event(
         title="Past Event",
@@ -147,7 +165,7 @@ def mock_past_event(mock_fixed_date):
         description="This is a past event",
         category=Category.GENERAL,
         occurrence=Occurrence.WITHIN_DAY,
-        date=mock_fixed_date - timedelta(days=7),
+        date=dummy_date - timedelta(days=7),
         time=time(10, 0),
         venue="Past Venue",
         url="https://example.com/past",
@@ -155,10 +173,10 @@ def mock_past_event(mock_fixed_date):
 
 
 @pytest.fixture
-def mock_multiday_event(mock_fixed_date):
+def mock_multiday_event(dummy_date):
     """Create a mock multi-day event for testing."""
-    start_date = mock_fixed_date - timedelta(days=3)
-    end_date = mock_fixed_date + timedelta(days=2)
+    start_date = dummy_date
+    end_date = dummy_date + timedelta(days=2)
     return Event(
         title="Multi-day Event",
         emoji="📅",
@@ -174,7 +192,7 @@ def mock_multiday_event(mock_fixed_date):
 
 
 @pytest.fixture
-def mock_past_multiday_event(mock_fixed_date):
+def mock_past_multiday_event(dummy_date):
     """Create a mock past multi-day event for testing."""
     return Event(
         title="Past Multi-day Event",
@@ -182,8 +200,8 @@ def mock_past_multiday_event(mock_fixed_date):
         description="This is a past multi-day event",
         category=Category.GENERAL,
         occurrence=Occurrence.WITHIN_DAYS,
-        date=mock_fixed_date - timedelta(days=10),
-        end_date=mock_fixed_date - timedelta(days=7),
+        date=dummy_date - timedelta(days=10),
+        end_date=dummy_date - timedelta(days=7),
         time=time(9, 0),
         venue="Past Multi-day Venue",
         url="https://example.com/past-multiday",
@@ -191,7 +209,7 @@ def mock_past_multiday_event(mock_fixed_date):
 
 
 @pytest.fixture
-def mock_this_week_multiday_event(mock_fixed_date):
+def mock_this_week_multiday_event(dummy_date):
     """Create a mock future multi-day event for testing."""
     return Event(
         title="This Week Multi-day Event",
@@ -199,8 +217,8 @@ def mock_this_week_multiday_event(mock_fixed_date):
         description="This is a this week multi-day event",
         category=Category.GENERAL,
         occurrence=Occurrence.WITHIN_DAYS,
-        date=mock_fixed_date + timedelta(days=1),
-        end_date=mock_fixed_date + timedelta(days=8),
+        date=dummy_date + timedelta(days=1),
+        end_date=dummy_date + timedelta(days=8),
         time=time(9, 0),
         venue="This Week Multi-day Venue",
         url="https://example.com/this-week-multiday",
@@ -208,7 +226,7 @@ def mock_this_week_multiday_event(mock_fixed_date):
 
 
 @pytest.fixture
-def mock_far_future_multiday_event(mock_fixed_date):
+def mock_far_future_multiday_event(dummy_date):
     """Create a mock far future multi-day event for testing."""
     return Event(
         title="Far Future Multi-day Event",
@@ -216,8 +234,8 @@ def mock_far_future_multiday_event(mock_fixed_date):
         description="This is a far future multi-day event",
         category=Category.RALLY,
         occurrence=Occurrence.WITHIN_DAYS,
-        date=mock_fixed_date + timedelta(days=93),
-        end_date=mock_fixed_date + timedelta(days=100),
+        date=dummy_date + timedelta(days=93),
+        end_date=dummy_date + timedelta(days=100),
         time=time(9, 0),
         venue="Far Future Multi-day Venue",
         url="https://example.com/far-future-multiday",
@@ -225,7 +243,7 @@ def mock_far_future_multiday_event(mock_fixed_date):
 
 
 @pytest.fixture
-def mock_event_no_url(mock_fixed_date):
+def mock_event_no_url(dummy_date):
     """Create a mock event without URL for testing."""
     return Event(
         title="Event Without URL",
@@ -233,14 +251,14 @@ def mock_event_no_url(mock_fixed_date):
         description="This is an event without URL",
         category=Category.VOLUNTEER,
         occurrence=Occurrence.WITHIN_DAY,
-        date=mock_fixed_date,
+        date=dummy_date,
         time=time(13, 0),
         venue="No URL Venue",
     )
 
 
 @pytest.fixture
-def mock_event_tg_url(mock_fixed_date):
+def mock_event_tg_url(dummy_date):
     """Create a mock event with Telegram URL for testing."""
     return Event(
         title="Event With TG URL",
@@ -248,7 +266,7 @@ def mock_event_tg_url(mock_fixed_date):
         description="This is an event with Telegram URL",
         category=Category.FUNDRAISER,
         occurrence=Occurrence.WITHIN_DAY,
-        date=mock_fixed_date,
+        date=dummy_date,
         time=time(20, 0),
         venue="TG URL Venue",
         tg_url="https://t.me/tg_url",
@@ -256,7 +274,7 @@ def mock_event_tg_url(mock_fixed_date):
 
 
 @pytest.fixture
-def mock_event_both_urls(mock_fixed_date):
+def mock_event_both_urls(dummy_date):
     """Create a mock event with both URLs for testing."""
     return Event(
         title="Event With Both URLs",
@@ -264,7 +282,7 @@ def mock_event_both_urls(mock_fixed_date):
         description="This is an event with both URLs",
         category=Category.VOLUNTEER,
         occurrence=Occurrence.WITHIN_DAY,
-        date=mock_fixed_date,
+        date=dummy_date,
         time=time(21, 0),
         venue="Both URLs Venue",
         tg_url="https://t.me/both_urls",
