@@ -1,13 +1,12 @@
 """Tests for the Event class."""
 
-from calendar import month
-from datetime import date, time, timedelta
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
 
 from format import weekday_name
-from model import Day, Event, Occurrence
+from model import Day, Event
 
 
 class TestEvent:
