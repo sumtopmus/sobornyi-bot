@@ -1,10 +1,11 @@
 """Tests for the topic module."""
 
-import pytest
 import logging
-from unittest.mock import AsyncMock, MagicMock, patch, call
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
-from handlers.topic import create_handlers, topic, offtop, move
+import pytest
+
+from handlers.topic import create_handlers, move, offtop, topic
 
 
 class TestTopic:
@@ -169,10 +170,8 @@ class TestTopic:
         mock_update.message.reply_to_message.delete = AsyncMock()
         mock_update.message.delete = AsyncMock()
 
-        # Mock utils.mention
-        with patch(
-            "handlers.topic.utils.mention", return_value="@user"
-        ) as mock_mention:
+        # Mock mention
+        with patch("handlers.topic.mention", return_value="@user") as mock_mention:
             # Call the function
             result = await move(mock_update, mock_context, destination_thread_id, True)
 
@@ -210,10 +209,8 @@ class TestTopic:
         mock_update.message.forward = AsyncMock(return_value=MagicMock())
         mock_update.message.delete = AsyncMock()
 
-        # Mock utils.mention
-        with patch(
-            "handlers.topic.utils.mention", return_value="@user"
-        ) as mock_mention:
+        # Mock mention
+        with patch("handlers.topic.mention", return_value="@user") as mock_mention:
             # Call the function
             result = await move(mock_update, mock_context, destination_thread_id, False)
 
@@ -248,10 +245,8 @@ class TestTopic:
         mock_update.message.copy = AsyncMock(return_value=MagicMock())
         mock_update.message.delete = AsyncMock()
 
-        # Mock utils.mention
-        with patch(
-            "handlers.topic.utils.mention", return_value="@user"
-        ) as mock_mention:
+        # Mock mention
+        with patch("handlers.topic.mention", return_value="@user") as mock_mention:
             # Call the function
             result = await move(mock_update, mock_context, destination_thread_id, False)
 

@@ -207,6 +207,36 @@ class TestEvent:
                 "https://example.com",
                 "[Test Event](https://t.me/event)",
             ),
+            # With brackets
+            (
+                "Test [Event]",
+                None,
+                "https://t.me/event",
+                "https://example.com",
+                "[Test (Event)](https://t.me/event)",
+            ),
+            (
+                "Test] [test] Event",
+                None,
+                "https://t.me/event",
+                "https://example.com",
+                "[Test) (test) Event](https://t.me/event)",
+            ),
+            # With other escape characters
+            (
+                "*Test* _Event_",
+                None,
+                "https://t.me/event",
+                "https://example.com",
+                "[\*Test\* \_Event\_](https://t.me/event)",
+            ),
+            (
+                "Test \\ Event",
+                None,
+                "https://t.me/event",
+                "https://example.com",
+                "[Test \\ Event](https://t.me/event)",
+            ),
             # With emoji
             (
                 "Test Event",

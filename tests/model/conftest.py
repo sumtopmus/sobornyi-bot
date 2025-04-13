@@ -1,7 +1,6 @@
 """Fixtures for model tests."""
 
 from datetime import date, time, timedelta
-from multiprocessing import dummy
 
 import pytest
 

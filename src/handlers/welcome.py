@@ -1,20 +1,20 @@
-from datetime import timedelta
-from enum import Enum
 import logging
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from enum import Enum
+
 import telegram.error
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     ContextTypes,
     ConversationHandler,
-    filters,
     MessageHandler,
     TypeHandler,
+    filters,
 )
 
-from config import settings
-from handlers import topic
 import utils
-
+from config import settings
+from format import mention
+from handlers import topic
 
 State = Enum("State", ["JOIN", "AWAITING"])
 
@@ -62,7 +62,9 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
             continue
         if "about" in context.user_data:
             utils.log(f"user {user.id} already introduced themselves", logging.INFO)
-            message = f"Cлава Україні, {utils.mention(user)}! Вітаємо тебе в Соборному, знову!"
+            message = (
+                f"Cлава Україні, {mention(user)}! Вітаємо тебе в Соборному, знову!"
+            )
             reply_to_message_id = None if settings.FORUM else update.message.id
             bot_message = await context.bot.sendMessage(
                 chat_id=update.message.chat.id,
@@ -74,7 +76,7 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
             utils.add_message_cleanup_job(context.application, bot_message.id)
             return ConversationHandler.END
         message = (
-            f"Cлава Україні, {utils.mention(user)}! Вітаємо тебе в Соборному!\n\n"
+            f"Cлава Україні, {mention(user)}! Вітаємо тебе в Соборному!\n\n"
             "Ми хочемо познайомитися з тобою, так що розкажи трохи про себе (в цій гілці) "
             "і додай, будь ласка, до повідомлення теґ #about. "
             "На це у тебе є одна доба. Якщо ми від тебе нічого не почуємо, ми попрощаємось.\n\n"
@@ -102,9 +104,7 @@ async def not_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State
     utils.log("not_about")
     user = update.message.from_user
     reply_to_message_id = update.message.id
-    message = (
-        f"{utils.mention(user)}, додай, будь ласка, до свого повідомлення теґ #about"
-    )
+    message = f"{mention(user)}, додай, будь ласка, до свого повідомлення теґ #about"
     if update.message.message_thread_id != settings.TOPICS["welcome"]:
         message += " і напиши його в цій гілці (у Вітальні)"
         reply_to_message_id = await topic.move(
@@ -135,7 +135,7 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     context.user_data["about"] = incoming_message.text
     user = incoming_message.from_user
     utils.log(f"user introduced themselves: {user.id} ({user.full_name})", logging.INFO)
-    message = f"Вітаємо тебе, {utils.mention(user)}!"
+    message = f"Вітаємо тебе, {mention(user)}!"
     if settings.FORUM:
         message += f"\n\n#️⃣ [Соборний](https://t.me/c/{settings.CHAT_LINK_ID}/1) – основна гілка\n"
         if "navigation" in settings.TOPICS:
@@ -170,7 +170,7 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
             )
             reply_to_message_id = forwarded_message.id
         except:
-            message = f"{utils.mention(user)} написав(-ла):"
+            message = f"{mention(user)} написав(-ла):"
             await context.bot.sendMessage(
                 chat_id=settings.CHAT_ID,
                 message_thread_id=settings.TOPICS["welcome"],
@@ -195,7 +195,7 @@ async def timeout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """When the conversation timepout is exceeded."""
     utils.log("timeout")
     user = update.effective_user
-    message = f"На жаль, {utils.mention(user)} покидає Соборний."
+    message = f"На жаль, {mention(user)} покидає Соборний."
     bot_message = await context.bot.sendMessage(
         chat_id=settings.CHAT_ID,
         message_thread_id=settings.TOPICS["welcome"],
