@@ -165,6 +165,11 @@ async def check_passphrase(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await update.message.reply_text("Нехай щастить!")
         if context.user_data.get("join_via_request"):
             try:
+                await context.bot.ban_chat_member(settings.CHAT_ID, user.id)
+                utils.log(f"banned: {user.id} ({user.full_name})", logging.INFO)
+            except telegram.error.TelegramError as e:
+                utils.log(f"could not ban {user.id}: {e}", logging.ERROR)
+            try:
                 await user.decline_join_request(settings.CHAT_ID)
             except telegram.error.TelegramError as e:
                 utils.log(f"could not decline request: {e}", logging.ERROR)

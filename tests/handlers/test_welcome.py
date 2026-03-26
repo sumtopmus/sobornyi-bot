@@ -325,10 +325,10 @@ class TestCheckPassphrase:
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
-    async def test_wrong_answer_last_try_declines_request(
+    async def test_wrong_answer_last_try_bans_and_declines_request(
         self, mock_settings, mock_update, mock_context
     ):
-        """Wrong answer on last try via join request declines the request."""
+        """Wrong answer on last try via join request bans the user and declines the request."""
         mock_settings.CHAT_ID = -1001234567890
         mock_context.user_data = {
             "passphrase_tries": MAX_TRIES - 1,
@@ -336,14 +336,17 @@ class TestCheckPassphrase:
         }
         mock_update.message.text = "Нічого"
         mock_update.message.reply_text = AsyncMock()
+        mock_context.bot.ban_chat_member = AsyncMock()
         user = MagicMock()
         user.id = 42
+        user.full_name = "User"
         user.decline_join_request = AsyncMock()
         mock_update.effective_user = user
 
         with patch("handlers.welcome.utils.log"):
             result = await check_passphrase(mock_update, mock_context)
 
+        mock_context.bot.ban_chat_member.assert_awaited_once_with(-1001234567890, 42)
         user.decline_join_request.assert_awaited_once_with(-1001234567890)
         assert result == ConversationHandler.END
 
