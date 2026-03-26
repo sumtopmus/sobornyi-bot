@@ -25,18 +25,17 @@ def create_config_files(config_dir, force=False):
         print("Make sure the config/templates directory exists with template files.")
         return [], []
 
-    # Define template and target file pairs
-    file_pairs = [
-        ("settings.local.toml.template", "settings.local.toml"),
-        (".secrets.toml.template", ".secrets.toml"),
+    files = [
+        "settings.local.toml",
+        ".secrets.toml",
     ]
 
     created_files = []
     skipped_files = []
 
-    for template_file, target_file in file_pairs:
-        template_file_path = template_path / template_file
-        target_file_path = config_path / target_file
+    for filename in files:
+        template_file_path = template_path / filename
+        target_file_path = config_path / filename
 
         # Check if template file exists
         if not template_file_path.exists():
