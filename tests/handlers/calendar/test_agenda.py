@@ -237,11 +237,10 @@ class TestAgenda:
         # Reset the mock to clear any pre-configured return values
         mock_agenda["context"].bot_data["calendar"].get_agenda.reset_mock()
 
-        # Call the function - should raise KeyError
-        with pytest.raises(KeyError):
-            await sync_agenda(mock_agenda["context"])
+        # Call the function - should return early without error
+        await sync_agenda(mock_agenda["context"])
 
-        # Assertions - function should raise exception before these calls
+        # Assertions - function should return before these calls
         mock_agenda["context"].bot.edit_message_caption.assert_not_called()
         mock_agenda["context"].bot_data["calendar"].get_agenda.assert_not_called()
 

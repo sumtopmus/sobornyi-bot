@@ -11,6 +11,9 @@ RESET := $(shell tput sgr0)
 # Project version - update this when releasing new versions
 VERSION := 1.0.4
 
+# Conda executable — use $CONDA_EXE env var set by conda init, fall back to 'conda'
+CONDA := $(or $(CONDA_EXE),conda)
+
 .PHONY: env init-dev run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-unit test-integration test-cov migrate migrate-help config help setup check-conda check-deps version docs
 
 help:
@@ -46,12 +49,12 @@ setup: check-conda env check-deps config
 
 check-conda:
 	@echo "✅ Checking for conda..."
-	@which conda > /dev/null || (echo "${RED}❌ conda is not installed. Please install miniconda or anaconda first.${RESET}" && exit 1)
+	@$(CONDA) --version > /dev/null || (echo "${RED}❌ conda is not installed. Please install miniconda or anaconda first.${RESET}" && exit 1)
 	@echo "${GREEN}✅ conda is installed.${RESET}"
 
 check-deps:
 	@echo "✅ Checking for required dependencies..."
-	@which conda > /dev/null || (echo "${RED}❌ conda is not installed. Please install miniconda or anaconda first.${RESET}" && exit 1)
+	@$(CONDA) --version > /dev/null || (echo "${RED}❌ conda is not installed. Please install miniconda or anaconda first.${RESET}" && exit 1)
 	@which python > /dev/null || (echo "${RED}❌ python is not installed. Please install python first.${RESET}" && exit 1)
 	@which pip > /dev/null || (echo "${RED}❌ pip is not installed. Please install pip first.${RESET}" && exit 1)
 	@echo "${GREEN}✅ All required dependencies are installed.${RESET}"
@@ -71,7 +74,7 @@ docs:
 
 env: config
 	@echo "📦 Creating conda environment and installing dependencies..."
-	conda env create -f environment.yaml
+	$(CONDA) env create -f environment.yaml
 	@echo "${GREEN}✅ Dependencies installed successfully.${RESET}"
 
 init-dev: env

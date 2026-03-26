@@ -52,7 +52,10 @@ async def publish_agenda(context: CallbackContext):
 async def sync_agenda(context: CallbackContext):
     """Syncs the agenda."""
     log("sync_agenda")
-    agenda_date = date.fromisoformat(context.bot_data["agenda"]["date"])
+    raw_date = context.bot_data["agenda"].get("date")
+    if not raw_date:
+        return
+    agenda_date = date.fromisoformat(raw_date)
     if agenda_date == this_week():
         text = context.bot_data["calendar"].get_agenda()
         if calculate_hash(text) == context.bot_data["agenda"]["hash"]:

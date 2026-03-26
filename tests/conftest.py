@@ -92,6 +92,7 @@ def mock_settings():
         mock_settings.ADMINS = ["admin1", "admin2"]
         mock_settings.MODERATORS = ["moderator1", "moderator2"]
         mock_settings.LOG_PATH = "test_log.log"
+        mock_settings.PASSPHRASE_LOG_PATH = "test_passphrase.log"
         mock_settings.MAX_BYTES = 1024
         mock_settings.BACKUP_COUNT = 3
         mock_settings.MORNING_TIME = "08:00:00"
