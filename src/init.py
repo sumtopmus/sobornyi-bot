@@ -1,6 +1,8 @@
 import copy
 import logging
 import logging.handlers
+import os
+import time
 from datetime import datetime, timedelta
 from warnings import filterwarnings
 
@@ -23,8 +25,24 @@ from config import debug_mode_off, debug_mode_on, settings
 from model import Calendar
 
 
+class _UnlimitedRotatingFileHandler(logging.handlers.RotatingFileHandler):
+    """RotatingFileHandler that never deletes old files — uses timestamp suffixes."""
+
+    def doRollover(self):
+        if self.stream:
+            self.stream.close()
+            self.stream = None  # type: ignore[assignment]
+        suffix = time.strftime("%Y%m%d-%H%M%S")
+        dfn = self.rotation_filename(f"{self.baseFilename}.{suffix}")
+        if os.path.exists(dfn):
+            os.remove(dfn)
+        self.rotate(self.baseFilename, dfn)
+        if not self.delay:
+            self.stream = self._open()
+
+
 def setup_logging() -> None:
-    # Logging
+    # Main log
     handler = logging.handlers.RotatingFileHandler(
         filename=settings.LOG_PATH,
         maxBytes=settings.MAX_BYTES,
@@ -35,6 +53,22 @@ def setup_logging() -> None:
     )
     handler.setFormatter(formatter)
     logging.getLogger().addHandler(handler)
+
+    # Passphrase log — size-limited, unlimited number of rotated files
+    passphrase_log_path = str(settings.PASSPHRASE_LOG_PATH)
+    passphrase_log_dir = os.path.dirname(passphrase_log_path)
+    if passphrase_log_dir and not os.path.exists(passphrase_log_dir):
+        os.makedirs(passphrase_log_dir)
+    passphrase_handler = _UnlimitedRotatingFileHandler(
+        filename=passphrase_log_path,
+        maxBytes=settings.MAX_BYTES,
+        backupCount=0,
+    )
+    passphrase_handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
+    passphrase_logger = logging.getLogger("passphrase")
+    passphrase_logger.addHandler(passphrase_handler)
+    passphrase_logger.propagate = False
+
     if settings.DEBUG:
         debug_mode_on()
     else:

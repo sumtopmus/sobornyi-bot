@@ -26,6 +26,8 @@ _EN_PASSPHRASE = re.compile(
 )
 MAX_TRIES = 3
 
+_passphrase_log = logging.getLogger("passphrase")
+
 
 def create_handlers() -> list:
     """Creates handlers that process new users."""
@@ -137,6 +139,11 @@ async def check_passphrase(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     is_ua = bool(_UA_PASSPHRASE.match(text))
     is_en = bool(_EN_PASSPHRASE.match(text))
+    result = "PASS" if (is_ua or is_en) else f"FAIL ({tries}/{MAX_TRIES})"
+    if user is not None:
+        _passphrase_log.info(
+            f"user={user.id} ({user.full_name}) try={tries} result={result} text={text!r}"
+        )
 
     if is_ua or is_en:
         context.user_data["passphrase_passed"] = True

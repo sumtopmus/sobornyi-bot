@@ -49,8 +49,12 @@ class TestSetupLogging:
         """Test setup_logging with DEBUG=True."""
         with (
             patch("logging.handlers.RotatingFileHandler") as mock_handler_class,
+            patch(
+                "init._UnlimitedRotatingFileHandler"
+            ) as mock_passphrase_handler_class,
             patch("logging.Formatter") as mock_formatter_class,
             patch("logging.getLogger") as mock_get_logger,
+            patch("os.path.exists", return_value=True),
             patch("init.debug_mode_on") as mock_debug_mode_on,
             patch("init.debug_mode_off") as mock_debug_mode_off,
         ):
@@ -58,28 +62,47 @@ class TestSetupLogging:
             mock_settings.DEBUG = True
             mock_handler = MagicMock()
             mock_handler_class.return_value = mock_handler
+            mock_passphrase_handler = MagicMock()
+            mock_passphrase_handler_class.return_value = mock_passphrase_handler
             mock_formatter = MagicMock()
             mock_formatter_class.return_value = mock_formatter
             mock_root_logger = MagicMock()
-            mock_get_logger.return_value = mock_root_logger
+            mock_passphrase_logger = MagicMock()
+            mock_get_logger.side_effect = lambda name=None: (
+                mock_passphrase_logger if name == "passphrase" else mock_root_logger
+            )
 
             setup_logging()
 
-            # Verify the handler was created with the correct parameters
+            # Verify the main handler was created with the correct parameters
             mock_handler_class.assert_called_once_with(
                 filename=mock_settings.LOG_PATH,
                 maxBytes=mock_settings.MAX_BYTES,
                 backupCount=mock_settings.BACKUP_COUNT,
             )
 
-            # Verify the formatter was created and set
-            mock_formatter_class.assert_called_once_with(
+            # Verify the passphrase handler was created
+            mock_passphrase_handler_class.assert_called_once_with(
+                filename=str(mock_settings.PASSPHRASE_LOG_PATH),
+                maxBytes=mock_settings.MAX_BYTES,
+                backupCount=0,
+            )
+
+            # Verify formatters were created for both handlers
+            mock_formatter_class.assert_any_call(
                 "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
             )
-            mock_handler.setFormatter.assert_called_once_with(mock_formatter)
+            mock_formatter_class.assert_any_call("%(asctime)s - %(message)s")
 
-            # Verify that the root logger had the handler added
+            # Verify handlers had their formatters set
+            mock_handler.setFormatter.assert_called_once_with(mock_formatter)
+            mock_passphrase_handler.setFormatter.assert_called_once_with(mock_formatter)
+
+            # Verify root logger and passphrase logger had handlers added
             mock_root_logger.addHandler.assert_called_once_with(mock_handler)
+            mock_passphrase_logger.addHandler.assert_called_once_with(
+                mock_passphrase_handler
+            )
 
             # Verify that debug_mode_on was called and debug_mode_off was not
             mock_debug_mode_on.assert_called_once()
@@ -89,8 +112,12 @@ class TestSetupLogging:
         """Test setup_logging with DEBUG=False."""
         with (
             patch("logging.handlers.RotatingFileHandler") as mock_handler_class,
+            patch(
+                "init._UnlimitedRotatingFileHandler"
+            ) as mock_passphrase_handler_class,
             patch("logging.Formatter") as mock_formatter_class,
             patch("logging.getLogger") as mock_get_logger,
+            patch("os.path.exists", return_value=True),
             patch("init.debug_mode_on") as mock_debug_mode_on,
             patch("init.debug_mode_off") as mock_debug_mode_off,
         ):
@@ -98,25 +125,41 @@ class TestSetupLogging:
             mock_settings.DEBUG = False
             mock_handler = MagicMock()
             mock_handler_class.return_value = mock_handler
+            mock_passphrase_handler = MagicMock()
+            mock_passphrase_handler_class.return_value = mock_passphrase_handler
             mock_formatter = MagicMock()
             mock_formatter_class.return_value = mock_formatter
             mock_root_logger = MagicMock()
-            mock_get_logger.return_value = mock_root_logger
+            mock_passphrase_logger = MagicMock()
+            mock_get_logger.side_effect = lambda name=None: (
+                mock_passphrase_logger if name == "passphrase" else mock_root_logger
+            )
 
             setup_logging()
 
-            # Verify the handler was created with the correct parameters
+            # Verify the main handler was created with the correct parameters
             mock_handler_class.assert_called_once_with(
                 filename=mock_settings.LOG_PATH,
                 maxBytes=mock_settings.MAX_BYTES,
                 backupCount=mock_settings.BACKUP_COUNT,
             )
 
-            # Verify the formatter was created and set
-            mock_formatter_class.assert_called_once_with(
+            # Verify the passphrase handler was created
+            mock_passphrase_handler_class.assert_called_once_with(
+                filename=str(mock_settings.PASSPHRASE_LOG_PATH),
+                maxBytes=mock_settings.MAX_BYTES,
+                backupCount=0,
+            )
+
+            # Verify formatters were created for both handlers
+            mock_formatter_class.assert_any_call(
                 "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
             )
+            mock_formatter_class.assert_any_call("%(asctime)s - %(message)s")
+
+            # Verify handlers had their formatters set
             mock_handler.setFormatter.assert_called_once_with(mock_formatter)
+            mock_passphrase_handler.setFormatter.assert_called_once_with(mock_formatter)
 
             # Verify that debug_mode_off was called and debug_mode_on was not
             mock_debug_mode_off.assert_called_once()
