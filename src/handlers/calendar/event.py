@@ -148,6 +148,12 @@ def create_handlers() -> list:
                 State.EVENT_EDITING_URL: [
                     MessageHandler(filters.TEXT & ~filters.COMMAND, edit_url),
                 ],
+                State.EVENT_EDITING_URL_CONFIRMATION: [
+                    CallbackQueryHandler(
+                        confirm_url_trim,
+                        pattern="^" + State.EVENT_EDITING_URL_CONFIRMATION.name + "$",
+                    ),
+                ],
                 State.EVENT_EDITING_IMAGE: [
                     MessageHandler(filters.PHOTO, edit_image),
                 ],
@@ -448,7 +454,34 @@ async def on_edit_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Sta
 async def edit_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the url."""
     log("edit_url")
-    context.user_data["current_event"].url = update.message.text
+    url = update.message.text
+    context.user_data["current_event"].url = url
+    if "?" not in url:
+        return await event_menu(update, context)
+    clean_url = url.split("?")[0]
+    context.user_data["clean_url"] = clean_url
+    text = (
+        f"Посилання містить параметри. Скорочена версія:\n\n"
+        f"{clean_url}\n\n"
+        f"Зберегти скорочене посилання?"
+    )
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "✂️ Так", callback_data=State.EVENT_EDITING_URL_CONFIRMATION.name
+            ),
+            InlineKeyboardButton("🚫 Ні", callback_data=State.EVENT_MENU.name),
+        ]
+    ]
+    await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    return State.EVENT_EDITING_URL_CONFIRMATION
+
+
+async def confirm_url_trim(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user confirms trimming the URL query string."""
+    log("confirm_url_trim")
+    await update.callback_query.answer()
+    context.user_data["current_event"].url = context.user_data.pop("clean_url")
     return await event_menu(update, context)
 
 

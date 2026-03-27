@@ -53,6 +53,7 @@ State = Enum(
         "EVENT_EDITING_VENUE",
         "EVENT_EDITING_LOCATION",
         "EVENT_EDITING_URL",
+        "EVENT_EDITING_URL_CONFIRMATION",
         "EVENT_EDITING_IMAGE",
         "REMINDER_SWITCHING",
     ],
