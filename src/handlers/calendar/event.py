@@ -454,6 +454,8 @@ async def on_edit_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Sta
 async def edit_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the url."""
     log("edit_url")
+    if context.user_data["current_event"] is None:
+        return await calendar_menu(update, context)
     url = update.message.text
     context.user_data["current_event"].url = url
     if "?" not in url:

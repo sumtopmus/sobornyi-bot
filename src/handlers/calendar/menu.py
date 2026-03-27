@@ -176,6 +176,8 @@ async def event_menu(
 ) -> State:
     log("event_menu")
     event = context.user_data["current_event"]
+    if event is None:
+        return await calendar_menu(update, context)
     datetime_value = event.time and (event.date or len(event.days) > 0)
     buttons = [
         ("Емоджи", event.emoji, State.EVENT_EDITING_EMOJI),
