@@ -125,21 +125,15 @@ async def on_agenda_preview(
 ) -> State:
     """When a user requests to preview the agenda of the current week."""
     log("on_agenda_preview")
-    text = context.bot_data["calendar"].get_agenda()
-    caption = text[:1024]
-    if len(text) > 1024:
-        await update.callback_query.answer(
-            f"⚠️ Текст перевищує 1024 символи ({len(text)}) і буде обрізаний.",
-            show_alert=True,
-        )
-    else:
-        await update.callback_query.answer()
+    caption = context.bot_data["calendar"].get_agenda()
     image = context.bot_data["agenda"]["image"]
     if image:
         await update.effective_user.send_photo(image, caption)
     else:
         await update.effective_user.send_photo(settings.DEFAULT_AGENDA_IMAGE, caption)
-    text = f"Так виглядатиме порядок тижневий. Якщо все вірно, Ви можете опублікувати його."
+    action_text = (
+        "Так виглядатиме порядок тижневий. Якщо все вірно, Ви можете опублікувати його."
+    )
     keyboard = [
         [
             InlineKeyboardButton(
@@ -149,7 +143,14 @@ async def on_agenda_preview(
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.effective_user.send_message(text, reply_markup=reply_markup)
+    await update.effective_user.send_message(action_text, reply_markup=reply_markup)
+    if len(caption) > 1024:
+        await update.callback_query.answer(
+            f"⚠️ Порядок перевищує 1024 символи ({len(caption)}). Можуть виникнути проблеми з відображенням.",
+            show_alert=True,
+        )
+    else:
+        await update.callback_query.answer()
     return State.AGENDA_PREVIEW
 
 

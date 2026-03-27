@@ -546,7 +546,7 @@ async def on_preview(update: Update, context: CallbackContext) -> State:
     full_repr = event.get_full_repr()
     if event.image and len(full_repr) > CAPTION_LIMIT:
         await update.callback_query.answer(
-            f"⚠️ Текст перевищує 1024 символи ({len(full_repr)}) і буде обрізаний.",
+            f"⚠️ Опис перевищує 1024 символи ({len(full_repr)}). Можуть виникнути проблеми з відображенням.",
             show_alert=True,
         )
     else:
