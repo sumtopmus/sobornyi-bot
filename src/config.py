@@ -30,6 +30,7 @@ class _Settings:
     CHANNEL_USERNAME: str
     ADMINS: list[str]
     MODERATORS: list[str]
+    MODERATOR_CHAT_ID: int
     TOPICS: dict[str, int]
     TAGS: dict[str, str]
     PRIORITIES: dict[str, int]

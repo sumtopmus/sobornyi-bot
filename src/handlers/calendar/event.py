@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 
+import telegram.error
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     CallbackContext,
@@ -17,7 +18,7 @@ from handlers.channel import cross_post, edit_post
 from model import Category, Day, Event, Occurrence
 from utils import log
 
-from .agenda import sync_agenda
+from .agenda import CAPTION_LIMIT, sync_agenda
 from .menu import State, calendar_menu, construct_back_button, datetime_menu, event_menu
 
 
@@ -508,10 +509,19 @@ async def edit_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Stat
 async def on_preview(update: Update, context: CallbackContext) -> State:
     """When a user wants to see the event before publishing it."""
     log("on_preview_event")
-    await update.callback_query.answer()
     event = context.user_data["current_event"]
+    full_repr = event.get_full_repr()
+    if event.image and len(full_repr) > CAPTION_LIMIT:
+        await update.callback_query.answer(
+            f"⚠️ Текст перевищує 1024 символи ({len(full_repr)}) і буде обрізаний.",
+            show_alert=True,
+        )
+    else:
+        await update.callback_query.answer()
     if event.image:
-        await update.effective_user.send_photo(**event.post())
+        await update.effective_user.send_photo(
+            photo=event.image, caption=full_repr[:CAPTION_LIMIT]
+        )
     else:
         await update.callback_query.edit_message_text(**event.post())
     text = f"Так виглядатиме пост з цією подією. Якщо все вірно, Ви можете опублікувати його."
@@ -533,14 +543,22 @@ async def on_publish(update: Update, context: CallbackContext) -> State:
     log("on_post_event")
     await update.callback_query.answer()
     event = context.user_data["current_event"]
-    if event.image:
-        message = await context.bot.send_photo(
-            chat_id=settings.CHANNEL_USERNAME, **event.post()
+    try:
+        if event.image:
+            message = await context.bot.send_photo(
+                chat_id=settings.CHANNEL_USERNAME, **event.post()
+            )
+        else:
+            message = await context.bot.send_message(
+                chat_id=settings.CHANNEL_USERNAME, **event.post()
+            )
+    except telegram.error.BadRequest as e:
+        log(f"on_publish failed: {e}", logging.WARNING)
+        text = "⚠️ Не вдалося опублікувати: текст надто довгий."
+        await update.callback_query.edit_message_text(
+            text, **construct_back_button(State.CALENDAR_MENU)
         )
-    else:
-        message = await context.bot.send_message(
-            chat_id=settings.CHANNEL_USERNAME, **event.post()
-        )
+        return State.EVENT_PUBLISHING
     await cross_post(message, context)
     event.message_id = message.message_id
     event.tg_url = message.link
@@ -562,23 +580,20 @@ async def sync_event_post(context: CallbackContext):
     if event.message_id not in context.bot_data["cross-posts"]:
         return
     # Update the original post in the channel
-    try:
-        if event.image:
-            message = await context.bot.edit_message_caption(
-                chat_id=settings.CHANNEL_USERNAME,
-                message_id=event.message_id,
-                caption=event.get_full_repr(),
-            )
-        else:
-            message = await context.bot.edit_message_text(
-                text=event.get_full_repr(),
-                chat_id=settings.CHANNEL_USERNAME,
-                message_id=event.message_id,
-            )
-        # Update the cross-post
-        await edit_post(message, context)
-    except Exception as e:
-        log(f"Failed to update event post: {e}", logging.WARNING)
+    if event.image:
+        message = await context.bot.edit_message_caption(
+            chat_id=settings.CHANNEL_USERNAME,
+            message_id=event.message_id,
+            caption=event.get_full_repr(),
+        )
+    else:
+        message = await context.bot.edit_message_text(
+            text=event.get_full_repr(),
+            chat_id=settings.CHANNEL_USERNAME,
+            message_id=event.message_id,
+        )
+    # Update the cross-post
+    await edit_post(message, context)
 
 
 async def on_delete_event(update: Update, context: CallbackContext) -> State:
@@ -635,7 +650,10 @@ async def back(update: Update, context: CallbackContext) -> State:
     """When a user presses the back button."""
     log("back")
     await update.callback_query.answer()
-    await sync_event_post(context)
+    try:
+        await sync_event_post(context)
+    except Exception as e:
+        log(f"sync_event_post on back failed: {e}", logging.WARNING)
     context.user_data["current_event"] = None
     return await calendar_menu(update, context)
 
@@ -655,8 +673,14 @@ async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
         await update.callback_query.edit_message_text(text)
     else:
         await update.effective_user.send_message(text)
-    await sync_agenda(context)
-    await sync_event_post(context)
+    try:
+        await sync_agenda(context)
+    except telegram.error.BadRequest as e:
+        log(f"sync_agenda on exit failed: {e}", logging.WARNING)
+    try:
+        await sync_event_post(context)
+    except Exception as e:
+        log(f"sync_event_post on exit failed: {e}", logging.WARNING)
     context.user_data["state"] = None
     return ConversationHandler.END
 

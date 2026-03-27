@@ -502,7 +502,7 @@ class TestEventHandlers:
 
     @pytest.mark.asyncio
     async def test_sync_event_post_with_exception(self, mock_context, mock_settings):
-        """Test sync_event_post function handles exceptions properly."""
+        """Test sync_event_post propagates exceptions to callers."""
         # Setup
         mock_event = MagicMock()
         mock_event.message_id = 123
@@ -517,26 +517,8 @@ class TestEventHandlers:
             side_effect=Exception("Failed to update message")
         )
 
-        # Mock the logging function
-        with patch("handlers.calendar.event.log") as mock_log:
-            # Call the function
+        with pytest.raises(Exception, match="Failed to update message"):
             await sync_event_post(mock_context)
-
-            # Assertions
-            mock_context.bot.edit_message_text.assert_called_once_with(
-                text=mock_event.get_full_repr(),
-                chat_id=mock_settings.CHANNEL_USERNAME,
-                message_id=123,
-            )
-
-            # Verify the exception was logged
-            assert any(
-                "Failed to update event post" in str(call)
-                for call in mock_log.call_args_list
-            )
-
-            # Verify edit_post was not called due to the exception
-            # No need to patch edit_post as the exception prevents it from being called
 
     @pytest.mark.asyncio
     async def test_delete_event_with_cross_post(
@@ -1540,6 +1522,7 @@ class TestEventHandlers:
         # Create a mock event with an image
         mock_event = MagicMock()
         mock_event.image = "test_image_id"
+        mock_event.get_full_repr.return_value = "Event details"
         mock_event.post.return_value = {
             "photo": "test_image_id",
             "caption": "Event details",
