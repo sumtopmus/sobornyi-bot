@@ -340,7 +340,7 @@ async def on_edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
     """When a user wants to edit the date."""
     log("on_edit_date")
     await update.callback_query.answer()
-    text = "Введіть дату заходу в форматі MM/DD/YY."
+    text = "Введіть дату заходу в форматі MM/DD/YY або MM/DD."
     await update.callback_query.edit_message_text(
         text, **construct_back_button(State.DATETIME_MENU)
     )
@@ -350,17 +350,27 @@ async def on_edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
 async def edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the date."""
     log("edit_date")
-    context.user_data["current_event"].date = datetime.strptime(
-        update.message.text, "%m/%d/%y"
-    ).date()
-    return await datetime_menu(update, context)
+    text = update.message.text
+    for fmt in ("%m/%d/%Y", "%m/%d/%y", "%m/%d"):
+        try:
+            input_text = f"{text}/{datetime.today().year}" if fmt == "%m/%d" else text
+            parsed_fmt = "%m/%d/%Y" if fmt == "%m/%d" else fmt
+            parsed = datetime.strptime(input_text, parsed_fmt).date()
+            context.user_data["current_event"].date = parsed
+            return await datetime_menu(update, context)
+        except ValueError:
+            continue
+    await update.message.reply_text(
+        "Невірний формат дати. Введіть дату в форматі MM/DD/YY або MM/DD."
+    )
+    return State.EVENT_EDITING_DATE
 
 
 async def on_edit_end_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user wants to edit the end date."""
     log("on_edit_end_date")
     await update.callback_query.answer()
-    text = "Введіть дату закінчення заходу в форматі MM/DD/YY."
+    text = "Введіть дату закінчення заходу в форматі MM/DD або MM/DD/YY."
     await update.callback_query.edit_message_text(
         text, **construct_back_button(State.DATETIME_MENU)
     )
@@ -370,10 +380,20 @@ async def on_edit_end_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 async def edit_end_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the end date."""
     log("edit_end_date")
-    context.user_data["current_event"].end_date = datetime.strptime(
-        update.message.text, "%m/%d/%y"
-    ).date()
-    return await datetime_menu(update, context)
+    text = update.message.text
+    for fmt in ("%m/%d/%Y", "%m/%d/%y", "%m/%d"):
+        try:
+            input_text = f"{text}/{datetime.today().year}" if fmt == "%m/%d" else text
+            parsed_fmt = "%m/%d/%Y" if fmt == "%m/%d" else fmt
+            parsed = datetime.strptime(input_text, parsed_fmt).date()
+            context.user_data["current_event"].end_date = parsed
+            return await datetime_menu(update, context)
+        except ValueError:
+            continue
+    await update.message.reply_text(
+        "Невірний формат дати. Введіть дату в форматі MM/DD або MM/DD/YY."
+    )
+    return State.EVENT_EDITING_END_DATE
 
 
 async def on_edit_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:

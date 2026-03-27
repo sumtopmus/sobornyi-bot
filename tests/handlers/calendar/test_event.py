@@ -913,6 +913,59 @@ class TestEventHandlers:
             mock_menu.assert_called_once_with(mock_update, mock_context)
 
     @pytest.mark.asyncio
+    async def test_edit_date_four_digit_year(self, mock_update, mock_context):
+        """Test that edit_date accepts a 4-digit year (MM/DD/YYYY)."""
+        mock_update.message = MagicMock()
+        mock_update.message.text = "09/29/2025"
+        mock_event = MagicMock()
+        mock_context.user_data = {"current_event": mock_event}
+
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+            result = await edit_date(mock_update, mock_context)
+
+            assert result == State.DATETIME_MENU
+            from datetime import date
+
+            assert mock_context.user_data["current_event"].date == date(2025, 9, 29)
+
+    @pytest.mark.asyncio
+    async def test_edit_date_invalid_input(self, mock_update, mock_context):
+        """Test that edit_date re-prompts on invalid input instead of crashing."""
+        mock_update.message = AsyncMock()
+        mock_update.message.text = "not-a-date"
+        mock_event = MagicMock()
+        mock_context.user_data = {"current_event": mock_event}
+
+        result = await edit_date(mock_update, mock_context)
+
+        assert result == State.EVENT_EDITING_DATE
+        mock_update.message.reply_text.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_edit_date_no_year(self, mock_update, mock_context):
+        """Test that edit_date accepts MM/DD and defaults to the current year."""
+        mock_update.message = MagicMock()
+        mock_update.message.text = "12/12"
+        mock_event = MagicMock()
+        mock_context.user_data = {"current_event": mock_event}
+
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+            result = await edit_date(mock_update, mock_context)
+
+            assert result == State.DATETIME_MENU
+            from datetime import date
+
+            assert mock_context.user_data["current_event"].date == date(
+                date.today().year, 12, 12
+            )
+
+    @pytest.mark.asyncio
     async def test_on_edit_end_date(self, mock_update, mock_context):
         """Test the on_edit_end_date function."""
         # Setup
@@ -969,6 +1022,59 @@ class TestEventHandlers:
 
             assert mock_context.user_data["current_event"].end_date == date(2023, 1, 2)
             mock_menu.assert_called_once_with(mock_update, mock_context)
+
+    @pytest.mark.asyncio
+    async def test_edit_end_date_four_digit_year(self, mock_update, mock_context):
+        """Test that edit_end_date accepts a 4-digit year (MM/DD/YYYY)."""
+        mock_update.message = MagicMock()
+        mock_update.message.text = "09/29/2025"
+        mock_event = MagicMock()
+        mock_context.user_data = {"current_event": mock_event}
+
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+            result = await edit_end_date(mock_update, mock_context)
+
+            assert result == State.DATETIME_MENU
+            from datetime import date
+
+            assert mock_context.user_data["current_event"].end_date == date(2025, 9, 29)
+
+    @pytest.mark.asyncio
+    async def test_edit_end_date_invalid_input(self, mock_update, mock_context):
+        """Test that edit_end_date re-prompts on invalid input instead of crashing."""
+        mock_update.message = AsyncMock()
+        mock_update.message.text = "not-a-date"
+        mock_event = MagicMock()
+        mock_context.user_data = {"current_event": mock_event}
+
+        result = await edit_end_date(mock_update, mock_context)
+
+        assert result == State.EVENT_EDITING_END_DATE
+        mock_update.message.reply_text.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_edit_end_date_no_year(self, mock_update, mock_context):
+        """Test that edit_end_date accepts MM/DD and defaults to the current year."""
+        mock_update.message = MagicMock()
+        mock_update.message.text = "12/12"
+        mock_event = MagicMock()
+        mock_context.user_data = {"current_event": mock_event}
+
+        with patch(
+            "handlers.calendar.event.datetime_menu", new=AsyncMock()
+        ) as mock_menu:
+            mock_menu.return_value = State.DATETIME_MENU
+            result = await edit_end_date(mock_update, mock_context)
+
+            assert result == State.DATETIME_MENU
+            from datetime import date
+
+            assert mock_context.user_data["current_event"].end_date == date(
+                date.today().year, 12, 12
+            )
 
     @pytest.mark.asyncio
     async def test_on_edit_time(self, mock_update, mock_context):
