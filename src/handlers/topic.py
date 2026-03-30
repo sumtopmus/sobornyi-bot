@@ -79,9 +79,10 @@ async def move(
             raise telegram.error.Forbidden(
                 f"the message has protected content and can't be forwarded: {message_to_move.text}"
             )
-        moved_message_id = await message_to_move.forward(
+        moved_message = await message_to_move.forward(
             settings.CHAT_ID, message_thread_id=destination_thread_id
         )
+        message_id = moved_message.message_id
     except:
         message = f"{mention(user)} написав(-ла):"
         await context.bot.sendMessage(
@@ -89,10 +90,11 @@ async def move(
             message_thread_id=destination_thread_id,
             text=message,
         )
-        moved_message_id = await message_to_move.copy(
+        copied_message = await message_to_move.copy(
             settings.CHAT_ID, message_thread_id=destination_thread_id
         )
+        message_id = copied_message.message_id
     if reply_to_message:
         await update.message.delete()
     await message_to_move.delete()
-    return moved_message_id
+    return message_id
