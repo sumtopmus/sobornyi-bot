@@ -80,9 +80,9 @@ class TestMessageCleanup:
         with patch("utils.log") as mock_log:
             await message_cleanup(mock_context)
 
-            # Check that the error was logged
+            # "not found" is expected (message already deleted), logged at INFO
             mock_log.assert_any_call(
-                "BadRequest: Message to delete not found", logging.ERROR
+                "BadRequest: Message to delete not found", logging.INFO
             )
 
 

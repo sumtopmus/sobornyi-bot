@@ -33,7 +33,8 @@ async def message_cleanup(context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         await context.bot.delete_message(settings.CHAT_ID, context.job.data)
     except telegram.error.BadRequest as e:
-        log(f"{e.__class__.__name__}: {e.message}", logging.ERROR)
+        level = logging.INFO if "not found" in e.message.lower() else logging.ERROR
+        log(f"{e.__class__.__name__}: {e.message}", level)
     clear_jobs(context.application, MESSAGE_CLEANUP_JOB, context.job.data)
 
 
