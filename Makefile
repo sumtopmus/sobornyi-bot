@@ -9,7 +9,7 @@ RED := $(shell tput setaf 1)
 RESET := $(shell tput sgr0)
 
 # Project version - update this when releasing new versions
-VERSION := 1.0.4
+VERSION := 1.1.0
 
 # Conda executable — use $CONDA_EXE env var set by conda init, fall back to 'conda'
 CONDA := $(or $(CONDA_EXE),conda)
