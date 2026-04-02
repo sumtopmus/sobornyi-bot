@@ -2,6 +2,7 @@
 config/.secrets.*
 # Local config
 config/*.local*
+.claude/*.local*
 
 # App data
 backup

@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 
+import telegram.error
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     CallbackContext,
@@ -17,7 +18,7 @@ from handlers.channel import cross_post, edit_post
 from model import Category, Day, Event, Occurrence
 from utils import log
 
-from .agenda import sync_agenda
+from .agenda import CAPTION_LIMIT, sync_agenda
 from .menu import State, calendar_menu, construct_back_button, datetime_menu, event_menu
 
 
@@ -146,6 +147,12 @@ def create_handlers() -> list:
                 ],
                 State.EVENT_EDITING_URL: [
                     MessageHandler(filters.TEXT & ~filters.COMMAND, edit_url),
+                ],
+                State.EVENT_EDITING_URL_CONFIRMATION: [
+                    CallbackQueryHandler(
+                        confirm_url_trim,
+                        pattern="^" + State.EVENT_EDITING_URL_CONFIRMATION.name + "$",
+                    ),
                 ],
                 State.EVENT_EDITING_IMAGE: [
                     MessageHandler(filters.PHOTO, edit_image),
@@ -333,7 +340,7 @@ async def on_edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
     """When a user wants to edit the date."""
     log("on_edit_date")
     await update.callback_query.answer()
-    text = "Введіть дату заходу в форматі MM/DD/YY."
+    text = "Введіть дату заходу в форматі MM/DD/YY або MM/DD."
     await update.callback_query.edit_message_text(
         text, **construct_back_button(State.DATETIME_MENU)
     )
@@ -343,17 +350,27 @@ async def on_edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> St
 async def edit_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the date."""
     log("edit_date")
-    context.user_data["current_event"].date = datetime.strptime(
-        update.message.text, "%m/%d/%y"
-    ).date()
-    return await datetime_menu(update, context)
+    text = update.message.text
+    for fmt in ("%m/%d/%Y", "%m/%d/%y", "%m/%d"):
+        try:
+            input_text = f"{text}/{datetime.today().year}" if fmt == "%m/%d" else text
+            parsed_fmt = "%m/%d/%Y" if fmt == "%m/%d" else fmt
+            parsed = datetime.strptime(input_text, parsed_fmt).date()
+            context.user_data["current_event"].date = parsed
+            return await datetime_menu(update, context)
+        except ValueError:
+            continue
+    await update.message.reply_text(
+        "Невірний формат дати. Введіть дату в форматі MM/DD/YY або MM/DD."
+    )
+    return State.EVENT_EDITING_DATE
 
 
 async def on_edit_end_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user wants to edit the end date."""
     log("on_edit_end_date")
     await update.callback_query.answer()
-    text = "Введіть дату закінчення заходу в форматі MM/DD/YY."
+    text = "Введіть дату закінчення заходу в форматі MM/DD або MM/DD/YY."
     await update.callback_query.edit_message_text(
         text, **construct_back_button(State.DATETIME_MENU)
     )
@@ -363,10 +380,20 @@ async def on_edit_end_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 async def edit_end_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the end date."""
     log("edit_end_date")
-    context.user_data["current_event"].end_date = datetime.strptime(
-        update.message.text, "%m/%d/%y"
-    ).date()
-    return await datetime_menu(update, context)
+    text = update.message.text
+    for fmt in ("%m/%d/%Y", "%m/%d/%y", "%m/%d"):
+        try:
+            input_text = f"{text}/{datetime.today().year}" if fmt == "%m/%d" else text
+            parsed_fmt = "%m/%d/%Y" if fmt == "%m/%d" else fmt
+            parsed = datetime.strptime(input_text, parsed_fmt).date()
+            context.user_data["current_event"].end_date = parsed
+            return await datetime_menu(update, context)
+        except ValueError:
+            continue
+    await update.message.reply_text(
+        "Невірний формат дати. Введіть дату в форматі MM/DD або MM/DD/YY."
+    )
+    return State.EVENT_EDITING_END_DATE
 
 
 async def on_edit_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
@@ -447,7 +474,36 @@ async def on_edit_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Sta
 async def edit_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
     """When a user enters the url."""
     log("edit_url")
-    context.user_data["current_event"].url = update.message.text
+    if context.user_data["current_event"] is None:
+        return await calendar_menu(update, context)
+    url = update.message.text
+    context.user_data["current_event"].url = url
+    if "?" not in url:
+        return await event_menu(update, context)
+    clean_url = url.split("?")[0]
+    context.user_data["clean_url"] = clean_url
+    text = (
+        f"Посилання містить параметри. Скорочена версія:\n\n"
+        f"{clean_url}\n\n"
+        f"Зберегти скорочене посилання?"
+    )
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "✂️ Так", callback_data=State.EVENT_EDITING_URL_CONFIRMATION.name
+            ),
+            InlineKeyboardButton("🚫 Ні", callback_data=State.EVENT_MENU.name),
+        ]
+    ]
+    await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    return State.EVENT_EDITING_URL_CONFIRMATION
+
+
+async def confirm_url_trim(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
+    """When a user confirms trimming the URL query string."""
+    log("confirm_url_trim")
+    await update.callback_query.answer()
+    context.user_data["current_event"].url = context.user_data.pop("clean_url")
     return await event_menu(update, context)
 
 
@@ -508,10 +564,19 @@ async def edit_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Stat
 async def on_preview(update: Update, context: CallbackContext) -> State:
     """When a user wants to see the event before publishing it."""
     log("on_preview_event")
-    await update.callback_query.answer()
     event = context.user_data["current_event"]
+    full_repr = event.get_full_repr()
+    if event.image and len(full_repr) > CAPTION_LIMIT:
+        await update.callback_query.answer(
+            f"⚠️ Опис перевищує 1024 символи ({len(full_repr)}). Можуть виникнути проблеми з відображенням.",
+            show_alert=True,
+        )
+    else:
+        await update.callback_query.answer()
     if event.image:
-        await update.effective_user.send_photo(**event.post())
+        await update.effective_user.send_photo(
+            photo=event.image, caption=full_repr[:CAPTION_LIMIT]
+        )
     else:
         await update.callback_query.edit_message_text(**event.post())
     text = f"Так виглядатиме пост з цією подією. Якщо все вірно, Ви можете опублікувати його."
@@ -533,14 +598,22 @@ async def on_publish(update: Update, context: CallbackContext) -> State:
     log("on_post_event")
     await update.callback_query.answer()
     event = context.user_data["current_event"]
-    if event.image:
-        message = await context.bot.send_photo(
-            chat_id=settings.CHANNEL_USERNAME, **event.post()
+    try:
+        if event.image:
+            message = await context.bot.send_photo(
+                chat_id=settings.CHANNEL_USERNAME, **event.post()
+            )
+        else:
+            message = await context.bot.send_message(
+                chat_id=settings.CHANNEL_USERNAME, **event.post()
+            )
+    except telegram.error.BadRequest as e:
+        log(f"on_publish failed: {e}", logging.WARNING)
+        text = "⚠️ Не вдалося опублікувати: текст надто довгий."
+        await update.callback_query.edit_message_text(
+            text, **construct_back_button(State.CALENDAR_MENU)
         )
-    else:
-        message = await context.bot.send_message(
-            chat_id=settings.CHANNEL_USERNAME, **event.post()
-        )
+        return State.EVENT_PUBLISHING
     await cross_post(message, context)
     event.message_id = message.message_id
     event.tg_url = message.link
@@ -562,23 +635,20 @@ async def sync_event_post(context: CallbackContext):
     if event.message_id not in context.bot_data["cross-posts"]:
         return
     # Update the original post in the channel
-    try:
-        if event.image:
-            message = await context.bot.edit_message_caption(
-                chat_id=settings.CHANNEL_USERNAME,
-                message_id=event.message_id,
-                caption=event.get_full_repr(),
-            )
-        else:
-            message = await context.bot.edit_message_text(
-                text=event.get_full_repr(),
-                chat_id=settings.CHANNEL_USERNAME,
-                message_id=event.message_id,
-            )
-        # Update the cross-post
-        await edit_post(message, context)
-    except Exception as e:
-        log(f"Failed to update event post: {e}", logging.WARNING)
+    if event.image:
+        message = await context.bot.edit_message_caption(
+            chat_id=settings.CHANNEL_USERNAME,
+            message_id=event.message_id,
+            caption=event.get_full_repr(),
+        )
+    else:
+        message = await context.bot.edit_message_text(
+            text=event.get_full_repr(),
+            chat_id=settings.CHANNEL_USERNAME,
+            message_id=event.message_id,
+        )
+    # Update the cross-post
+    await edit_post(message, context)
 
 
 async def on_delete_event(update: Update, context: CallbackContext) -> State:
@@ -635,7 +705,10 @@ async def back(update: Update, context: CallbackContext) -> State:
     """When a user presses the back button."""
     log("back")
     await update.callback_query.answer()
-    await sync_event_post(context)
+    try:
+        await sync_event_post(context)
+    except Exception as e:
+        log(f"sync_event_post on back failed: {e}", logging.WARNING)
     context.user_data["current_event"] = None
     return await calendar_menu(update, context)
 
@@ -655,8 +728,14 @@ async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> State:
         await update.callback_query.edit_message_text(text)
     else:
         await update.effective_user.send_message(text)
-    await sync_agenda(context)
-    await sync_event_post(context)
+    try:
+        await sync_agenda(context)
+    except telegram.error.BadRequest as e:
+        log(f"sync_agenda on exit failed: {e}", logging.WARNING)
+    try:
+        await sync_event_post(context)
+    except Exception as e:
+        log(f"sync_event_post on exit failed: {e}", logging.WARNING)
     context.user_data["state"] = None
     return ConversationHandler.END
 

@@ -1,5 +1,7 @@
+import logging
 from datetime import date, datetime, time, timedelta
 
+import telegram.error
 from telegram import Update
 from telegram.ext import Application, CallbackContext
 
@@ -9,6 +11,7 @@ from model import next_week, this_week
 from utils import calculate_hash, log
 
 JOB_NAME = "weekly_agenda"
+CAPTION_LIMIT = 1024
 
 
 def agenda_on(app: Application) -> None:
@@ -32,16 +35,27 @@ async def publish_agenda(context: CallbackContext):
     log("publish_agenda")
     text = context.bot_data["calendar"].get_agenda()
     image = context.bot_data["agenda"]["image"]
-    if image:
-        message = await context.bot.send_photo(
-            chat_id=settings.CHANNEL_USERNAME, photo=image, caption=text
+    try:
+        if image:
+            message = await context.bot.send_photo(
+                chat_id=settings.CHANNEL_USERNAME, photo=image, caption=text
+            )
+        else:
+            message = await context.bot.send_photo(
+                chat_id=settings.CHANNEL_USERNAME,
+                photo=settings.DEFAULT_AGENDA_IMAGE,
+                caption=text,
+            )
+    except telegram.error.BadRequest as e:
+        log(f"publish_agenda failed: {e}", logging.ERROR)
+        await context.bot.send_message(
+            chat_id=settings.MODERATOR_CHAT_ID,
+            text=(
+                f"⚠️ Порядок тижневий не опубліковано: текст перевищує ліміт Telegram "
+                f"({len(text)}/{CAPTION_LIMIT} символів). Скоротіть та опублікуйте вручну."
+            ),
         )
-    else:
-        message = await context.bot.send_photo(
-            chat_id=settings.CHANNEL_USERNAME,
-            photo=settings.DEFAULT_AGENDA_IMAGE,
-            caption=text,
-        )
+        return
     await cross_post(message, context)
     context.bot_data["agenda"]["message_id"] = message.message_id
     context.bot_data["agenda"]["date"] = this_week().isoformat()
@@ -52,7 +66,10 @@ async def publish_agenda(context: CallbackContext):
 async def sync_agenda(context: CallbackContext):
     """Syncs the agenda."""
     log("sync_agenda")
-    agenda_date = date.fromisoformat(context.bot_data["agenda"]["date"])
+    raw_date = context.bot_data["agenda"].get("date")
+    if not raw_date:
+        return
+    agenda_date = date.fromisoformat(raw_date)
     if agenda_date == this_week():
         text = context.bot_data["calendar"].get_agenda()
         if calculate_hash(text) == context.bot_data["agenda"]["hash"]:

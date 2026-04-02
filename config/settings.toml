@@ -8,7 +8,8 @@ agenda_image = 'assets/images/agenda-default.jpg'
 db_path = 'data/db'
 # Logging
 log_path = 'logs/bot.log'
-max_bytes = 1048576       # 1 MB
+passphrase_log_path = 'logs/passphrase.log'
+max_bytes = 1048576                         # 1 MB
 backup_count = 5
 # General
 timezone = 'US/Eastern'
@@ -33,6 +34,7 @@ chat_id = 'PLACEHOLDER'
 chat_link_id = 'PLACEHOLDER'
 chat_invite_link = 'PLACEHOLDER'
 channel_username = '@PLACEHOLDER'
+moderator_chat_id = 'PLACEHOLDER'
 moderators = ['@PLACEHOLDER']
 
 token = 'SECRET_PLACEHOLDER'
@@ -52,6 +54,6 @@ forum = false
 
 time_offset = 10          # in seconds
 conversation_timeout = 30 # in seconds
-welcome_timeout = 10      # in seconds
+welcome_timeout = 20      # in seconds
 cleanup_period = 20       # in seconds
 max_bytes = 16384         # in bytes

@@ -1,12 +1,13 @@
 from enum import Enum
 
+import telegram.error
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
 from model import Day, Occurrence, this_week
 from utils import log
 
-from .agenda import sync_agenda
+from .agenda import CAPTION_LIMIT, sync_agenda
 
 State = Enum(
     "State",
@@ -52,17 +53,25 @@ State = Enum(
         "EVENT_EDITING_VENUE",
         "EVENT_EDITING_LOCATION",
         "EVENT_EDITING_URL",
+        "EVENT_EDITING_URL_CONFIRMATION",
         "EVENT_EDITING_IMAGE",
         "REMINDER_SWITCHING",
     ],
 )
 
 
-async def update_menu(update: Update, menu: dict, new_message: bool = False):
+async def update_menu(
+    update: Update, menu: dict, new_message: bool = False, alert: str = None
+):
     if new_message or not update.callback_query:
+        if alert:
+            await update.effective_user.send_message(alert)
         await update.effective_user.send_message(**menu)
     else:
-        await update.callback_query.answer()
+        if alert:
+            await update.callback_query.answer(alert, show_alert=True)
+        else:
+            await update.callback_query.answer()
         await update.callback_query.edit_message_text(**menu)
 
 
@@ -73,7 +82,15 @@ async def calendar_menu(
     new_message: bool = False,
 ) -> State:
     log("calendar_menu")
-    await sync_agenda(context)
+    alert = None
+    try:
+        await sync_agenda(context)
+    except telegram.error.BadRequest:
+        text = context.bot_data["calendar"].get_agenda()
+        alert = (
+            f"⚠️ Порядок тижневий не оновлено: текст перевищує ліміт Telegram "
+            f"({len(text)}/{CAPTION_LIMIT} символів). Скоротіть та опублікуйте вручну."
+        )
     text = "Ви знаходитесь в меню редагування календаря. Що Ви хочете зробити?"
     if prefix_text:
         text = prefix_text + "\n\n" + text
@@ -108,7 +125,7 @@ async def calendar_menu(
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     menu = {"text": text, "reply_markup": reply_markup}
-    await update_menu(update, menu, new_message)
+    await update_menu(update, menu, new_message, alert=alert)
     context.user_data["current_event"] = None
     context.user_data["state"] = State.CALENDAR_MENU
     return State.CALENDAR_MENU
@@ -159,6 +176,8 @@ async def event_menu(
 ) -> State:
     log("event_menu")
     event = context.user_data["current_event"]
+    if event is None:
+        return await calendar_menu(update, context)
     datetime_value = event.time and (event.date or len(event.days) > 0)
     buttons = [
         ("Емоджи", event.emoji, State.EVENT_EDITING_EMOJI),

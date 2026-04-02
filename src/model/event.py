@@ -122,8 +122,6 @@ class Event:
             formatted_title = f"[{formatted_title}]({self.url})"
         else:
             formatted_title = formatted_title
-        print(f"self.title: {self.title}")
-        print(f"formatted_title: {formatted_title}")
         if not self.emoji:
             return formatted_title
         return f"{self.emoji} {formatted_title}"
