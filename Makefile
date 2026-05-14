@@ -14,7 +14,7 @@ VERSION := 1.1.0
 # Conda executable — use $CONDA_EXE env var set by conda init, fall back to 'conda'
 CONDA := $(or $(CONDA_EXE),conda)
 
-.PHONY: env init-dev run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-unit test-integration test-cov migrate migrate-help config help setup check-conda check-deps version docs
+.PHONY: env init-dev run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-unit test-integration test-cov test-watch migrate migrate-help config help setup check-conda check-deps version docs
 
 help:
 	@echo "${BOLD}🔍 Available commands:${RESET}"
@@ -31,6 +31,7 @@ help:
 	@echo "  ${BOLD}make test-unit${RESET}             - 🔬 Run unit tests only"
 	@echo "  ${BOLD}make test-integration${RESET}      - 🔌 Run integration tests only"
 	@echo "  ${BOLD}make test-cov${RESET}              - 📊 Run tests with coverage report"
+	@echo "  ${BOLD}make test-watch${RESET}            - 👀 Watch files and re-run affected tests (testmon)"
 	@echo "  ${BOLD}make display-coverage${RESET}      - 📈 Open coverage report in browser"
 	@echo "  ${BOLD}make clean${RESET}                 - 🧹 Remove all generated files"
 	@echo "  ${BOLD}make clean-state${RESET}           - 🧼 Clean cache and logs"
@@ -129,6 +130,10 @@ test-cov: check-deps
 	-@echo
 	@echo "Coverage report: htmlcov/index.html"
 	@open htmlcov/index.html
+
+test-watch: check-deps
+	@echo "👀 Watching files — re-runs affected tests on save (Ctrl-C to stop)..."
+	@ptw . -- --testmon
 
 display-coverage:
 	@echo "📈 Opening coverage report in browser..."
