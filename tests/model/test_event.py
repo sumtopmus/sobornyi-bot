@@ -227,7 +227,7 @@ class TestEvent:
                 None,
                 "https://t.me/event",
                 "https://example.com",
-                "[\*Test\* \_Event\_](https://t.me/event)",
+                r"[\*Test\* \_Event\_](https://t.me/event)",
             ),
             (
                 "Test \\ Event",
