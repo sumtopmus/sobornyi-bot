@@ -8,19 +8,16 @@ BLUE := $(shell tput setaf 4)
 RED := $(shell tput setaf 1)
 RESET := $(shell tput sgr0)
 
-# Project version - update this when releasing new versions
-VERSION := 1.1.0
+# Project version — single source of truth is pyproject.toml
+VERSION := $(shell uv version --short)
 
-# Conda executable — use $CONDA_EXE env var set by conda init, fall back to 'conda'
-CONDA := $(or $(CONDA_EXE),conda)
-
-.PHONY: env init-dev run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-unit test-integration test-cov test-watch migrate migrate-help config help setup check-conda check-deps version docs
+.PHONY: env init-dev run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-unit test-integration test-cov test-watch migrate migrate-help config help setup check-deps version docs lock
 
 help:
 	@echo "${BOLD}🔍 Available commands:${RESET}"
 	@echo "  ${BOLD}make${RESET}                       - ℹ️  Show this help message"
 	@echo "  ${BOLD}make setup${RESET}                 - 🏗️  First-time setup: install dependencies and configure project"
-	@echo "  ${BOLD}make env${RESET}                   - 📦 Create conda environment and install dependencies"
+	@echo "  ${BOLD}make env${RESET}                   - 📦 Create virtual environment and install dependencies"
 	@echo "  ${BOLD}make init-dev${RESET}              - 🛠️  Setup development environment with pre-commit hooks"
 	@echo "  ${BOLD}make run${RESET}                   - 🚀 Run bot in production mode"
 	@echo "  ${BOLD}make debug${RESET}                 - 🐞 Run bot in debug mode"
@@ -42,22 +39,15 @@ help:
 	@echo "  ${BOLD}make config${RESET}                - 🧰 Generate configuration files"
 	@echo "  ${BOLD}make version${RESET}               - 🏷️  Show the project version"
 	@echo "  ${BOLD}make docs${RESET}                  - 📚 Generate project documentation"
-	@echo "  ${BOLD}make check-conda${RESET}           - 🐍 Check if conda is installed"
+	@echo "  ${BOLD}make lock${RESET}                  - 🔒 Upgrade and relock dependencies"
 	@echo "  ${BOLD}make check-deps${RESET}            - ✅ Check if required tools are installed"
 
-setup: check-conda env check-deps config
+setup: check-deps env
 	@echo "${GREEN}🎉 Project setup complete! Run 'make run' to start the bot.${RESET}"
-
-check-conda:
-	@echo "✅ Checking for conda..."
-	@$(CONDA) --version > /dev/null || (echo "${RED}❌ conda is not installed. Please install miniconda or anaconda first.${RESET}" && exit 1)
-	@echo "${GREEN}✅ conda is installed.${RESET}"
 
 check-deps:
 	@echo "✅ Checking for required dependencies..."
-	@$(CONDA) --version > /dev/null || (echo "${RED}❌ conda is not installed. Please install miniconda or anaconda first.${RESET}" && exit 1)
-	@which python > /dev/null || (echo "${RED}❌ python is not installed. Please install python first.${RESET}" && exit 1)
-	@which pip > /dev/null || (echo "${RED}❌ pip is not installed. Please install pip first.${RESET}" && exit 1)
+	@uv --version > /dev/null 2>&1 || (echo "${RED}❌ uv is not installed. Install it from https://docs.astral.sh/uv/getting-started/installation/${RESET}" && exit 1)
 	@echo "${GREEN}✅ All required dependencies are installed.${RESET}"
 
 version:
@@ -74,23 +64,27 @@ docs:
 	fi
 
 env: config
-	@echo "📦 Creating conda environment and installing dependencies..."
-	$(CONDA) env create -f environment.yaml
+	@echo "📦 Creating virtual environment and installing dependencies..."
+	uv sync
 	@echo "${GREEN}✅ Dependencies installed successfully.${RESET}"
 
 init-dev: env
 	@echo "🛠️  Setting up development environment with pre-commit hooks..."
-	pip install -r requirements-dev.txt
-	pre-commit install
+	uv run pre-commit install
 	@echo "${GREEN}✅ Development environment set up successfully.${RESET}"
+
+lock:
+	@echo "🔒 Upgrading and relocking dependencies..."
+	uv lock --upgrade
+	@echo "${GREEN}✅ uv.lock updated. Run 'uv sync' to apply.${RESET}"
 
 run: check-deps clean-cache
 	@echo "🚀 Running bot in production mode..."
-	@ENV_FOR_DYNACONF=prod python src/bot.py
+	@ENV_FOR_DYNACONF=prod uv run python src/bot.py
 
 debug: check-deps clean-state
 	@echo "🐞 Running bot in debug mode..."
-	@ENV_FOR_DYNACONF=dev python src/bot.py
+	@ENV_FOR_DYNACONF=dev uv run python src/bot.py
 
 backup:
 	@echo "💾 Creating backup of data and logs..."
@@ -103,37 +97,37 @@ backup:
 
 migrate:
 	@echo "🔄 Running database migrations..."
-	@python tools/migration.py
+	@uv run python tools/migration.py
 
 migrate-help:
 	@echo "ℹ️  Showing migration help..."
-	@python tools/migration.py --help
+	@uv run python tools/migration.py --help
 
 test: check-deps
 	@echo "🧪 Running all tests..."
-	@pytest
+	@uv run pytest
 	@echo "${GREEN}✅ All tests passed.${RESET}"
 
 test-unit: check-deps
 	@echo "🔬 Running unit tests only..."
-	@pytest -m "not integration"
+	@uv run pytest -m "not integration"
 	@echo "${GREEN}✅ Unit tests passed.${RESET}"
 
 test-integration: check-deps
 	@echo "🔌 Running integration tests only..."
-	@pytest -m integration
+	@uv run pytest -m integration
 	@echo "${GREEN}✅ Integration tests passed.${RESET}"
 
 test-cov: check-deps
 	@echo "📊 Running tests with coverage report..."
-	@pytest --cov=src --cov-report=term --cov-report=html
+	@uv run pytest --cov=src --cov-report=term --cov-report=html
 	-@echo
 	@echo "Coverage report: htmlcov/index.html"
 	@open htmlcov/index.html
 
 test-watch: check-deps
 	@echo "👀 Watching files — re-runs affected tests on save (Ctrl-C to stop)..."
-	@ptw . -- --testmon
+	@uv run ptw . -- --testmon
 
 display-coverage:
 	@echo "📈 Opening coverage report in browser..."
@@ -174,6 +168,6 @@ clean-conversations:
 config:
 	@echo "🧰 Generating configuration files from templates..."
 	@echo "Note: This requires template files in config/templates/ directory."
-	@python tools/generate_config.py
+	@uv run python tools/generate_config.py
 	@echo "${GREEN}✅ Configuration files have been created in the config/ directory.${RESET}"
 	@echo "${YELLOW}Please update them with your own settings before running the application.${RESET}"

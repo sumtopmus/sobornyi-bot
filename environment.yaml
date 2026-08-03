@@ -1,9 +1,0 @@
-name: sobornyi-bot
-channels:
-  - defaults
-  - conda-forge
-dependencies:
-  - python==3.13.2
-  - pip==25.0.1
-  - pip:
-    - -r requirements.txt
