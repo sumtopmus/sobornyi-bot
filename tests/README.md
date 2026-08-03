@@ -14,19 +14,19 @@ This directory contains tests for the Sobornyi Bot application.
 To run all tests:
 
 ```bash
-pytest
+uv run pytest
 ```
 
 To run tests with coverage:
 
 ```bash
-pytest --cov=src
+uv run pytest --cov=src
 ```
 
 To run a specific test file:
 
 ```bash
-pytest tests/test_utils.py
+uv run pytest tests/test_utils.py
 ```
 
 ## Fixtures
