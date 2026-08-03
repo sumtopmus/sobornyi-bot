@@ -6,7 +6,7 @@ Telegram bot to control the Sobornyi group.
 
 ### Prerequisites
 
-- Conda (Miniconda or Anaconda)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - Telegram account
 
 ### Initial Setup
@@ -30,13 +30,7 @@ Telegram bot to control the Sobornyi group.
    - Edit `config/settings.local.yml` with your specific environment settings for `dev` and `prod`.
    - Add your bot token to `config/.secrets.local.yml`.
 
-7. Activate the environment:
-
-   ```bash
-   conda activate telegram-bot
-   ```
-
-8. Run the bot:
+7. Run the bot:
 
    ```bash
    # Development mode with debug logging
@@ -119,16 +113,16 @@ For advanced migration options:
 
 ```bash
 # Run with specific options
-python tools/migration.py --source /path/to/old/data --target /path/to/new/data
+uv run python tools/migration.py --source /path/to/old/data --target /path/to/new/data
 
 # Migrate only specific data types
-python tools/migration.py --bot-only
-python tools/migration.py --chat-only
-python tools/migration.py --user-only
+uv run python tools/migration.py --bot-only
+uv run python tools/migration.py --chat-only
+uv run python tools/migration.py --user-only
 
 # Other options
-python tools/migration.py --no-backup  # Skip creating backups
-python tools/migration.py --verbose    # Enable verbose logging
+uv run python tools/migration.py --no-backup  # Skip creating backups
+uv run python tools/migration.py --verbose    # Enable verbose logging
 ```
 
 For more information about the migration tool, see [tools/README.md](tools/README.md).
@@ -139,7 +133,7 @@ For more information about the migration tool, see [tools/README.md](tools/READM
 |---------|-------------|
 | `make` | ℹ️ Show this help message |
 | `make setup` | 🏗️ First-time setup: install dependencies and configure project |
-| `make env` | 📦 Create conda environment and install dependencies |
+| `make env` | 📦 Create virtual environment and install dependencies |
 | `make init-dev` | 🛠️ Setup development environment with pre-commit hooks |
 | `make run` | 🚀 Run bot in production mode |
 | `make debug` | 🐞 Run bot in debug mode |
@@ -160,7 +154,7 @@ For more information about the migration tool, see [tools/README.md](tools/READM
 | `make config` | 🧰 Generate configuration files |
 | `make version` | 🏷️ Show the project version |
 | `make docs` | 📚 Generate project documentation |
-| `make check-conda` | 🐍 Check if conda is installed |
+| `make lock` | 🔒 Upgrade and relock dependencies |
 | `make check-deps` | ✅ Check if required tools are installed |
 
 ## Development

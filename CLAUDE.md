@@ -5,7 +5,8 @@ Telegram bot for managing the Sobornyi group. Built with `python-telegram-bot` a
 ## Commands
 
 ```bash
-make setup        # First-time setup (conda env + config generation)
+make setup        # First-time setup (uv sync + config generation)
+make lock         # Upgrade and relock dependencies (uv lock --upgrade)
 make run          # Production mode (ENV_FOR_DYNACONF=prod, clears cache)
 make debug        # Dev mode (ENV_FOR_DYNACONF=dev, clears cache+logs+conversations)
 make test         # Run all tests
@@ -14,6 +15,14 @@ make test-cov     # Run tests with coverage, opens htmlcov/index.html
 make migrate      # Run data migration tool
 make init-dev     # Install pre-commit hooks + dev dependencies
 ```
+
+Dependencies are managed with [uv](https://docs.astral.sh/uv/). `pyproject.toml`
+is the single source of truth (deps, pytest, coverage, black, isort) and
+`uv.lock` pins exact versions. No environment activation is needed — every
+Makefile target runs through `uv run`.
+
+Each git worktree gets its own `.venv`. A newly created worktree needs its own
+`uv sync` before tests will run.
 
 ## Architecture
 
@@ -56,9 +65,9 @@ Config is accessed via `from config import settings`. Environment selected by `E
 
 ## Testing
 
-- Tests live in `tests/`, pytest is configured via `pytest.ini` with `pythonpath = src`
+- Tests live in `tests/`, pytest is configured via `pyproject.toml`'s `[tool.pytest.ini_options]` with `pythonpath = src`
 - `asyncio_mode = auto` — all async tests work without extra decorators
-- Tests always run with `DYNACONF_ENV=dev` (set in `pytest.ini`)
+- Tests always run with `DYNACONF_ENV=dev` (set in `pyproject.toml`'s `[tool.pytest.ini_options]`)
 - Integration tests are marked with `@pytest.mark.integration`; run separately with `make test-integration`
 
 ## Data Persistence

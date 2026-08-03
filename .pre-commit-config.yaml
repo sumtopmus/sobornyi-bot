@@ -10,7 +10,6 @@ repos:
       - id: name-tests-test
         args: ["--pytest-test-first"]
       - id: no-commit-to-branch
-      - id: requirements-txt-fixer
       - id: trailing-whitespace
   - repo: https://github.com/psf/black
     rev: 25.1.0
@@ -27,9 +26,13 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: pytest -q
+        entry: uv run pytest -q
         language: system
         pass_filenames: false
         types: [python]
         verbose: false
         stages: [pre-commit]
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.11.18
+    hooks:
+      - id: uv-lock
