@@ -31,7 +31,7 @@ uv run python -m tools.migration
 You can also run the script directly (it's executable):
 
 ```bash
-./tools/migration.py
+uv run ./tools/migration.py
 ```
 
 This will:
@@ -116,7 +116,7 @@ uv run python -m tools.migration_test
 You can also run the test script directly (it's executable):
 
 ```bash
-./tools/migration_test.py
+uv run ./tools/migration_test.py
 ```
 
 This will:
