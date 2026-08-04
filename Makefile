@@ -80,11 +80,11 @@ lock:
 
 run: check-deps clean-cache
 	@echo "🚀 Running bot in production mode..."
-	@ENV_FOR_DYNACONF=prod uv run python src/bot.py
+	@ENV_FOR_DYNACONF=prod uv run --no-dev --frozen python src/bot.py
 
 debug: check-deps clean-state
 	@echo "🐞 Running bot in debug mode..."
-	@ENV_FOR_DYNACONF=dev uv run python src/bot.py
+	@ENV_FOR_DYNACONF=dev uv run --frozen python src/bot.py
 
 backup:
 	@echo "💾 Creating backup of data and logs..."
@@ -145,8 +145,8 @@ clean-cache:
 	@echo "🗑️ Removing cache files..."
 	@rm -rf src/__pycache__
 	@rm -rf src/handlers/__pycache__
-	@find . -type d -name "__pycache__" -exec rm -rf {} +
-	@find . -type f -name "*.pyc" -delete
+	@find . -path "./.venv" -prune -o -type d -name "__pycache__" -exec rm -rf {} +
+	@find . -path "./.venv" -prune -o -type f -name "*.pyc" -exec rm -f {} +
 	@echo "${GREEN}✅ Cache files removed.${RESET}"
 
 clean-logs:

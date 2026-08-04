@@ -6,7 +6,7 @@ Telegram bot to control the Sobornyi group.
 
 ### Prerequisites
 
-- [uv](https://docs.astral.sh/uv/getting-started/installation/)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (>=0.11)
 - Telegram account
 
 ### Initial Setup
@@ -168,6 +168,10 @@ For developers looking to contribute:
    ```
 
 2. This installs pre-commit hooks and development dependencies.
+
+   **Updating an existing clone?** Re-run `make init-dev` after pulling the uv
+   migration — the previously installed pre-commit hook points at the old
+   conda interpreter and will stop working once that environment is gone.
 
 3. Before committing changes, run tests:
 
