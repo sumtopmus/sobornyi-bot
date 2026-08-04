@@ -12,7 +12,7 @@ passphrase_log_path = 'logs/passphrase.log'
 max_bytes = 1048576                         # 1 MB
 backup_count = 5
 # General
-timezone = 'US/Eastern'
+timezone = 'America/New_York'
 # Behavior
 war_mode = true
 war_start_date = '2022-02-24'
