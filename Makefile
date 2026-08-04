@@ -9,7 +9,8 @@ RED := $(shell tput setaf 1)
 RESET := $(shell tput sgr0)
 
 # Project version — single source of truth is pyproject.toml
-VERSION := $(shell uv version --short)
+# Recursive (=) so the uv shell-out is deferred to first use, not every make invocation
+VERSION = $(shell uv version --short)
 
 .PHONY: env init-dev run debug backup clean clean-state clean-cache clean-logs clean-data clean-conversations test test-unit test-integration test-cov test-watch migrate migrate-help config help setup check-deps version docs lock
 
