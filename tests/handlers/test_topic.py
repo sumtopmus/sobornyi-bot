@@ -39,9 +39,10 @@ class TestTopic:
         mock_context.args = ["test_topic"]
 
         # Mock the offtop function
-        with patch("handlers.topic.offtop", AsyncMock()) as mock_offtop, patch(
-            "handlers.topic.utils.log"
-        ) as mock_log:
+        with (
+            patch("handlers.topic.offtop", AsyncMock()) as mock_offtop,
+            patch("handlers.topic.utils.log") as mock_log,
+        ):
             # Call the function
             await topic(mock_update, mock_context)
 
@@ -74,9 +75,10 @@ class TestTopic:
         mock_settings.TOPICS = {"offtop": 123456}
 
         # Mock the move function
-        with patch("handlers.topic.move", AsyncMock()) as mock_move, patch(
-            "handlers.topic.utils.log"
-        ) as mock_log:
+        with (
+            patch("handlers.topic.move", AsyncMock()) as mock_move,
+            patch("handlers.topic.utils.log") as mock_log,
+        ):
             # Call the function
             await offtop(mock_update, mock_context)
 
@@ -94,9 +96,10 @@ class TestTopic:
         mock_settings.TOPICS = {"offtop": 123456, "test_topic": 789012}
 
         # Mock the move function
-        with patch("handlers.topic.move", AsyncMock()) as mock_move, patch(
-            "handlers.topic.utils.log"
-        ) as mock_log:
+        with (
+            patch("handlers.topic.move", AsyncMock()) as mock_move,
+            patch("handlers.topic.utils.log") as mock_log,
+        ):
             # Call the function
             await offtop(mock_update, mock_context)
 

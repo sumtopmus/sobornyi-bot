@@ -10,15 +10,14 @@ repos:
       - id: name-tests-test
         args: ["--pytest-test-first"]
       - id: no-commit-to-branch
-      - id: requirements-txt-fixer
       - id: trailing-whitespace
   - repo: https://github.com/psf/black
-    rev: 25.1.0
+    rev: 26.5.1
     hooks:
       - id: black
         language_version: python3.13
   - repo: https://github.com/pycqa/isort
-    rev: 6.0.1
+    rev: 8.0.1
     hooks:
       - id: isort
         name: isort (python)
@@ -27,9 +26,13 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: pytest -q
+        entry: uv run pytest -q
         language: system
         pass_filenames: false
         types: [python]
         verbose: false
         stages: [pre-commit]
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.11.18
+    hooks:
+      - id: uv-lock

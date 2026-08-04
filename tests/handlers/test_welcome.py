@@ -123,9 +123,11 @@ class TestJoin:
         channel.link = "https://t.me/test"
         mock_context.bot.get_chat.return_value = channel
 
-        with patch("handlers.welcome.utils.log"), patch(
-            "handlers.welcome.mention", return_value="@user"
-        ), patch("handlers.welcome.utils.add_message_cleanup_job"):
+        with (
+            patch("handlers.welcome.utils.log"),
+            patch("handlers.welcome.mention", return_value="@user"),
+            patch("handlers.welcome.utils.add_message_cleanup_job"),
+        ):
             result = await join(mock_update, mock_context)
 
         mock_context.bot.sendMessage.assert_awaited_once()
@@ -147,9 +149,11 @@ class TestJoin:
         mock_context.user_data = {"about": "intro text"}
         mock_context.bot.sendMessage = AsyncMock()
 
-        with patch("handlers.welcome.utils.log"), patch(
-            "handlers.welcome.mention", return_value="@user"
-        ), patch("handlers.welcome.utils.add_message_cleanup_job"):
+        with (
+            patch("handlers.welcome.utils.log"),
+            patch("handlers.welcome.mention", return_value="@user"),
+            patch("handlers.welcome.utils.add_message_cleanup_job"),
+        ):
             result = await join(mock_update, mock_context)
 
         mock_context.bot.sendMessage.assert_awaited_once()
@@ -408,9 +412,11 @@ class TestNotAbout:
         mock_update.message.id = 1
         mock_context.bot.sendMessage = AsyncMock()
 
-        with patch("handlers.welcome.utils.log"), patch(
-            "handlers.welcome.mention", return_value="@testuser"
-        ), patch("handlers.welcome.utils.add_message_cleanup_job") as mock_add_cleanup:
+        with (
+            patch("handlers.welcome.utils.log"),
+            patch("handlers.welcome.mention", return_value="@testuser"),
+            patch("handlers.welcome.utils.add_message_cleanup_job") as mock_add_cleanup,
+        ):
             result = await not_about(mock_update, mock_context)
 
         mock_context.bot.sendMessage.assert_called_once_with(
@@ -435,13 +441,12 @@ class TestNotAbout:
         mock_update.message.id = 1
         mock_context.bot.sendMessage = AsyncMock()
 
-        with patch("handlers.welcome.utils.log"), patch(
-            "handlers.welcome.mention", return_value="@testuser"
-        ), patch(
-            "handlers.welcome.utils.add_message_cleanup_job"
-        ) as mock_add_cleanup, patch(
-            "handlers.welcome.topic.move", return_value=2
-        ) as mock_move:
+        with (
+            patch("handlers.welcome.utils.log"),
+            patch("handlers.welcome.mention", return_value="@testuser"),
+            patch("handlers.welcome.utils.add_message_cleanup_job") as mock_add_cleanup,
+            patch("handlers.welcome.topic.move", return_value=2) as mock_move,
+        ):
             result = await not_about(mock_update, mock_context)
 
         mock_move.assert_called_once_with(mock_update, mock_context, 123)
@@ -480,10 +485,11 @@ class TestAbout:
         mock_context.user_data = {}
         mock_context.bot.sendMessage = AsyncMock()
 
-        with patch("handlers.welcome.utils.log"), patch(
-            "handlers.welcome.mention", return_value="@testuser"
-        ), patch("handlers.welcome.utils.add_message_cleanup_job"), patch(
-            "handlers.welcome.utils.clear_jobs"
+        with (
+            patch("handlers.welcome.utils.log"),
+            patch("handlers.welcome.mention", return_value="@testuser"),
+            patch("handlers.welcome.utils.add_message_cleanup_job"),
+            patch("handlers.welcome.utils.clear_jobs"),
         ):
             result = await about(mock_update, mock_context)
 
@@ -507,11 +513,12 @@ class TestAbout:
         mock_context.user_data = {}
         mock_context.bot.sendMessage = AsyncMock()
 
-        with patch("handlers.welcome.utils.log"), patch(
-            "handlers.welcome.mention", return_value="@testuser"
-        ), patch("handlers.welcome.utils.add_message_cleanup_job"), patch(
-            "handlers.welcome.utils.clear_jobs"
-        ) as mock_clear_jobs:
+        with (
+            patch("handlers.welcome.utils.log"),
+            patch("handlers.welcome.mention", return_value="@testuser"),
+            patch("handlers.welcome.utils.add_message_cleanup_job"),
+            patch("handlers.welcome.utils.clear_jobs") as mock_clear_jobs,
+        ):
             result = await about(mock_update, mock_context)
 
         mock_clear_jobs.assert_called_once_with(
@@ -583,9 +590,11 @@ class TestTimeout:
         user.full_name = "User"
         mock_update.effective_user = user
 
-        with patch("handlers.welcome.utils.log") as mock_log, patch(
-            "handlers.welcome.mention", return_value="@user"
-        ), patch("handlers.welcome.utils.add_message_cleanup_job"):
+        with (
+            patch("handlers.welcome.utils.log") as mock_log,
+            patch("handlers.welcome.mention", return_value="@user"),
+            patch("handlers.welcome.utils.add_message_cleanup_job"),
+        ):
             result = await timeout(mock_update, mock_context)
 
         mock_context.bot.ban_chat_member.assert_awaited_once_with(

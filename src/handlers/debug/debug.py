@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes, filters
 
-from config import settings, debug_mode_on, debug_mode_off
+from config import debug_mode_off, debug_mode_on, settings
 from utils import log
 
 

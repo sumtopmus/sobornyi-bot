@@ -1,7 +1,6 @@
 from collections import defaultdict
 from datetime import time
 
-
 clock_emojis = defaultdict(lambda: "🕕")
 clock_emojis.update(
     {

@@ -25,13 +25,13 @@ make migrate
 Or run the Python module directly:
 
 ```bash
-python -m tools.migration
+uv run python -m tools.migration
 ```
 
 You can also run the script directly (it's executable):
 
 ```bash
-./tools/migration.py
+uv run ./tools/migration.py
 ```
 
 This will:
@@ -47,7 +47,7 @@ This will:
 The migration tool provides several command-line options:
 
 ```bash
-python -m tools.migration --help
+uv run python -m tools.migration --help
 ```
 
 ```text
@@ -72,31 +72,31 @@ options:
 Migrate data from a specific directory to another directory:
 
 ```bash
-python -m tools.migration --source /path/to/old/data --target /path/to/new/data
+uv run python -m tools.migration --source /path/to/old/data --target /path/to/new/data
 ```
 
 Migrate only bot data:
 
 ```bash
-python -m tools.migration --bot-only
+uv run python -m tools.migration --bot-only
 ```
 
 Migrate without creating backups:
 
 ```bash
-python -m tools.migration --no-backup
+uv run python -m tools.migration --no-backup
 ```
 
 Enable verbose logging:
 
 ```bash
-python -m tools.migration --verbose
+uv run python -m tools.migration --verbose
 ```
 
 Disable console logging (log to file only):
 
 ```bash
-python -m tools.migration --no-console
+uv run python -m tools.migration --no-console
 ```
 
 ## Testing the Migration
@@ -110,13 +110,13 @@ make migrate-test
 Or run the Python module directly:
 
 ```bash
-python -m tools.migration_test
+uv run python -m tools.migration_test
 ```
 
 You can also run the test script directly (it's executable):
 
 ```bash
-./tools/migration_test.py
+uv run ./tools/migration_test.py
 ```
 
 This will:

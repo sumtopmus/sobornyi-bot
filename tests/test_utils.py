@@ -33,9 +33,11 @@ class TestLog:
 
     def test_log_with_debug_on(self, mock_settings, caplog):
         mock_settings.DEBUG = True
-        with patch("utils.logging.getLogger") as mock_logger, patch(
-            "utils.print"
-        ) as mock_print, patch("utils.datetime") as mock_datetime:
+        with (
+            patch("utils.logging.getLogger") as mock_logger,
+            patch("utils.print") as mock_print,
+            patch("utils.datetime") as mock_datetime,
+        ):
 
             mock_log = MagicMock()
             mock_logger.return_value.log = mock_log
@@ -116,9 +118,11 @@ class TestJobManagement:
         app = mock_context.application
         message_id = 12345
 
-        with patch("utils.add_job") as mock_add_job, patch(
-            "utils.log"
-        ) as mock_log, patch("utils.timedelta") as mock_timedelta:
+        with (
+            patch("utils.add_job") as mock_add_job,
+            patch("utils.log") as mock_log,
+            patch("utils.timedelta") as mock_timedelta,
+        ):
 
             mock_timedelta.return_value = timedelta(seconds=60)
 

@@ -1,2 +1,0 @@
-dynaconf==3.2.10
-python-telegram-bot[callback-data, job-queue]==22.0

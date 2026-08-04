@@ -1,0 +1,71 @@
+[project]
+name = "sobornyi-bot"
+version = "1.1.0"
+description = "Telegram bot to control the Sobornyi group"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "dynaconf>=3.3.4,<4",
+    "python-telegram-bot[callback-data,job-queue]>=22.8,<23",
+]
+
+[dependency-groups]
+dev = [
+    "black>=26.5.1,<27",
+    "isort>=8.0.1,<9",
+    "pre-commit>=4.6.1,<5",
+    "pyright>=1.1.411,<2",
+    "pytest>=9.1.1,<10",
+    "pytest-asyncio>=1.4,<2",
+    "pytest-cov>=7.1,<8",
+    "pytest-env>=1.7,<2",
+    "pytest-testmon>=2.2,<3",
+    "pytest-watcher>=0.6.3,<0.7",
+]
+
+[tool.uv]
+package = false
+required-version = ">=0.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+python_classes = ["Test*"]
+addopts = "-v"
+markers = [
+    "integration: marks a test as an integration test (deselect with '-m \"not integration\"')",
+]
+env = ["DYNACONF_ENV=dev"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["ignore::telegram.warnings.PTBUserWarning"]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/site-packages/*",
+    "*/dist-packages/*",
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/.pytest_cache/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+    "except ImportError",
+    "raise AssertionError",
+]
+
+[tool.black]
+target-version = ["py313"]
+
+[tool.isort]
+profile = "black"
