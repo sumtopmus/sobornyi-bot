@@ -1,10 +1,11 @@
 """Tests for the channel module."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from telegram import Message
 
-from handlers.channel import create_handlers, post, cross_post, edit
+from handlers.channel import create_handlers, cross_post, edit, post
 
 
 class TestChannel:

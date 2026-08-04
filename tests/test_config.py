@@ -2,11 +2,11 @@
 
 import logging
 from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from dynaconf import Dynaconf
 
-from config import debug_mode_on, debug_mode_off, settings
+from config import debug_mode_off, debug_mode_on, settings
 
 
 class TestDebugMode:

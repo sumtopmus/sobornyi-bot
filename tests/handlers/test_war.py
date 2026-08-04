@@ -1,16 +1,17 @@
 """Tests for the war module."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, call
 from datetime import datetime, time
+from unittest.mock import AsyncMock, MagicMock, call, patch
+
+import pytest
 
 from handlers.war import (
+    JOB_NAME,
     create_handlers,
-    war_on,
-    war_off,
     enable_war_mode,
     morning_message,
-    JOB_NAME,
+    war_off,
+    war_on,
 )
 
 
@@ -94,9 +95,10 @@ class TestWar:
         mock_context.application = MagicMock()
 
         # Call the function
-        with patch("handlers.war.utils.log") as mock_log, patch(
-            "handlers.war.utils.clear_jobs"
-        ) as mock_clear_jobs:
+        with (
+            patch("handlers.war.utils.log") as mock_log,
+            patch("handlers.war.utils.clear_jobs") as mock_clear_jobs,
+        ):
             war_off(mock_update, mock_context)
 
             # Assertions
@@ -116,9 +118,10 @@ class TestWar:
         mock_today = datetime(2022, 3, 1)
 
         # Call the function
-        with patch("handlers.war.utils.log") as mock_log, patch(
-            "handlers.war.datetime"
-        ) as mock_datetime:
+        with (
+            patch("handlers.war.utils.log") as mock_log,
+            patch("handlers.war.datetime") as mock_datetime,
+        ):
             mock_datetime.strptime.return_value = datetime(2022, 2, 24)
             mock_datetime.today.return_value = mock_today
             mock_datetime.strptime = datetime.strptime

@@ -1,10 +1,7 @@
 """Debug handlers module."""
 
+from . import debug, info, upload
 from .error import handler as error_handler
-
-from . import debug
-from . import info
-from . import upload
 
 __all__ = ["debug", "error_handler", "handlers"]
 
