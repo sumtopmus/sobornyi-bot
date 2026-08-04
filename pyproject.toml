@@ -7,6 +7,11 @@ requires-python = ">=3.13,<3.14"
 dependencies = [
     "dynaconf>=3.3.4,<4",
     "python-telegram-bot[callback-data,job-queue]>=22.8,<23",
+    # Ship the IANA zone database with the app. The interpreter uv provisions
+    # resolves zones from the host's /usr/share/zoneinfo, and Debian 12 /
+    # Ubuntu 24.04+ split the legacy names (US/Eastern) into tzdata-legacy,
+    # which is not installed by default. Conda used to bundle the full db.
+    "tzdata>=2026.3",
 ]
 
 [dependency-groups]
